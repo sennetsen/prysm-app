@@ -1,0 +1,36 @@
+.vertical-nav {
+    width: 60px;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    border-radius: 8px;
+    position: fixed; /* Fixes it to the right side of the screen */
+    right: 20px; /* Space from the right edge */
+    top: 100px; /* Space from the top */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Light shadow for a floating effect */
+  }
+  
+  .nav-button {
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    margin: 10px 0;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+  }
+  
+  .nav-button:hover {
+    background-color: #f0f0f0; /* Highlight on hover */
+  }
+  
+  .icon {
+    font-size: 24px; /* Icon size */
+    color: #000000;
+  }  

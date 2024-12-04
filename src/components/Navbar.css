@@ -1,0 +1,34 @@
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background-color: #f97373;
+    color: white;
+  }
+  
+  .logo {
+    font-size: 1.2rem;
+  }
+  
+  .board-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+  
+  .user-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .user-icon,
+  .question-icon,
+  .share-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: white;
+  }
+  

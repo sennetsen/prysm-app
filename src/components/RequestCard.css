@@ -1,0 +1,41 @@
+.request-card {
+    background-color: #e8f0ff;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 200px; /* Sets the width */
+    height: 200px; /* Sets the height to match the width */
+    overflow: hidden; /* Hides any overflow content */
+
+  }
+  
+  .request-title {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .request-description {
+    font-size: 0.9rem;
+    color: #555;
+    margin: 10px 0;
+  }
+  
+  .request-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: #888;
+  }
+  
+  .username {
+    font-weight: bold;
+  }
+  
+  .likes, .comments {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  
