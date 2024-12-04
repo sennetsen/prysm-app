@@ -15,17 +15,19 @@
 
 .board {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Ensure consistent column size */
+  gap: 20px; /* Space between post-its */
   padding: 20px;
   background-color: white;
   border-radius: 8px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  width: 80%;
-  height: 500px; /* Fixed size */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for the board */
+  width: 93%;
+  height: 74vh; /* Fixed size for the board */
   margin: 20px auto;
   overflow-y: auto;
+  justify-items: center; /* Center align the post-its in their grid cells */
 }
+
 
 .empty-board-message {
   text-align: center;
@@ -46,7 +48,7 @@
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   padding: 20px;
   z-index: 10;
-  transition: transform 0.3s ease-in-out; /* Smooth slide-in/out */
+  transition: transform 0.3s ease-in-out;
 }
 
 .sidebar.hidden {
@@ -57,7 +59,6 @@
   transform: translateX(0); /* Show the sidebar */
 }
 
-/* Toggle button styles */
 .toggle-button {
   position: absolute;
   right: -20px;
@@ -75,6 +76,7 @@
   cursor: pointer;
   z-index: 20;
 }
+
 
 /* Modal styles (unchanged) */
 .modal-overlay {

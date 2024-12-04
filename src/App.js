@@ -1,43 +1,52 @@
 import React, { useState } from "react";
 import Navbar from "./components/Navbar";
-import Sidebar from "./components/Sidebar";
 import VerticalNav from "./components/VerticalNav";
 import RequestCard from "./components/RequestCard";
 import "./App.css";
 
 function App() {
-  const [cards, setCards] = useState([]); // Store post-it notes
-  const [isModalOpen, setIsModalOpen] = useState(false); // Control modal visibility
-  const [newPostContent, setNewPostContent] = useState(""); // Content for the new post-it
+  const [cards, setCards] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newPostContent, setNewPostContent] = useState("");
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true); // Track sidebar visibility
 
-  // Open the modal
   const handlePostItClick = () => {
     setIsModalOpen(true);
   };
 
-  // Add a new post-it with content from the modal
   const handlePostSubmit = () => {
     if (newPostContent.trim()) {
       setCards((prevCards) => [
         ...prevCards,
         { id: prevCards.length + 1, content: newPostContent.trim() },
       ]);
-      setNewPostContent(""); // Clear input
-      setIsModalOpen(false); // Close modal
+      setNewPostContent("");
+      setIsModalOpen(false);
     }
   };
 
-  // Close the modal without adding a post-it
   const handleModalClose = () => {
     setIsModalOpen(false);
-    setNewPostContent(""); // Clear input
+    setNewPostContent("");
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarVisible(!isSidebarVisible);
   };
 
   return (
     <div className="app">
       <Navbar />
       <div className="main-content">
-        <Sidebar /> {/* Sidebar is now included */}
+        <div className={`sidebar ${isSidebarVisible ? "visible" : "hidden"}`}>
+          <div className="sidebar-content">
+            <h2>XYZ Creator ✅</h2>
+            <p>Brief bio (like Instagram?) lorem ipsum dolor sit amet</p>
+          </div>
+          <button className="toggle-button" onClick={toggleSidebar}>
+            {isSidebarVisible ? "⭠" : "⭢"}
+          </button>
+        </div>
         <div className="board">
           {cards.length === 0 ? (
             <p className="empty-board-message">
@@ -52,14 +61,13 @@ function App() {
         <VerticalNav onPostItClick={handlePostItClick} />
       </div>
 
-      {/* Modal for creating a new post-it */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal">
             <textarea
               placeholder="Type your note here..."
               value={newPostContent}
-              onChange={(e) => setNewPostContent(e.target.value)} // Update content state
+              onChange={(e) => setNewPostContent(e.target.value)}
             ></textarea>
             <div className="modal-buttons">
               <button onClick={handleModalClose}>Cancel</button>
