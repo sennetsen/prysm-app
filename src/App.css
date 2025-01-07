@@ -79,6 +79,8 @@
 
 
 /* Modal styles (unchanged) */
+
+/* 
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -132,4 +134,114 @@ textarea {
 .modal-buttons button:last-child {
   background: #f97373;
   color: white;
+} */
+
+
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Dim background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
+
+.modal {
+  position: relative;
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  width: 400px; /* Adjust width if needed */
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3); /* Add shadow for depth */
+}
+
+.post-it-modal {
+  background-color: #fef3c7; /* Post-it yellow background */
+  border-radius: 12px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Post-it shadow */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.post-it-textbox {
+  background-color: #fef3c7; /* Same color as the modal */
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.1); /* Subtle inset shadow */
+}
+
+textarea {
+  width: 100%;
+  height: 150px; /* Make it a bit larger than board post-its */
+  border: none;
+  background: transparent; /* Match the background to the "post-it" */
+  resize: none;
+  font-family: "Arial", sans-serif;
+  font-size: 1rem;
+  color: #333;
+  outline: none; /* Remove focus outline */
+  padding: 10px;
+}
+
+textarea::placeholder {
+  color: #aaa; /* Subtle placeholder color */
+}
+
+/* Cancel and Post buttons */
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end; /* Push buttons to the bottom-right */
+  gap: 10px; /* Space between the buttons */
+}
+
+.cancel-button,
+.post-button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.cancel-button {
+  background: #f0f0f0; /* Soft gray */
+  color: #333;
+}
+
+.post-button {
+  background: #f97373; /* Red from the vertical nav bar */
+  color: white;
+}
+
+.cancel-button:hover {
+  background: #e4e4e4;
+}
+
+.post-button:hover {
+  background: #f85c5c;
+}
+
+/* .board {
+  display: flex;
+  justify-content: center;
+  align-items: center; 
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin: 20px auto;
+  position: relative; 
+}
+
+.empty-board-message {
+  font-size: 1.2rem;
+  color: #888;
+  text-align: center;
+} */
