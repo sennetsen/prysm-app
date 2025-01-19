@@ -1,64 +1,60 @@
-// import React from "react";
-// import "./RequestCard.css";
-
-// function RequestCard({ content }) {
-//   return (
-//     <div className="request-card">
-//       <p>{content}</p>
-//     </div>
-//   );
-// }
-
-// export default RequestCard;
-
-// import React from "react";
-// import "./RequestCard.css";
-
-// function RequestCard({ content, color }) {
-//   return (
-//     <div className="request-card" style={{ backgroundColor: color }}>
-//       <p>{content}</p>
-//     </div>
-//   );
-// }
-
-// export default RequestCard;
-
-
-// import React from "react";
-// import "./RequestCard.css";
-
-// function RequestCard({ content, color, timestamp }) {
-//   return (
-//     <div className="request-card" style={{ backgroundColor: color }}>
-//       <p>{content}</p>
-//       <div className="timestamp">{timestamp}</div>
-//     </div>
-//   );
-// }
-
-// export default RequestCard;
-
-
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "./RequestCard.css";
 
-function RequestCard({ id, content, color, timestamp, likes, onLike, onDelete }) {
+function RequestCard({ id, title, content, isAnonymous, color, onDelete }) {
+  const [liked, setLiked] = useState(false);
+  const [timestamp, setTimestamp] = useState('');
+
+  const toggleLike = () => {
+    setLiked(!liked);
+  };
+
+  useEffect(() => {
+    const createdTime = new Date();
+    const updateTimestamp = () => {
+      const now = new Date();
+      const diffInSeconds = Math.floor((now - createdTime) / 1000);
+
+      if (diffInSeconds < 60) {
+        setTimestamp('just now');
+      } else if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        setTimestamp(`${minutes} minute${minutes > 1 ? 's' : ''} ago`);
+      } else if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        setTimestamp(`${hours} hour${hours > 1 ? 's' : ''} ago`);
+      } else {
+        const days = Math.floor(diffInSeconds / 86400);
+        setTimestamp(`${days} day${days > 1 ? 's' : ''} ago`);
+      }
+    };
+
+    updateTimestamp();
+    const interval = setInterval(updateTimestamp, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="request-card" style={{ backgroundColor: color }}>
       <button className="delete-button" onClick={() => onDelete(id)}>
-        &times;
+        ✖
       </button>
+      <h3>{title}</h3>
       <p>{content}</p>
+      {isAnonymous ? (
+        <p className="anonymous">Posted anonymously</p>
+      ) : (
+        <div className="user-info">
+          <img src="/path-to-profile-pic.jpg" alt="Profile" className="profile-pic" />
+          <span className="username">Username</span>
+        </div>
+      )}
       <div className="card-footer">
         <span className="timestamp">{timestamp}</span>
-        <div className="like-section">
-          <button className="like-button" onClick={() => onLike(id)}>
-            ❤️
-          </button>
-          <span>{likes}</span>
-        </div>
+        <button className={`like-button ${liked ? 'liked' : ''}`} onClick={toggleLike}>
+          {liked ? '❤️' : '🤍'}
+        </button>
       </div>
     </div>
   );

@@ -1,14 +1,20 @@
-import React from 'react';
-import './Navbar.css';
+// cursor version
 
-function Navbar() {
+import React from "react";
+import "./Navbar.css";
+
+function Navbar({ onProfileClick, onQuestionClick }) {
   return (
     <nav className="navbar">
-      <div className="logo">LOGO</div>
-      <h1 className="board-name">Board Name</h1>
-      <div className="user-actions">
-        <button className="question-icon">?</button>
-        <button className="user-icon">👤</button>
+      <img src="/img/Group 21.svg" alt="Logo" className="logo" />
+      <div className="navbar-icons">
+        <button className="question-icon" onClick={onQuestionClick}>
+          ︖
+        </button>
+        <button className="profile-icon" onClick={onProfileClick}>
+          👤
+        </button>
+        <div className="divider"></div>
         <button className="share-button">Share</button>
       </div>
     </nav>
@@ -16,3 +22,9 @@ function Navbar() {
 }
 
 export default Navbar;
+
+
+
+
+
+

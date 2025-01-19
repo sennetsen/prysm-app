@@ -1,391 +1,88 @@
-// import React, { useState } from "react";
-// import Navbar from "./components/Navbar";
-// import VerticalNav from "./components/VerticalNav";
-// import RequestCard from "./components/RequestCard";
-// import "./App.css";
+// cursor version
 
-// function App() {
-//   const [cards, setCards] = useState([]);
-//   const [isModalOpen, setIsModalOpen] = useState(false);
-//   const [newPostContent, setNewPostContent] = useState("");
-//   const [isSidebarVisible, setIsSidebarVisible] = useState(true); // Track sidebar visibility
-
-//   const handlePostItClick = () => {
-//     setIsModalOpen(true);
-//   };
-
-//   const handlePostSubmit = () => {
-//     if (newPostContent.trim()) {
-//       setCards((prevCards) => [
-//         ...prevCards,
-//         { id: prevCards.length + 1, content: newPostContent.trim() },
-//       ]);
-//       setNewPostContent("");
-//       setIsModalOpen(false);
-//     }
-//   };
-
-//   const handleModalClose = () => {
-//     setIsModalOpen(false);
-//     setNewPostContent("");
-//   };
-
-//   const toggleSidebar = () => {
-//     setIsSidebarVisible(!isSidebarVisible);
-//   };
-
-//   return (
-//     <div className="app">
-//       <Navbar />
-//       <div className="main-content">
-//         <div className={`sidebar ${isSidebarVisible ? "visible" : "hidden"}`}>
-//           <div className="sidebar-content">
-//             <h2>XYZ Creator ✅</h2>
-//             <p>Brief bio (like Instagram?) lorem ipsum dolor sit amet</p>
-//           </div>
-//           <button className="toggle-button" onClick={toggleSidebar}>
-//             {isSidebarVisible ? "⭠" : "⭢"}
-//           </button>
-//         </div>
-//         <div className="board">
-//           {cards.length === 0 ? (
-//             <p className="empty-board-message">
-//               No notes yet. Click the button to add one!
-//             </p>
-//           ) : (
-//             cards.map((card) => (
-//               <RequestCard key={card.id} content={card.content} />
-//             ))
-//           )}
-//         </div>
-//         <VerticalNav onPostItClick={handlePostItClick} />
-//       </div>
-
-//       {/* {isModalOpen && (
-//         <div className="modal-overlay">
-//           <div className="modal">
-//             <textarea
-//               placeholder="Type your note here..."
-//               value={newPostContent}
-//               onChange={(e) => setNewPostContent(e.target.value)}
-//             ></textarea>
-//             <div className="modal-buttons">
-//               <button onClick={handleModalClose}>Cancel</button>
-//               <button onClick={handlePostSubmit}>Post</button>
-//             </div>
-//           </div>
-//         </div>
-//       )} */
-//       isModalOpen && (
-//         <div className="modal-overlay">
-//           <div className="modal post-it-modal">
-//             {/* The textarea styled as a post-it */}
-//             <div className="post-it-textbox">
-//               <textarea
-//                 placeholder="Type your note here..."
-//                 value={newPostContent}
-//                 onChange={(e) => setNewPostContent(e.target.value)}
-//               ></textarea>
-//             </div>
-      
-//             {/* Cancel and Post buttons positioned in the bottom-right */}
-//             <div className="modal-buttons">
-//               <button className="cancel-button" onClick={handleModalClose}>
-//                 Cancel
-//               </button>
-//               <button className="post-button" onClick={handlePostSubmit}>
-//                 Post
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       )
-      
-      
-      
-      
-//       }
-//     </div>
-//   );
-// }
-
-// export default App;
-
-
-// timestamps
-
-// import React, { useState } from "react";
-// import Navbar from "./components/Navbar";
-// import VerticalNav from "./components/VerticalNav";
-// import RequestCard from "./components/RequestCard";
-// import "./App.css";
-
-// function App() {
-//   const [cards, setCards] = useState([]); // Stores all post-its
-//   const [isModalOpen, setIsModalOpen] = useState(false); // Tracks modal visibility
-//   const [newPostContent, setNewPostContent] = useState(""); // Tracks input in modal
-//   const [postItColor, setPostItColor] = useState("#FEF3C7"); // Default color for post-its
-
-//   const colors = ["#FEF3C7", "#DBEAFE", "#FEE2E2"]; // Post-it color options
-
-//   // Open the modal and randomly select a color
-//   const handlePostItClick = () => {
-//     const randomColor = colors[Math.floor(Math.random() * colors.length)];
-//     setPostItColor(randomColor); // Set the random color
-//     setIsModalOpen(true); // Open the modal
-//   };
-
-//   // Add a new post-it with content, color, and timestamp
-//   const handlePostSubmit = () => {
-//     if (newPostContent.trim()) {
-//       const currentTime = new Date();
-//       const timestamp = `${currentTime.getHours()}:${String(
-//         currentTime.getMinutes()
-//       ).padStart(2, "0")}`; // Format hour:minute
-
-//       setCards((prevCards) => [
-//         ...prevCards,
-//         {
-//           id: prevCards.length + 1,
-//           content: newPostContent.trim(),
-//           color: postItColor,
-//           timestamp: timestamp, // Add the timestamp
-//         },
-//       ]);
-//       setNewPostContent(""); // Clear the input
-//       setIsModalOpen(false); // Close the modal
-//     }
-//   };
-
-//   // Close the modal without adding a post-it
-//   const handleModalClose = () => {
-//     setIsModalOpen(false);
-//     setNewPostContent(""); // Clear the input
-//   };
-
-//   return (
-//     <div className="app">
-//       <Navbar />
-
-  
-
-
-//       <div className="main-content">
-//         <div className="board">
-//           {cards.length === 0 ? (
-//             <p className="empty-board-message">No notes yet. Click the button to add one!</p>
-//           ) : (
-//             cards.map((card) => (
-//               <RequestCard
-//                 key={card.id}
-//                 content={card.content}
-//                 color={card.color}
-//                 timestamp={card.timestamp} // Pass timestamp to RequestCard
-//               />
-//             ))
-//           )}
-//         </div>
-//         <VerticalNav onPostItClick={handlePostItClick} />
-//       </div>
-
-//       {/* Modal for creating a new post-it */}
-//       {isModalOpen && (
-//         <div className="modal-overlay">
-//           <div className="modal post-it-modal" style={{ backgroundColor: postItColor }}>
-//             <textarea
-//               placeholder="Type your note here..."
-//               value={newPostContent}
-//               onChange={(e) => setNewPostContent(e.target.value)}
-//               style={{ backgroundColor: postItColor }}
-//             ></textarea>
-//             <div className="modal-buttons">
-//               <button className="cancel-button" onClick={handleModalClose}>
-//                 Cancel
-//               </button>
-//               <button className="post-button" onClick={handlePostSubmit}>
-//                 Post
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-// export default App;
-
-
-
-
-
-// import React, { useState } from "react";
-// import Navbar from "./components/Navbar";
-// import VerticalNav from "./components/VerticalNav";
-// import RequestCard from "./components/RequestCard";
-// import Sidebar from "./components/Sidebar"; // Include the Sidebar component
-// import "./App.css";
-
-// function App() {
-//   const [cards, setCards] = useState([]); // Stores all post-its
-//   const [isModalOpen, setIsModalOpen] = useState(false); // Tracks modal visibility
-//   const [newPostContent, setNewPostContent] = useState(""); // Tracks input in modal
-//   const [postItColor, setPostItColor] = useState("#FEF3C7"); // Default color for post-its
-
-//   const colors = ["#FEF3C7", "#DBEAFE", "#FEE2E2"]; // Post-it color options
-
-//   // Open the modal and randomly select a color
-//   const handlePostItClick = () => {
-//     const randomColor = colors[Math.floor(Math.random() * colors.length)];
-//     setPostItColor(randomColor); // Set the random color
-//     setIsModalOpen(true); // Open the modal
-//   };
-
-//   // Add a new post-it with content, color, and timestamp
-//   const handlePostSubmit = () => {
-//     if (newPostContent.trim()) {
-//       const currentTime = new Date();
-//       const timestamp = `${currentTime.getHours()}:${String(
-//         currentTime.getMinutes()
-//       ).padStart(2, "0")}`; // Format hour:minute
-
-//       setCards((prevCards) => [
-//         ...prevCards,
-//         {
-//           id: prevCards.length + 1,
-//           content: newPostContent.trim(),
-//           color: postItColor,
-//           timestamp: timestamp, // Add the timestamp
-//         },
-//       ]);
-//       setNewPostContent(""); // Clear the input
-//       setIsModalOpen(false); // Close the modal
-//     }
-//   };
-
-//   // Close the modal without adding a post-it
-//   const handleModalClose = () => {
-//     setIsModalOpen(false);
-//     setNewPostContent(""); // Clear the input
-//   };
-
-//   return (
-//     <div className="app">
-//       <Navbar />
-//       <div className="main-content">
-//         <Sidebar /> {/* Sidebar component is included here */}
-//         <div className="board">
-//           {cards.length === 0 ? (
-//             <p className="empty-board-message">No notes yet. Click the button to add one!</p>
-//           ) : (
-//             cards.map((card) => (
-//               <RequestCard
-//                 key={card.id}
-//                 content={card.content}
-//                 color={card.color}
-//                 timestamp={card.timestamp} // Pass timestamp to RequestCard
-//               />
-//             ))
-//           )}
-//         </div>
-//         <VerticalNav onPostItClick={handlePostItClick} />
-//       </div>
-
-//       {/* Modal for creating a new post-it */}
-//       {isModalOpen && (
-//         <div className="modal-overlay">
-//           <div className="modal post-it-modal" style={{ backgroundColor: postItColor }}>
-//             <textarea
-//               placeholder="Type your note here..."
-//               value={newPostContent}
-//               onChange={(e) => setNewPostContent(e.target.value)}
-//               style={{ backgroundColor: postItColor }}
-//             ></textarea>
-//             <div className="modal-buttons">
-//               <button className="cancel-button" onClick={handleModalClose}>
-//                 Cancel
-//               </button>
-//               <button className="post-button" onClick={handlePostSubmit}>
-//                 Post
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-// export default App;
-
-
-
-
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
-import VerticalNav from "./components/VerticalNav";
-import RequestCard from "./components/RequestCard";
 import Sidebar from "./components/Sidebar";
+import RequestCard from "./components/RequestCard";
 import "./App.css";
 
 function App() {
   const [cards, setCards] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
-  const [postItColor, setPostItColor] = useState("#FEF3C7");
+  const [newPostTitle, setNewPostTitle] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [modalColor, setModalColor] = useState("#fff");
+  const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
+  const [isQuestionPopupOpen, setIsQuestionPopupOpen] = useState(false);
 
-  const colors = ["#FEF3C7", "#DBEAFE", "#FEE2E2"];
+  const colors = ["#d5dcfa", "#feeaa5", "#FFCFCF"];
 
   const handlePostItClick = () => {
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    setPostItColor(randomColor);
+    setModalColor(randomColor);
     setIsModalOpen(true);
-  };
-
-  const handlePostSubmit = () => {
-    if (newPostContent.trim()) {
-      const currentTime = new Date();
-      const hours = currentTime.getHours() % 12 || 12; // Convert to 12-hour format
-      const minutes = String(currentTime.getMinutes()).padStart(2, "0");
-      const ampm = currentTime.getHours() >= 12 ? "PM" : "AM";
-      const timestamp = `${hours}:${minutes} ${ampm}`;
-
-      setCards((prevCards) => [
-        ...prevCards,
-        {
-          id: prevCards.length + 1,
-          content: newPostContent.trim(),
-          color: postItColor,
-          timestamp: timestamp,
-          likes: 0,
-        },
-      ]);
-      setNewPostContent("");
-      setIsModalOpen(false);
-    }
   };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
     setNewPostContent("");
+    setNewPostTitle("");
   };
 
-  const handleLike = (id) => {
-    setCards((prevCards) =>
-      prevCards.map((card) =>
-        card.id === id ? { ...card, likes: card.likes + 1 } : card
-      )
-    );
+  const handlePostSubmit = () => {
+    if (newPostContent.trim() && newPostTitle.trim()) {
+      setCards((prevCards) => [
+        ...prevCards,
+        {
+          id: prevCards.length + 1,
+          title: newPostTitle.trim(),
+          content: newPostContent.trim(),
+          isAnonymous,
+          color: modalColor,
+        },
+      ]);
+      handleModalClose();
+    }
+  };
+
+  const handleProfileClick = () => {
+    setIsProfilePopupOpen(!isProfilePopupOpen);
+    setIsQuestionPopupOpen(false);
+  };
+
+  const handleQuestionClick = () => {
+    setIsQuestionPopupOpen(!isQuestionPopupOpen);
+    setIsProfilePopupOpen(false);
+  };
+
+  const handleOutsideClick = (e) => {
+    if (!e.target.closest('.profile-popup') && !e.target.closest('.question-popup') && !e.target.closest('.profile-icon') && !e.target.closest('.question-icon')) {
+      setIsProfilePopupOpen(false);
+      setIsQuestionPopupOpen(false);
+    }
   };
 
   const handleDelete = (id) => {
-    setCards((prevCards) => prevCards.filter((card) => card.id !== id));
+    setCards(cards.filter(card => card.id !== id));
   };
+
+  useEffect(() => {
+    if (isProfilePopupOpen || isQuestionPopupOpen) {
+      document.addEventListener('click', handleOutsideClick);
+    } else {
+      document.removeEventListener('click', handleOutsideClick);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [isProfilePopupOpen, isQuestionPopupOpen]);
 
   return (
     <div className="app">
-      <Navbar />
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet" />
+      <Navbar onProfileClick={handleProfileClick} onQuestionClick={handleQuestionClick} />
       <div className="main-content">
         <Sidebar />
         <div className="board">
@@ -396,37 +93,84 @@ function App() {
               <RequestCard
                 key={card.id}
                 id={card.id}
+                title={card.title}
                 content={card.content}
+                isAnonymous={card.isAnonymous}
                 color={card.color}
-                timestamp={card.timestamp}
-                likes={card.likes}
-                onLike={handleLike}
                 onDelete={handleDelete}
               />
             ))
           )}
         </div>
-        <VerticalNav onPostItClick={handlePostItClick} />
       </div>
+
+      <button className="create-post-it-button" onClick={handlePostItClick}>
+        +
+      </button>
 
       {isModalOpen && (
         <div className="modal-overlay">
-          <div className="modal post-it-modal" style={{ backgroundColor: postItColor }}>
+          <div className="modal post-it-modal" style={{ backgroundColor: modalColor }}>
+            <button className="close-modal-button" onClick={handleModalClose}>
+              &times;
+            </button>
+            <h3 className="modal-title">
+              <input
+                type="text"
+                placeholder="Request title"
+                value={newPostTitle}
+                onChange={(e) => setNewPostTitle(e.target.value)}
+                className="title-input"
+              />
+            </h3>
             <textarea
-              placeholder="Type your note here..."
+              placeholder="Start typing your request..."
               value={newPostContent}
-              onChange={(e) => setNewPostContent(e.target.value)}
-              style={{ backgroundColor: postItColor }}
+              onChange={(e) => {
+                if (e.target.value.length <= 350) {
+                  setNewPostContent(e.target.value);
+                }
+              }}
+              className="content-input"
             ></textarea>
-            <div className="modal-buttons">
-              <button className="cancel-button" onClick={handleModalClose}>
-                Cancel
-              </button>
-              <button className="post-button" onClick={handlePostSubmit}>
-                Post
+            <div className="modal-footer">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={isAnonymous}
+                  onChange={() => setIsAnonymous(!isAnonymous)}
+                />
+                Hide my name
+              </label>
+              <span className="char-count">{`${newPostContent.length}/350`}</span>
+              <button
+                className="post-button"
+                onClick={handlePostSubmit}
+                disabled={!newPostContent.trim() || !newPostTitle.trim()}
+              >
+                Request
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {isProfilePopupOpen && (
+        <div className="profile-popup">
+          <h2>Hello, NAME!</h2>
+          <p>Requests Made: XX</p>
+          <p>Joined Jan 12, 2025</p>
+          <button className="logout-button">Log Out</button>
+        </div>
+      )}
+
+      {isQuestionPopupOpen && (
+        <div className="question-popup">
+          <h2>Thanks for using us!</h2>
+          <p>Prysm is still in private beta.</p>
+          <p>Find us at <a href="https://prysmapp.com">prysmapp.com</a></p>
+          <p>or contact us at <a href="mailto:getprysm@gmail.com">getprysm@gmail.com</a></p>
+          <div className="placeholder-box">[SVG Placeholder]</div>
         </div>
       )}
     </div>
@@ -434,3 +178,4 @@ function App() {
 }
 
 export default App;
+
