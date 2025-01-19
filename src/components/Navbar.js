@@ -1,7 +1,6 @@
-// cursor version
-
 import React from "react";
 import "./Navbar.css";
+import { supabase, GoogleSignInButton } from "../supabaseClient";
 
 function Navbar({ onProfileClick, onQuestionClick }) {
   return (
@@ -16,15 +15,10 @@ function Navbar({ onProfileClick, onQuestionClick }) {
         </button>
         <div className="divider"></div>
         <button className="share-button">Share</button>
+        <GoogleSignInButton />
       </div>
     </nav>
   );
 }
 
 export default Navbar;
-
-
-
-
-
-

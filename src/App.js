@@ -1,6 +1,7 @@
 // cursor version
 
 import React, { useState, useEffect } from "react";
+import { supabase } from "./supabaseClient";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import RequestCard from "./components/RequestCard";

@@ -1,0 +1,15 @@
+- fix the post prompt ui --> look like the figma
+- update current endpoints to fit the --> BOARD_USER= cardstack --> {cards}
+--> each card (JSON data to send to POSTGRES DB in SUPABASE) 
+  {text (public), timestamp (public), likecount (public), contact (private)}
+- add deletion function (private to BOARD_USER and PUBLIC_USER)
+  -> check IP of request (try this)
+  -> general PUBLIC view should not have deletion option for other posts
+- Add OAuth2 sign-in (Google)
+
+UI todos:
+  Edited post-its popup
+  Edited actual postit - text, timestamp, contact (private), likes, deletion
+  Share popup
+  Help Popup (in development)
+  Profile popup 
