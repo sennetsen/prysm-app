@@ -1,58 +1,31 @@
 import React, { useState, useEffect } from "react";
 import "./RequestCard.css";
-import { supabase } from "../supabaseClient";
+import { HeartFilled, HeartOutlined, CloseCircleFilled } from "@ant-design/icons";
+import { Button } from "antd";
 
-function RequestCard({ id, title, content, isAnonymous, color, authorId, author, created_at, onDelete, currentUserId, setUser }) {
-  const [reactions, setReactions] = useState([]);
+function RequestCard({
+  id,
+  title,
+  content,
+  isAnonymous,
+  color,
+  authorId,
+  author,
+  created_at,
+  onDelete,
+  currentUserId,
+  isBoardOwner,
+  onLike,
+  likesCount,
+  reactions = []
+}) {
   const [timestamp, setTimestamp] = useState('');
 
-  // Check if the current user can delete the post
-  const canDelete = currentUserId && authorId === currentUserId;
-
-  useEffect(() => {
-    console.log("Current User ID:", currentUserId);
-    console.log("Author ID:", authorId);
-  }, [currentUserId, authorId]);
-
-  const toggleReaction = async (reactionType = 'like') => {
-    if (!currentUserId) return;
-
-    try {
-      const { data: existingReaction } = await supabase
-        .from('reactions')
-        .select()
-        .eq('post_id', id)
-        .eq('user_id', currentUserId)
-        .eq('reaction_type', reactionType)
-        .single();
-
-      if (existingReaction) {
-        const { error } = await supabase
-          .from('reactions')
-          .delete()
-          .eq('id', existingReaction.id);
-
-        if (!error) {
-          setReactions(reactions.filter(r => r.id !== existingReaction.id));
-        }
-      } else {
-        const { data, error } = await supabase
-          .from('reactions')
-          .insert({
-            post_id: id,
-            user_id: currentUserId,
-            reaction_type: reactionType
-          })
-          .select();
-
-        if (!error && data) {
-          setReactions([...reactions, data[0]]);
-        }
-      }
-    } catch (error) {
-      console.error('Error toggling reaction:', error);
-    }
-  };
+  const canDelete = isBoardOwner || (currentUserId && authorId === currentUserId);
+  const hasLiked = reactions.some(r =>
+    r.user_id === currentUserId &&
+    r.reaction_type === 'like'
+  );
 
   useEffect(() => {
     const createdTime = new Date(created_at);
@@ -79,74 +52,29 @@ function RequestCard({ id, title, content, isAnonymous, color, authorId, author,
     return () => clearInterval(interval);
   }, [created_at]);
 
-  const handleSignInWithGoogle = async (response) => {
-    try {
-      const { credential } = response;
-
-      const { data: { user }, error: authError } = await supabase.auth.signInWithIdToken({
-        provider: 'google',
-        token: credential,
-      });
-
-      if (authError) throw authError;
-
-      const { data: existingUser, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      const profilePictureUrl = user.user_metadata.avatar_url || user.user_metadata.picture;
-
-      // If user doesn't exist and there's no other error
-      if (!existingUser && (!fetchError || fetchError.code === 'PGRST116')) {
-        const userData = {
-          id: user.id,
-          email: user.email,
-          full_name: user.user_metadata.full_name || user.user_metadata.name,
-          created_at: new Date().toISOString(),
-          last_sign_in: new Date().toISOString(),
-        };
-
-        // Only add avatar_url if it exists
-        if (profilePictureUrl) {
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('profile-pictures')
-            .upload(`${user.id}.png`, await fetch(profilePictureUrl).then(res => res.blob()));
-
-          if (uploadError) {
-            console.error('Error uploading profile picture:', uploadError);
-            return;
-          }
-
-          const { publicURL } = supabase.storage.from('profile-pictures').getPublicUrl(`${user.id}.png`);
-          userData.avatar_url = publicURL; // Add avatar_url only if it was uploaded
-        }
-
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert([userData]);
-
-        if (insertError) {
-          console.error('Error inserting user:', insertError);
-          throw insertError;
-        }
-      } else if (existingUser) {
-        // Handle existing user logic...
-      }
-
-      setUser(user);
-    } catch (error) {
-      console.error('Error in handleSignInWithGoogle:', error);
+  const handleDelete = async () => {
+    if (canDelete) {
+      await onDelete(id);
     }
   };
 
   return (
     <div className="request-card" style={{ backgroundColor: color }}>
       {canDelete && (
-        <button className="delete-button" onClick={() => onDelete(id)}>
-          ✕
-        </button>
+        <CloseCircleFilled
+          className="ant-delete-button"
+          onClick={handleDelete}
+          style={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            fontSize: "16px",
+            color: "rgba(0, 0, 0, 0.45)",
+            transition: "color 0.3s",
+            cursor: "pointer"
+          }}
+          aria-label="Delete post"
+        />
       )}
       <h3>{title}</h3>
       <p>{content}</p>
@@ -158,12 +86,20 @@ function RequestCard({ id, title, content, isAnonymous, color, authorId, author,
           <span>{isAnonymous ? 'Anonymous' : (author?.full_name || 'Unknown')}</span>
         </div>
         <div className="timestamp">{timestamp}</div>
-        <button
-          className={`like-button ${reactions.some(r => r.user_id === currentUserId) ? 'liked' : ''}`}
-          onClick={() => toggleReaction('like')}
-        >
-          ❤️
-        </button>
+        <Button
+          type="text"
+          icon={
+            hasLiked ? (
+              <HeartFilled style={{ color: '#ff4d4f' }} />
+            ) : (
+              <HeartOutlined style={{ color: '#8c8c8c' }} />
+            )
+          }
+          onClick={() => onLike(id, hasLiked)}
+          className="custom-like-button"
+        />
+        <span className="like-count">{likesCount}</span>
+
       </div>
     </div>
   );

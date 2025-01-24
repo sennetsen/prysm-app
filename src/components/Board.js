@@ -66,6 +66,7 @@ function Board({ boardId }) {
           authorId={post.author_id} // Pass author_id directly
           created_at={post.created_at}
           currentUserId={currentUser.id}
+          setUser={setUser}
           isBoardOwner={boardData.owner_id === currentUser.id}
         />
       ))}

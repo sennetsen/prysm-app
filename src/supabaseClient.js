@@ -73,16 +73,45 @@ function GoogleSignInButton() {
 
       if (authError) throw authError;
 
-      // After successful authentication, store user data
+      const profilePictureUrl = user.user_metadata.avatar_url || user.user_metadata.picture;
+
+      // Check local storage for the profile picture
+      const cachedProfilePicture = localStorage.getItem(`profilePicture_${user.id}`);
+
+      if (cachedProfilePicture) {
+        // Use the cached image if it matches the current profile picture URL
+        if (cachedProfilePicture !== profilePictureUrl) {
+          // Update local storage if the profile picture has changed
+          const response = await fetch(profilePictureUrl);
+          if (response.ok) {
+            const blob = await response.blob();
+            const imageUrl = URL.createObjectURL(blob);
+            localStorage.setItem(`profilePicture_${user.id}`, imageUrl);
+            user.user_metadata.picture = imageUrl;
+          }
+        } else {
+          // Use the cached image
+          user.user_metadata.picture = cachedProfilePicture;
+        }
+      } else {
+        // Fetch and store the profile picture in local storage
+        const response = await fetch(profilePictureUrl);
+        if (response.ok) {
+          const blob = await response.blob();
+          const imageUrl = URL.createObjectURL(blob);
+          localStorage.setItem(`profilePicture_${user.id}`, imageUrl);
+          user.user_metadata.picture = imageUrl;
+        }
+      }
+
+      // Continue with user data handling...
       const { data: existingUser, error: fetchError } = await supabase
         .from('users')
         .select('*')
         .eq('id', user.id)
         .single();
 
-      const profilePictureUrl = user.user_metadata.avatar_url || user.user_metadata.picture;
-
-      // If user doesn't exist and there's no other error
+      // Handle user data insertion or update...
       if (!existingUser && (!fetchError || fetchError.code === 'PGRST116')) {
         // Upload the profile picture to Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -140,6 +169,9 @@ function GoogleSignInButton() {
             console.error('Error updating user profile picture:', updateError);
             throw updateError;
           }
+
+          // Update local storage with the new profile picture URL
+          localStorage.setItem(`profilePicture_${user.id}`, publicURL);
         }
 
         // Update last sign in time for existing users
