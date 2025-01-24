@@ -48,37 +48,68 @@
   color: red;
 }
 
-.delete-button {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background: none;
-  border: none;
-  color: black;
-  font-size: 12px;
-  cursor: pointer;
-  display: block; /* Always visible */
+.custom-like-button {
+  font-size: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover .anticon {
+    transform: scale(1.1);
+  }
+
+  &:active .anticon {
+    transform: scale(0.9);
+  }
 }
 
+.anticon {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 20px;
+}
 
-.create-post-it-button {
-  position: absolute;
+.ant-delete-button:hover {
+  color: #ff4d4f !important;
+  transform: scale(1.1);
+}
+
+.ant-delete-button:active {
+  transform: scale(0.9);
+}
+
+/* Replace existing .create-post-it-button styles with: */
+.ant-btn.create-post-it-button {
+  position: fixed;
   bottom: 80px;
   right: 65px;
-  background-color: #b43144;
-  border: none;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  font-size: 24px;
-  color: #000;
-  cursor: pointer;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
   z-index: 1000;
+  transition: all 0.2s ease !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.create-post-it-button:hover {
+.ant-btn.create-post-it-button:hover {
   transform: scale(1.1);
-  box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2) !important;
+  background-color: #c4384a !important;
+}
+
+.ant-btn.create-post-it-button:active {
+  transform: scale(0.95);
+}
+
+.ant-btn.create-post-it-button .anticon {
+  vertical-align: middle;
+}
+
+.like-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.like-count {
+  font-size: 0.9rem;
+  color: #666;
+  min-width: 20px;
+  text-align: center;
 }

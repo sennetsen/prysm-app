@@ -1,5 +1,3 @@
-// cursor version
-
 import React, { useState, useEffect, useCallback } from "react";
 import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from "react-router-dom";
 import { supabase, GoogleSignInButton } from "./supabaseClient";
@@ -7,6 +5,8 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import RequestCard from "./components/RequestCard";
 import "./App.css";
+import { Button } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 
 // HomePage component
 function HomePage() {
@@ -41,7 +41,7 @@ function BoardView() {
         .from('boards')
         .select('*')
         .eq('url_path', boardPath)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching board:', error);
@@ -49,7 +49,9 @@ function BoardView() {
       }
 
       setBoardData(data);
-      setIsBoardOwner(user?.id === data.owner_id);
+      if (data) {
+        setIsBoardOwner(user?.id === data.owner_id);
+      }
     };
 
     if (boardPath) {
@@ -185,21 +187,26 @@ function BoardView() {
     if (!user) return;
 
     try {
-      if (isCurrentlyLiked) {
-        // Remove existing like
-        const { error } = await supabase
+      const { data: currentReactions, error: fetchError } = await supabase
+        .from('reactions')
+        .select()
+        .eq('post_id', postId)
+        .eq('user_id', user.id)
+        .eq('reaction_type', 'like');
+
+      if (fetchError) throw fetchError;
+
+      if (currentReactions.length > 0) {
+        // If like exists, delete it
+        const { error: deleteError } = await supabase
           .from('reactions')
           .delete()
-          .match({
-            post_id: postId,
-            user_id: user.id,
-            reaction_type: 'like'
-          });
+          .eq('id', currentReactions[0].id);
 
-        if (error) throw error;
+        if (deleteError) throw deleteError;
       } else {
-        // Add new like
-        const { error } = await supabase
+        // If no like exists, create it
+        const { error: insertError } = await supabase
           .from('reactions')
           .insert([{
             post_id: postId,
@@ -207,11 +214,25 @@ function BoardView() {
             reaction_type: 'like'
           }]);
 
-        if (error) throw error;
+        if (insertError) throw insertError;
       }
 
-      // Refresh posts after reaction change
-      fetchPosts();
+      // Update local state without sorting
+      setCards(prevCards => prevCards.map(card => {
+        if (card.id === postId) {
+          const newLikesCount = isCurrentlyLiked ? card.likesCount - 1 : card.likesCount + 1;
+          const newReactions = isCurrentlyLiked
+            ? card.reactions.filter(r => r.user_id !== user.id)
+            : [...card.reactions, { user_id: user.id, reaction_type: 'like' }];
+
+          return {
+            ...card,
+            likesCount: newLikesCount,
+            reactions: newReactions
+          };
+        }
+        return card;
+      }));
     } catch (error) {
       console.error('Error handling reaction:', error);
     }
@@ -239,9 +260,21 @@ function BoardView() {
         <Sidebar />
         <div className="board">
           {canAddPost && (
-            <button onClick={handlePostItClick} className="create-post-it-button">
-              +
-            </button>
+            <Button
+              type="primary"
+              shape="circle"
+              icon={<PlusOutlined />}
+              onClick={handlePostItClick}
+              className="create-post-it-button"
+              style={{
+                backgroundColor: '#b43144',
+                borderColor: '#9c2938',
+                width: 50,
+                height: 50,
+                fontSize: '24px',
+                boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)'
+              }}
+            />
           )}
           {cards.map((card) => (
             <RequestCard
@@ -249,7 +282,7 @@ function BoardView() {
               id={card.id}
               title={card.title}
               content={card.content}
-              isAnonymous={card.isAnonymous}
+              isAnonymous={card.is_anonymous}
               color={card.color}
               onDelete={handleDelete}
               authorId={card.author_id}
@@ -258,6 +291,8 @@ function BoardView() {
               currentUserId={user?.id}
               isBoardOwner={isBoardOwner}
               onLike={handleLike}
+              likesCount={card.likesCount}
+              reactions={card.reactions || []}
             />
           ))}
         </div>
