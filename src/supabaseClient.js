@@ -35,7 +35,7 @@ function GoogleSignInButton() {
 
     if (!user && window.google?.accounts?.id) {
       window.google.accounts.id.initialize({
-        client_id: "63305175595-6mftaocn7r0gj8dinb33ru8qi4iofhge.apps.googleusercontent.com",
+        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
         callback: handleSignInWithGoogle
       });
 
@@ -65,7 +65,6 @@ function GoogleSignInButton() {
   const handleSignInWithGoogle = async (response) => {
     try {
       const { credential } = response;
-      console.log('Google response:', response);
 
       const { data: { user }, error: authError } = await supabase.auth.signInWithIdToken({
         provider: 'google',
@@ -74,52 +73,76 @@ function GoogleSignInButton() {
 
       if (authError) throw authError;
 
-      // Detailed logging of user data
-      console.log('Full user object:', user);
-      console.log('User metadata:', user.user_metadata);
-      console.log('User ID:', user.id);
-      console.log('User email:', user.email);
-
       // After successful authentication, store user data
       const { data: existingUser, error: fetchError } = await supabase
         .from('users')
-        .select('*')  // Select all columns
+        .select('*')
         .eq('id', user.id)
         .single();
 
-      console.log('Existing user query result:', existingUser);
-      console.log('Fetch error:', fetchError);
+      const profilePictureUrl = user.user_metadata.avatar_url || user.user_metadata.picture;
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw fetchError;
-      }
+      // If user doesn't exist and there's no other error
+      if (!existingUser && (!fetchError || fetchError.code === 'PGRST116')) {
+        // Upload the profile picture to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('profile-pictures')
+          .upload(`public/${user.id}.png`, await fetch(profilePictureUrl).then(res => res.blob()));
 
-      if (!existingUser) {
+        if (uploadError) {
+          console.error('Error uploading profile picture:', uploadError);
+          return;
+        }
+
+        // Get the public URL of the uploaded image
+        const { publicURL } = supabase.storage.from('profile-pictures').getPublicUrl(`public/${user.id}.png`);
+
         const userData = {
           id: user.id,
           email: user.email,
-          full_name: user.user_metadata.name,
-          avatar_url: user.user_metadata.picture,
+          full_name: user.user_metadata.full_name || user.user_metadata.name,
+          avatar_url: publicURL, // Use the uploaded image URL
           created_at: new Date().toISOString(),
           last_sign_in: new Date().toISOString()
         };
 
-        console.log('Attempting to insert user data:', userData);
-
-        const { data: newUser, error: insertError } = await supabase
+        const { error: insertError } = await supabase
           .from('users')
-          .insert([userData])
-          .select()
-          .single();
+          .insert([userData]);
 
         if (insertError) {
           console.error('Error inserting user:', insertError);
           throw insertError;
         }
+      } else if (existingUser) {
+        // Check if the profile picture has changed
+        if (existingUser.avatar_url !== profilePictureUrl) {
+          // Upload the new profile picture to Supabase Storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('profile-pictures')
+            .upload(`public/${user.id}.png`, await fetch(profilePictureUrl).then(res => res.blob()));
 
-        console.log('New user created:', newUser);
-      } else {
-        console.log('Updating existing user:', existingUser);
+          if (uploadError) {
+            console.error('Error uploading new profile picture:', uploadError);
+            return;
+          }
+
+          // Get the public URL of the uploaded image
+          const { publicURL } = supabase.storage.from('profile-pictures').getPublicUrl(`public/${user.id}.png`);
+
+          // Update the user's avatar_url in the database
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ avatar_url: publicURL })
+            .eq('id', user.id);
+
+          if (updateError) {
+            console.error('Error updating user profile picture:', updateError);
+            throw updateError;
+          }
+        }
+
+        // Update last sign in time for existing users
         const { error: updateError } = await supabase
           .from('users')
           .update({ last_sign_in: new Date().toISOString() })
@@ -132,10 +155,8 @@ function GoogleSignInButton() {
       }
 
       setUser(user);
-
     } catch (error) {
-      console.error('Full error object:', error);
-      console.error('Error in handleSignInWithGoogle:', error.message);
+      console.error('Error in handleSignInWithGoogle:', error);
     }
   };
 
