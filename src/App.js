@@ -307,22 +307,8 @@ function BoardView() {
       <div className="main-content">
         <Sidebar />
         <div className="board">
-          {canAddPost && (
-            <Button
-              type="primary"
-              shape="circle"
-              icon={<PlusOutlined />}
-              onClick={handlePostItClick}
-              className="create-post-it-button"
-              style={{
-                backgroundColor: '#b43144',
-                borderColor: '#9c2938',
-                width: 50,
-                height: 50,
-                fontSize: '24px',
-                boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)'
-              }}
-            />
+          {cards.length === 0 && (
+            <p className="empty-board-message">No posts yet. Click the button to add one!</p>
           )}
           {cards.map((card) => (
             <RequestCard
@@ -343,6 +329,23 @@ function BoardView() {
               reactions={card.reactions || []}
             />
           ))}
+          {canAddPost && (
+            <Button
+              type="primary"
+              shape="circle"
+              icon={<PlusOutlined />}
+              onClick={handlePostItClick}
+              className="create-post-it-button"
+              style={{
+                backgroundColor: '#b43144',
+                borderColor: '#9c2938',
+                width: 50,
+                height: 50,
+                fontSize: '24px',
+                boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)'
+              }}
+            />
+          )}
         </div>
       </div>
 
@@ -371,15 +374,16 @@ function BoardView() {
               }}
               className="content-input"
             ></textarea>
+            <div className="checkbox-container">
+              <input
+                type="checkbox"
+                id="hideName"
+                checked={isAnonymous}
+                onChange={() => setIsAnonymous(!isAnonymous)}
+              />
+              <label htmlFor="hideName">Hide my name</label>
+            </div>
             <div className="modal-footer">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={isAnonymous}
-                  onChange={() => setIsAnonymous(!isAnonymous)}
-                />
-                Hide my name
-              </label>
               <span className="char-count">{`${newPostContent.length}/350`}</span>
               <button
                 className="post-button"

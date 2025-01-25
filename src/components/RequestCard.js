@@ -76,30 +76,39 @@ function RequestCard({
           aria-label="Delete post"
         />
       )}
-      <h3>{title}</h3>
-      <p>{content}</p>
-      <div className="card-footer">
-        <div className={isAnonymous ? "anonymous" : "user-info"}>
-          {!isAnonymous && author?.avatar_url && (
-            <img src={author.avatar_url} alt="Profile" className="profile-pic" />
+      <div className="card-content">
+        <h3>{title}</h3>
+        <div className="request-content">
+          <p>{content}</p>
+          {isAnonymous ? (
+            <p className="anonymous">Posted anonymously</p>
+          ) : (
+            <div className="user-info">
+              {author?.avatar_url && (
+                <img src={author.avatar_url} alt="Profile" className="profile-pic" />
+              )}
+              <span>{author?.full_name || 'Unknown'}</span>
+            </div>
           )}
-          <span>{isAnonymous ? 'Anonymous' : (author?.full_name || 'Unknown')}</span>
         </div>
-        <div className="timestamp">{timestamp}</div>
-        <Button
-          type="text"
-          icon={
-            hasLiked ? (
-              <HeartFilled style={{ color: '#ff4d4f' }} />
-            ) : (
-              <HeartOutlined style={{ color: '#8c8c8c' }} />
-            )
-          }
-          onClick={() => onLike(id, hasLiked)}
-          className="custom-like-button"
-        />
-        <span className="like-count">{likesCount}</span>
-
+      </div>
+      <div className="card-footer">
+        <span className="timestamp">{timestamp}</span>
+        <div className="like-section">
+          <Button
+            type="text"
+            icon={
+              hasLiked ? (
+                <HeartFilled style={{ color: '#ff4d4f' }} />
+              ) : (
+                <HeartOutlined style={{ color: '#8c8c8c' }} />
+              )
+            }
+            onClick={() => onLike(id, hasLiked)}
+            className="custom-like-button"
+          />
+          <span className="like-count">{likesCount}</span>
+        </div>
       </div>
     </div>
   );
