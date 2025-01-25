@@ -104,6 +104,54 @@ function BoardView() {
     }
   }, [boardData, fetchPosts]);
 
+  useEffect(() => {
+    if (!boardData?.id) return;
+
+    // Subscribe to post inserts and deletes
+    const postsSubscription = supabase
+      .channel('posts-channel')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'posts',
+        filter: `board_id=eq.${boardData.id}`
+      }, async (payload) => {
+        // Fetch full post data with author info
+        const { data: newPost } = await supabase
+          .from('posts')
+          .select(`
+            *,
+            author:users(full_name, avatar_url),
+            reactions(reaction_type, user_id)
+          `)
+          .eq('id', payload.new.id)
+          .single();
+
+        if (newPost) {
+          setCards(prev => [
+            ...prev,
+            {
+              ...newPost,
+              likesCount: newPost.reactions.filter(r => r.reaction_type === 'like').length
+            }
+          ]);
+        }
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'posts',
+        filter: `board_id=eq.${boardData.id}`
+      }, (payload) => {
+        setCards(prev => prev.filter(card => card.id !== payload.old.id));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(postsSubscription);
+    };
+  }, [boardData?.id]);
+
   // Add your other existing functions here (handleDelete, handleSubmit, etc.)
   const handleProfileClick = () => {
     setIsProfilePopupOpen(!isProfilePopupOpen);
