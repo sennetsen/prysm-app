@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from "react-router-dom";
-import { supabase, GoogleSignInButton } from "./supabaseClient";
+import { supabase } from "./supabaseClient";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import RequestCard from "./components/RequestCard";
@@ -12,7 +12,7 @@ import { PlusOutlined } from '@ant-design/icons';
 function HomePage() {
   return (
     <div className="app">
-      <h1>Welcome to Atarea</h1>
+      <h1>Welcome to Prysm</h1>
       {/* Add your homepage content here */}
     </div>
   );
@@ -22,6 +22,7 @@ function HomePage() {
 function BoardView() {
   const { boardPath } = useParams();
   const [boardData, setBoardData] = useState(null);
+  const [boardNotFound, setBoardNotFound] = useState(false);
   const [user, setUser] = useState(null);
   const [cards, setCards] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,6 +33,7 @@ function BoardView() {
   const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
   const [isQuestionPopupOpen, setIsQuestionPopupOpen] = useState(false);
   const [isBoardOwner, setIsBoardOwner] = useState(false);
+  const [totalPosts, setTotalPosts] = useState(0);
 
   const colors = ["#d5dcfa", "#feeaa5", "#FFCFCF"];
 
@@ -43,15 +45,14 @@ function BoardView() {
         .eq('url_path', boardPath)
         .maybeSingle();
 
-      if (error) {
+      if (error || !data) {
         console.error('Error fetching board:', error);
+        setBoardNotFound(true);
         return;
       }
 
       setBoardData(data);
-      if (data) {
-        setIsBoardOwner(user?.id === data.owner_id);
-      }
+      setIsBoardOwner(user?.id === data.owner_id);
     };
 
     if (boardPath) {
@@ -95,6 +96,7 @@ function BoardView() {
 
       const sortedPosts = postsWithLikes.sort((a, b) => b.likesCount - a.likesCount);
       setCards(sortedPosts);
+      setTotalPosts(sortedPosts.length);
     }
   }, [boardData]);
 
@@ -135,6 +137,7 @@ function BoardView() {
               likesCount: newPost.reactions.filter(r => r.reaction_type === 'like').length
             }
           ]);
+          setTotalPosts(prev => prev + 1);
         }
       })
       .on('postgres_changes', {
@@ -144,6 +147,7 @@ function BoardView() {
         filter: `board_id=eq.${boardData.id}`
       }, (payload) => {
         setCards(prev => prev.filter(card => card.id !== payload.old.id));
+        setTotalPosts(prev => prev - 1);
       })
       .subscribe();
 
@@ -204,6 +208,7 @@ function BoardView() {
       } else if (data && data.length > 0) {
         // Update the posts state with the new post
         setCards(prevCards => [...prevCards, { ...data[0], author: { full_name: user.user_metadata.full_name, avatar_url: user.user_metadata.avatar_url } }]);
+        setTotalPosts(prev => prev + 1);
         handleModalClose(); // Close the modal after successful submission
       } else {
         console.error('No data returned from insert operation');
@@ -228,6 +233,7 @@ function BoardView() {
       console.error('Error deleting post:', error);
     } else {
       setCards(cards.filter(card => card.id !== id));
+      setTotalPosts(prev => prev - 1);
     }
   };
 
@@ -298,14 +304,30 @@ function BoardView() {
     };
   }, [isProfilePopupOpen, isQuestionPopupOpen]);
 
+  // if (boardNotFound) {
+  //   return <Navigate to="/" />;
+  // }
+
+  // if (!boardData) {
+  //   return <div>Loading...</div>; // Show loading state
+  // }
+
   return (
     <div className="app">
       <Navbar
         onProfileClick={handleProfileClick}
         onQuestionClick={handleQuestionClick}
+        title={boardData?.title}
+        color={boardData?.color}
       />
       <div className="main-content">
-        <Sidebar />
+        <Sidebar
+          description={boardData?.description}
+          bio={boardData?.bio}
+          totalPosts={totalPosts}
+          creatorName={boardData?.creator_name}
+          color={boardData?.color}
+        />
         <div className="board">
           {cards.length === 0 && (
             <p className="empty-board-message">No posts yet. Click the button to add one!</p>

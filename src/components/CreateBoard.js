@@ -1,5 +1,14 @@
 const createBoard = async (boardName, ownerEmail) => {
-  const urlPath = generateUrlPath(boardName);
+  const urlPath = `${generateUrlPath(boardName)}-${ownerEmail.split('@')[0]}`;
+
+  const { data: existing } = await supabase
+    .from('boards')
+    .select('url_path')
+    .eq('url_path', urlPath);
+
+  if (existing.length > 0) {
+    throw new Error('Board URL already exists');
+  }
 
   const { data, error } = await supabase
     .from('boards')

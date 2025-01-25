@@ -27,7 +27,7 @@
 import React, { useState } from "react";
 import "./Sidebar.css";
 
-function Sidebar() {
+function Sidebar({ description, bio, totalPosts, creatorName, color }) {
   const [isHidden, setIsHidden] = useState(false); // Tracks sidebar visibility
 
   const toggleSidebar = () => {
@@ -42,11 +42,13 @@ function Sidebar() {
           <div className="profile-picture"></div>
 
           {/* Creator Info */}
-          <h2 className="creator-name">XYZ Creator</h2>
-          <p className="creator-bio">Brief bio (like Instagram?) lorem ipsum dolor sit amet</p>
+          <h2 className="creator-name">{creatorName || "Creator"}</h2>
+          <p className="creator-bio">{bio || ""}</p>
 
           {/* Requests Section */}
-          <p className="requests-title">XX Requests</p>
+          <p className="requests-title">
+            {totalPosts} {totalPosts === 1 ? "Request" : "Requests"}
+          </p>
           <div className="requests-avatars">
             <img src="https://via.placeholder.com/30" alt="Avatar" className="avatar" />
             <img src="https://via.placeholder.com/30" alt="Avatar" className="avatar" />
@@ -57,14 +59,8 @@ function Sidebar() {
 
           {/* Description */}
           <p className="description-text">
-            Description text - Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
-            quis nostrud exercitation.
+            {description || ""}
           </p>
-          {/* <p className="description-text">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-            incididunt ut labore et dolore magna.
-          </p> */}
         </div>
       )}
 

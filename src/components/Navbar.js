@@ -1,28 +1,35 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import "./Navbar.css";
 import logo from "../img/Vector (1).svg";
 import helpIcon from "../img/Vector.svg";
 import shareIcon from "../img/Icon.svg";
 import { supabase, GoogleSignInButton } from "../supabaseClient";
 
-function Navbar({ onProfileClick, onQuestionClick }) {
+function Navbar({ onProfileClick, onQuestionClick, title, color }) {
   const user = supabase.auth.user;
   const userId = user ? user.id : null;
   const cachedProfilePicture = userId ? localStorage.getItem(`profilePicture_${userId}`) : null;
 
+  const navbarStyle = {
+    backgroundColor: color || "#b43144", // Fallback color
+  };
+
   return (
-    <nav className="navbar">
-      <img src={logo} alt="Logo" className="logo" />
-      <div className="navbar-title">Board Name</div>
+    <nav style={navbarStyle} className="navbar">
+      <Link to="/">
+        <img src={logo} alt="Logo" className="logo" />
+      </Link>
+      <div className="navbar-title">{title || "Request Board"}</div>
       <div className="navbar-icons">
         <button className="question-icon" onClick={onQuestionClick}>
           <img src={helpIcon} alt="Help Icon" />
         </button>
         <button className="profile-icon" onClick={onProfileClick}>
           {cachedProfilePicture ? (
-            <img 
-              src={cachedProfilePicture} 
-              alt="Profile" 
+            <img
+              src={cachedProfilePicture}
+              alt="Profile"
               className="profile-pic"
               style={{
                 width: '36px',
