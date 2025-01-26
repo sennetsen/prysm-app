@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./RequestCard.css";
 import { HeartFilled, HeartOutlined, CloseCircleFilled } from "@ant-design/icons";
 import { Button } from "antd";
+import fallbackImg from '../img/fallback.png';
 
 function RequestCard({
   id,
@@ -80,20 +81,42 @@ function RequestCard({
         <h3>{title}</h3>
         <div className="request-content">
           <p>{content}</p>
-          {isAnonymous ? (
-            <p className="anonymous">Posted anonymously</p>
-          ) : (
-            <div className="user-info">
-              {author?.avatar_url && (
-                <img src={author.avatar_url} alt="Profile" className="profile-pic" />
-              )}
-              <span>{author?.full_name || 'Unknown'}</span>
-            </div>
-          )}
         </div>
       </div>
+
+      <span className="timestamp">{timestamp}</span>
+
+      {isAnonymous ? (
+        <div className="user-info">
+          <img
+            src={fallbackImg}
+            alt="Anonymous"
+            className="profile-pic"
+          />
+          <span>Anonymous</span>
+        </div>
+      ) : (
+        author && (
+          <div className="user-info">
+            {author.avatar_url ? (
+              <img
+                src={author.avatar_url}
+                alt="Profile"
+                className="profile-pic"
+              />
+            ) : (
+              <img
+                src={fallbackImg}
+                alt="Profile"
+                className="profile-pic"
+              />
+            )}
+            <span>{author.full_name}</span>
+          </div>
+        )
+      )}
+
       <div className="card-footer">
-        <span className="timestamp">{timestamp}</span>
         <div className="like-section">
           <Button
             type="text"

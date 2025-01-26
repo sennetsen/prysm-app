@@ -5,8 +5,9 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import RequestCard from "./components/RequestCard";
 import "./App.css";
-import { Button } from 'antd';
+import { Button, Checkbox, Form } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
+import { lightenColor } from './utils/colorUtils'; // Import the lightenColor function
 
 // HomePage component
 function HomePage() {
@@ -24,6 +25,7 @@ function BoardView() {
   const [boardData, setBoardData] = useState(null);
   const [boardNotFound, setBoardNotFound] = useState(false);
   const [user, setUser] = useState(null);
+  const [totalRequests, setTotalRequests] = useState(0);
   const [cards, setCards] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
@@ -34,6 +36,8 @@ function BoardView() {
   const [isQuestionPopupOpen, setIsQuestionPopupOpen] = useState(false);
   const [isBoardOwner, setIsBoardOwner] = useState(false);
   const [totalPosts, setTotalPosts] = useState(0);
+  const [navbarColor, setNavbarColor] = useState('#b43144'); // Default color
+  const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
 
   const colors = ["#d5dcfa", "#feeaa5", "#FFCFCF"];
 
@@ -41,7 +45,7 @@ function BoardView() {
     const fetchBoardData = async () => {
       const { data, error } = await supabase
         .from('boards')
-        .select('*')
+        .select('*, owner:users(avatar_url)')
         .eq('url_path', boardPath)
         .maybeSingle();
 
@@ -52,6 +56,7 @@ function BoardView() {
       }
 
       setBoardData(data);
+      setNavbarColor(data.color);
       setIsBoardOwner(user?.id === data.owner_id);
     };
 
@@ -60,7 +65,24 @@ function BoardView() {
     }
   }, [boardPath, user]);
 
-  // Your existing useEffect for auth
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+
+      if (session?.user) {
+        const { count } = await supabase
+          .from('posts')
+          .select('id', { count: 'exact' })
+          .eq('author_id', session.user.id);
+
+        setTotalRequests(count);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
@@ -91,7 +113,14 @@ function BoardView() {
     } else {
       const postsWithLikes = data.map(post => {
         const likesCount = post.reactions.filter(r => r.reaction_type === 'like').length;
-        return { ...post, likesCount };
+        return {
+          ...post,
+          likesCount,
+          author: {
+            ...post.author,
+            avatar_url: post.author?.avatar_url || null
+          }
+        };
       });
 
       const sortedPosts = postsWithLikes.sort((a, b) => b.likesCount - a.likesCount);
@@ -304,21 +333,20 @@ function BoardView() {
     };
   }, [isProfilePopupOpen, isQuestionPopupOpen]);
 
-  // if (boardNotFound) {
-  //   return <Navigate to="/" />;
-  // }
-
-  // if (!boardData) {
-  //   return <div>Loading...</div>; // Show loading state
-  // }
+  useEffect(() => {
+    if (navbarColor) {
+      const lightShade = lightenColor(navbarColor, 75); // Lighten by 75%
+      setBackgroundColor(lightShade);
+    }
+  }, [navbarColor]);
 
   return (
-    <div className="app">
+    <div className="app" style={{ backgroundColor }}>
       <Navbar
         onProfileClick={handleProfileClick}
         onQuestionClick={handleQuestionClick}
         title={boardData?.title}
-        color={boardData?.color}
+        color={navbarColor}
       />
       <div className="main-content">
         <Sidebar
@@ -326,6 +354,8 @@ function BoardView() {
           bio={boardData?.bio}
           totalPosts={totalPosts}
           creatorName={boardData?.creator_name}
+          avatarUrl={boardData?.owner?.avatar_url}
+          posts={cards}
           color={boardData?.color}
         />
         <div className="board">
@@ -396,15 +426,15 @@ function BoardView() {
               }}
               className="content-input"
             ></textarea>
-            <div className="checkbox-container">
-              <input
-                type="checkbox"
-                id="hideName"
+            <Form.Item>
+              <Checkbox
                 checked={isAnonymous}
-                onChange={() => setIsAnonymous(!isAnonymous)}
-              />
-              <label htmlFor="hideName">Hide my name</label>
-            </div>
+                onChange={(e) => setIsAnonymous(e.target.checked)}
+                style={{ marginTop: 8 }}
+              >
+                <span style={{ color: '#666' }}>Hide my name</span>
+              </Checkbox>
+            </Form.Item>
             <div className="modal-footer">
               <span className="char-count">{`${newPostContent.length}/350`}</span>
               <button
@@ -421,9 +451,15 @@ function BoardView() {
 
       {isProfilePopupOpen && (
         <div className="profile-popup">
-          <h2>Hello, NAME!</h2>
-          <p>Requests Made: XX</p>
-          <p>Joined Jan 12, 2025</p>
+          <h2>Hello, {user?.user_metadata?.name || 'Visitor'}!</h2>
+          <p>Total Requests Made: {totalRequests}</p>
+          {user?.created_at && (
+            <p>Joined {new Date(user.created_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}</p>
+          )}
           <button className="logout-button">Log Out</button>
         </div>
       )}

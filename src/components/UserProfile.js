@@ -1,14 +1,29 @@
 import React from 'react';
 import { supabase } from '../supabaseClient';
 
-function UserProfile({ user, onSignOut }) {
+function UserProfile({ user, onSignOut, totalUserRequests }) {
   const handleSignOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      // Check if there's an active session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        console.log('No active session found, clearing local state');
+        onSignOut();
+        return;
+      }
+
+      // Only attempt to sign out if there's an active session
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) throw signOutError;
+
       onSignOut();
     } catch (error) {
-      console.error('Error signing out:', error);
+      if (error.message !== 'Auth session missing!') {
+        console.error('Error signing out:', error);
+      }
+      // Always call onSignOut to ensure UI state is updated
+      onSignOut();
     }
   };
 
@@ -51,7 +66,7 @@ function UserProfile({ user, onSignOut }) {
           {getInitial()}
         </div>
       )}
-      <span style={{ 
+      <span style={{
         color: 'white',
         fontSize: '1.1rem',
         fontWeight: '500'

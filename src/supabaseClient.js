@@ -73,117 +73,39 @@ function GoogleSignInButton() {
 
       if (authError) throw authError;
 
-      const profilePictureUrl = user.user_metadata.avatar_url || user.user_metadata.picture;
+      const currentTime = new Date().toISOString();
 
-      // Check local storage for the profile picture
-      const cachedProfilePicture = localStorage.getItem(`profilePicture_${user.id}`);
-
-      if (cachedProfilePicture) {
-        // Use the cached image if it matches the current profile picture URL
-        if (cachedProfilePicture !== profilePictureUrl) {
-          // Update local storage if the profile picture has changed
-          const response = await fetch(profilePictureUrl);
-          if (response.ok) {
-            const blob = await response.blob();
-            const imageUrl = URL.createObjectURL(blob);
-            localStorage.setItem(`profilePicture_${user.id}`, imageUrl);
-            user.user_metadata.picture = imageUrl;
-          }
-        } else {
-          // Use the cached image
-          user.user_metadata.picture = cachedProfilePicture;
-        }
-      } else {
-        // Fetch and store the profile picture in local storage
-        const response = await fetch(profilePictureUrl);
-        if (response.ok) {
-          const blob = await response.blob();
-          const imageUrl = URL.createObjectURL(blob);
-          localStorage.setItem(`profilePicture_${user.id}`, imageUrl);
-          user.user_metadata.picture = imageUrl;
-        }
-      }
-
-      // Continue with user data handling...
+      // Check if user exists in your users table
       const { data: existingUser, error: fetchError } = await supabase
         .from('users')
         .select('*')
         .eq('id', user.id)
         .single();
 
-      // Handle user data insertion or update...
-      if (!existingUser && (!fetchError || fetchError.code === 'PGRST116')) {
-        // Upload the profile picture to Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('profile-pictures')
-          .upload(`public/${user.id}.png`, await fetch(profilePictureUrl).then(res => res.blob()));
-
-        if (uploadError) {
-          console.error('Error uploading profile picture:', uploadError);
-          return;
-        }
-
-        // Get the public URL of the uploaded image
-        const { publicURL } = supabase.storage.from('profile-pictures').getPublicUrl(`public/${user.id}.png`);
-
+      if (!existingUser) {
+        // For new users
         const userData = {
           id: user.id,
           email: user.email,
           full_name: user.user_metadata.full_name || user.user_metadata.name,
-          avatar_url: publicURL, // Use the uploaded image URL
-          created_at: new Date().toISOString(),
-          last_sign_in: new Date().toISOString()
+          avatar_url: user.user_metadata.avatar_url || user.user_metadata.picture,
+          created_at: currentTime,
+          last_sign_in: currentTime
         };
 
         const { error: insertError } = await supabase
           .from('users')
           .insert([userData]);
 
-        if (insertError) {
-          console.error('Error inserting user:', insertError);
-          throw insertError;
-        }
-      } else if (existingUser) {
-        // Check if the profile picture has changed
-        if (existingUser.avatar_url !== profilePictureUrl) {
-          // Upload the new profile picture to Supabase Storage
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('profile-pictures')
-            .upload(`public/${user.id}.png`, await fetch(profilePictureUrl).then(res => res.blob()));
-
-          if (uploadError) {
-            console.error('Error uploading new profile picture:', uploadError);
-            return;
-          }
-
-          // Get the public URL of the uploaded image
-          const { publicURL } = supabase.storage.from('profile-pictures').getPublicUrl(`public/${user.id}.png`);
-
-          // Update the user's avatar_url in the database
-          const { error: updateError } = await supabase
-            .from('users')
-            .update({ avatar_url: publicURL })
-            .eq('id', user.id);
-
-          if (updateError) {
-            console.error('Error updating user profile picture:', updateError);
-            throw updateError;
-          }
-
-          // Update local storage with the new profile picture URL
-          localStorage.setItem(`profilePicture_${user.id}`, publicURL);
-        }
-
-        // Update last sign in time for existing users
+        if (insertError) throw insertError;
+      } else {
+        // For existing users
         const { error: updateError } = await supabase
           .from('users')
-          .update({ last_sign_in: new Date().toISOString() })
+          .update({ last_sign_in: currentTime })
           .eq('id', user.id);
 
-        if (updateError) {
-          console.error('Error updating user:', updateError);
-          throw updateError;
-        }
+        if (updateError) throw updateError;
       }
 
       setUser(user);

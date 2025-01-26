@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import RequestCard from "./RequestCard";
 import "./Board.css";
 import { supabase } from "../supabaseClient";
+import Sidebar from "./Sidebar";
 
 function Board({ boardId }) {
   const [posts, setPosts] = useState([]);
@@ -14,10 +15,10 @@ function Board({ boardId }) {
       if (session) {
         setCurrentUser(session.user);
 
-        // Fetch board data
+        // Fetch board data including creator_name and avatar_url
         const { data: board, error: boardError } = await supabase
           .from("boards")
-          .select("*, owner:users(*)")
+          .select("*, owner:users(avatar_url)")
           .eq("id", boardId)
           .single();
 
@@ -54,6 +55,13 @@ function Board({ boardId }) {
 
   return (
     <div className="board">
+      <Sidebar
+        description={boardData?.description}
+        bio={boardData?.bio}
+        totalPosts={posts.length}
+        creatorName={boardData?.creator_name}
+        avatarUrl={boardData?.owner?.avatar_url}
+      />
       {posts.map((post) => (
         <RequestCard
           key={post.id}
@@ -63,7 +71,7 @@ function Board({ boardId }) {
           isAnonymous={post.is_anonymous}
           color={post.color}
           onDelete={() => handleDelete(post.id)}
-          authorId={post.author_id} // Pass author_id directly
+          authorId={post.author_id}
           created_at={post.created_at}
           currentUserId={currentUser.id}
           setUser={setUser}

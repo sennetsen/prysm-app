@@ -65,9 +65,9 @@
 
 
 
-   /* Sidebar Container */
+/* Sidebar Container */
 .sidebar {
-  position: absolute;
+  position: fixed;
   left: 0;
   top: 120px;
   width: 300px;
@@ -80,7 +80,8 @@
 }
 
 .sidebar.hidden {
-  transform: translateX(-100%); /* Slide the sidebar off-screen */
+  transform: translateX(-100%);
+  /* Slide the sidebar off-screen */
 }
 
 .sidebar-content {
@@ -93,9 +94,17 @@
 .profile-picture {
   width: 80px;
   height: 80px;
-  background-color: #f0f0f0; /* Placeholder color */
+  background-color: #f0f0f0;
+  /* Placeholder color */
   border-radius: 50%;
   margin-bottom: 15px;
+}
+
+.profile-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 /* Creator Info */
@@ -127,12 +136,23 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  margin-right: 5px;
+  border: 2px solid white;
+  margin-right: -10px;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.2s ease;
+}
+
+.avatar:hover {
+  transform: scale(1.1);
+  z-index: 2;
 }
 
 .more-requests {
   font-size: 0.9rem;
   color: #555;
+  margin-left: 15px;
+  z-index: 1;
 }
 
 /* Description Text */
