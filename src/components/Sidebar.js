@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./Sidebar.css";
 import fallbackImg from '../img/fallback.png'; // Import the fallback image
+import verifiedIcon from '../img/verified.svg';
 
 function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }) {
   const [isHidden, setIsHidden] = useState(false); // Tracks sidebar visibility
@@ -36,7 +37,14 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
           </div>
 
           {/* Creator Info */}
-          <h2 className="creator-name">{creatorName || "Creator"}</h2>
+          <h2 className="creator-name">
+            {creatorName || "Creator"}
+            <img
+              src={verifiedIcon}
+              alt="Verified Creator"
+              className="verified-icon"
+            />
+          </h2>
           <p className="creator-bio">{bio || ""}</p>
 
           {/* Requests Section */}

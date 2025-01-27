@@ -70,11 +70,11 @@
   position: fixed;
   left: 0;
   top: 120px;
-  width: 300px;
-  background-color: white;
+  width: 320px;
+  background-color: #FDFCFC;
   border-radius: 12px;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+  padding: 25px;
   z-index: 10;
   transition: transform 0.3s ease-in-out;
 }
@@ -97,7 +97,8 @@
   background-color: #f0f0f0;
   /* Placeholder color */
   border-radius: 50%;
-  margin-bottom: 15px;
+  margin: 0 auto -5px auto;
+  display: block;
 }
 
 .profile-img {
@@ -109,22 +110,40 @@
 
 /* Creator Info */
 .creator-name {
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: bold;
-  margin: 0;
+  text-align: center;
+  margin-top: 25px;
+  font-family: 'Lexend Deca', sans-serif;
+  color: #281010;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.verified-icon {
+  width: 25px;
+  height: 25px;
+  vertical-align: middle;
 }
 
 .creator-bio {
-  font-size: 0.9rem;
-  color: #555;
-  margin-bottom: 20px;
+  font-size: 1.125rem;
+  color: #98a2b3;
+  text-align: center;
+  margin-top: -15px;
+  font-family: 'Lexend Deca', sans-serif;
 }
+
 
 /* Requests Section */
 .requests-title {
-  font-weight: bold;
-  margin-bottom: 10px;
+  font-size: 1rem;
+  margin-top: 0px;
+  font-family: 'Lexend Deca', sans-serif;
+  color: #281010;
 }
+
 
 .requests-avatars {
   display: flex;
@@ -149,37 +168,41 @@
 }
 
 .more-requests {
-  font-size: 0.9rem;
-  color: #555;
   margin-left: 15px;
   z-index: 1;
+  font-size: 0.83rem;
+  color: #281010;
 }
 
 /* Description Text */
 .description-text {
-  font-size: 0.9rem;
-  color: #333;
-  margin-bottom: 15px;
+  font-size: 1.1rem;
+  color: #281010;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  font-family: 'Poppins', sans-serif;
 }
 
-/* Toggle Button */
 .toggle-button {
   position: absolute;
   top: 50%;
-  right: -15px;
+  right: -20px;
+  /* Aligns the button flush with the sidebar */
   transform: translateY(-50%);
   background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 50%;
+  border: none;
+  border-radius: 8px;
   width: 30px;
-  height: 30px;
+  height: 50px;
   display: flex;
   justify-content: center;
   align-items: center;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  font-size: 1.2rem;
-  z-index: 20;
+  font-size: 1rem;
+  color: #281010;
+  z-index: 1;
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .toggle-button:hover {

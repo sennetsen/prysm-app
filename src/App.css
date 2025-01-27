@@ -119,11 +119,12 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.1);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(5px);
 }
 
 .post-it-modal {
@@ -135,17 +136,18 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.08);
 }
 
 .close-modal-button {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 16px;
+  right: 16px;
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 24px;
   cursor: pointer;
+  color: #666;
 }
 
 .title-input,
@@ -187,7 +189,7 @@
 }
 
 .char-count {
-  font-size: 0.9rem;
+  font-size: 16px;
   color: #888;
 }
 
@@ -209,11 +211,12 @@
   background-color: #f97373;
 }
 
+/* Change to lexend deca */
 h1,
 h2,
 h3,
 p {
-  font-family: Arial, sans-serif;
+  font-family: 'Lexend Deca', sans-serif;
 }
 
 * {

@@ -6,21 +6,22 @@
     padding: 20px;
     background-color: #f5f5f5;
   } */
-  
 
-  /* .board {
+
+/* .board {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
     gap: 20px; 
     padding: 20px;
     background-color: #f5f5f5;
   } */
-  
-  .board {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 cards per row */
-    gap: 20px; /* Space between cards */
-    padding: 20px;
-    background-color: #f5f5f5;
-  }
-  
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  /* 3 cards per row */
+  gap: 20px;
+  /* Space between cards */
+  padding: 20px;
+  background-color: #f5f5f5;
+}
