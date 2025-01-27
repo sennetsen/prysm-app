@@ -120,11 +120,12 @@
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(1px);
 }
 
 .post-it-modal {
@@ -147,7 +148,7 @@
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #666;
+  color: #281010;
 }
 
 .title-input,
@@ -157,10 +158,11 @@
   margin-bottom: 5px;
   /* padding: 5px; */
   font-size: 1rem;
-  color: #333;
+  color: #281010;
   outline: none;
   background-color: transparent;
 }
+
 
 .content-input {
   resize: none;
@@ -176,39 +178,53 @@
 
 .title-input::placeholder,
 .content-input::placeholder {
-  color: #aaa;
+  color: #76746c;
 }
 
 .modal-footer {
-  border-top: 1px solid black;
+  border-top: 1px solid rgba(40, 16, 16, 0.5);
   padding-top: 10px;
-  /* margin: 0 -20px; */
+  margin: 0 -20px;
+  padding-left: 20px;
+  padding-right: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .char-count {
-  font-size: 16px;
-  color: #888;
+  font-size: 12px;
+  color: #76746c;
 }
 
 .post-button {
   background-color: #ccc;
   border: none;
-  border-radius: 5px;
-  padding: 5px 10px;
+  border-radius: 8px;
+  padding: 8px 18px;
+  margin-bottom: -5px;
   cursor: pointer;
   color: #fff;
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
 }
 
 .post-button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .post-button:not(:disabled) {
-  background-color: #f97373;
+  background-color: #76746c;
+}
+
+
+.post-button:not(:disabled):hover {
+  transform: scale(1.02);
 }
 
 /* Change to lexend deca */
@@ -289,7 +305,9 @@ p {
   display: flex;
   align-items: center;
   margin-bottom: 5px;
-  margin-top: -10px;
+  color: #B39898;
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 14px;
 }
 
 .checkbox-container input {
@@ -300,4 +318,46 @@ p {
   margin-top: auto;
   padding-top: 8px;
   border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.hide-name-container {
+  margin-top: 8px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+
+}
+
+.hide-name-checkbox {
+  color: #B39898;
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 12px;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.hide-name-checkbox .ant-checkbox {
+  width: 14px;
+  height: 14px;
+  top: 0 !important;
+  margin-top: -2px;
+}
+
+/* Style for the checkbox when checked */
+.hide-name-checkbox .ant-checkbox-checked .ant-checkbox-inner {
+  background-color: #76746c !important;
+  border-color: #76746c !important;
+}
+
+/* Style for the checkbox on hover */
+.hide-name-checkbox .ant-checkbox:hover .ant-checkbox-inner {
+  border-color: #76746c !important;
+}
+
+.hide-name-text {
+  color: #76746c;
+  margin-left: 4px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
 }

@@ -426,13 +426,13 @@ function BoardView() {
               }}
               className="content-input"
             ></textarea>
-            <Form.Item>
+            <Form.Item className="hide-name-container">
               <Checkbox
                 checked={isAnonymous}
                 onChange={(e) => setIsAnonymous(e.target.checked)}
-                style={{ marginTop: 8 }}
+                className="hide-name-checkbox"
               >
-                <span style={{ color: '#666' }}>Hide my name</span>
+                <span className="hide-name-text">Hide my name</span>
               </Checkbox>
             </Form.Item>
             <div className="modal-footer">
