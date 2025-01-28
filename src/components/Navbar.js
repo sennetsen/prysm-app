@@ -1,16 +1,39 @@
+<<<<<<< Updated upstream
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+=======
+import React, { useState, useEffect } from "react";
+>>>>>>> Stashed changes
 import "./Navbar.css";
 import logo from "../img/Vector (1).svg";
 import helpIcon from "../img/Vector.svg";
 import shareIcon from "../img/Icon.svg";
 import { supabase, GoogleSignInButton } from "../supabaseClient";
 
+<<<<<<< Updated upstream
 function Navbar({ onProfileClick, onQuestionClick, title, color }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const user = supabase.auth.user;
   const userId = user ? user.id : null;
   const cachedProfilePicture = userId ? localStorage.getItem(`profilePicture_${userId}`) : null;
+=======
+function Navbar({ onProfileClick, onQuestionClick, onJoinClick }) {
+  const [user, setUser] = useState(null);
+  const [cachedProfilePicture, setCachedProfilePicture] = useState(null);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        const userId = session.user.id;
+        const cachedPic = localStorage.getItem(`profilePicture_${userId}`);
+        setCachedProfilePicture(cachedPic);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+>>>>>>> Stashed changes
 
   const navbarStyle = {
     backgroundColor: color || "#b43144", // Fallback color
@@ -41,6 +64,11 @@ function Navbar({ onProfileClick, onQuestionClick, title, color }) {
         <button className="question-icon" onClick={onQuestionClick}>
           <img src={helpIcon} alt="Help Icon" />
         </button>
+        {!user && (
+          <button className="join-button" onClick={onJoinClick}>
+            <div className="join-button-text">Join</div>
+          </button>
+        )}
         <button className="profile-icon" onClick={onProfileClick}>
           {cachedProfilePicture ? (
             <img
@@ -58,7 +86,9 @@ function Navbar({ onProfileClick, onQuestionClick, title, color }) {
             "👤"
           )}
         </button>
-        <GoogleSignInButton />
+        <button className="google-profile-button" onClick={onProfileClick}>
+          <GoogleSignInButton />
+        </button>
         <div className="divider"></div>
         <button className="share-button">
           <div className="share-button-icon">

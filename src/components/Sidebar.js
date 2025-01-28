@@ -37,6 +37,7 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
           </div>
 
           {/* Creator Info */}
+<<<<<<< Updated upstream
           <h2 className="creator-name">
             {creatorName || "Creator"}
             <img
@@ -46,6 +47,10 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
             />
           </h2>
           <p className="creator-bio">{bio || ""}</p>
+=======
+          <h2 className="creator-name">XYZ Creator</h2>
+          <p className="creator-bio">Everything I Learned, I Learned From The Movies.</p>
+>>>>>>> Stashed changes
 
           {/* Requests Section */}
           <p className="requests-title">
@@ -67,7 +72,15 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
 
           {/* Description */}
           <p className="description-text">
+<<<<<<< Updated upstream
             {description || ""}
+=======
+          Cineoholic here—request anything of me here, from film recommendations, reviews, discussions on cinematic techniques, or even deep dives into your favorite movies… literally whatever comes to mind!<br></br>
+
+
+
+<br></br> Feel free to like requests you’re excited about; the more likes it gets, the more likely I’ll bring it to life! For some requests, I may reach out via email to confirm details. Just a heads-up: spam or hate won’t be tolerated.
+>>>>>>> Stashed changes
           </p>
         </div>
       )}
