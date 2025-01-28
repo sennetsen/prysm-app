@@ -420,7 +420,7 @@ function BoardView() {
               placeholder="Start typing your request..."
               value={newPostContent}
               onChange={(e) => {
-                if (e.target.value.length <= 350) {
+                if (e.target.value.length <= 300) {
                   setNewPostContent(e.target.value);
                 }
               }}
@@ -436,7 +436,7 @@ function BoardView() {
               </Checkbox>
             </Form.Item>
             <div className="modal-footer">
-              <span className="char-count">{`${newPostContent.length}/350`}</span>
+              <span className="char-count">{`${newPostContent.length}/300`}</span>
               <button
                 className="post-button"
                 onClick={handlePostSubmit}

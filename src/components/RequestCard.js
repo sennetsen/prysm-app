@@ -60,7 +60,7 @@ function RequestCard({
   };
 
   return (
-    <div className="request-card" style={{ backgroundColor: color }}>
+    <div className="request-card" style={{ backgroundColor: color, '--card-color': color }}>
       {canDelete && (
         <CloseCircleFilled
           className="ant-delete-button"
@@ -80,7 +80,9 @@ function RequestCard({
       <div className="card-content">
         <h3>{title}</h3>
         <div className="request-content">
-          <p>{content}</p>
+          <div className="scroll-container">
+            <p>{content}</p>
+          </div>
         </div>
       </div>
 
@@ -120,17 +122,12 @@ function RequestCard({
         <div className="like-section">
           <Button
             type="text"
-            icon={
-              hasLiked ? (
-                <HeartFilled style={{ color: '#ff4d4f' }} />
-              ) : (
-                <HeartOutlined style={{ color: '#8c8c8c' }} />
-              )
-            }
+            icon={hasLiked ? <HeartFilled /> : <HeartOutlined />}
             onClick={() => onLike(id, hasLiked)}
-            className="custom-like-button"
-          />
-          <span className="like-count">{likesCount}</span>
+            className={`custom-like-button ${hasLiked ? 'liked' : ''}`}
+          >
+            <span className="like-count">{likesCount}</span>
+          </Button>
         </div>
       </div>
     </div>

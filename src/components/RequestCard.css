@@ -18,58 +18,88 @@
 }
 
 .request-card h3 {
-  padding-top: 5px;
-  z-index: 1;
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 18px;
+  color: #281010;
+  margin: 20px 0 16px 8px;
+  padding: 0;
+  font-weight: 600;
 }
 
 .request-card p {
-  /* margin: 5px 5px; */
-  /* margin-top: -10px; */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  line-clamp: 3;
-  margin-bottom: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(12px, 1vw, 16px);
+  line-height: 1.5;
+  color: #281010;
+  margin: 0 0 16px 8px;
+  padding: 0;
+  white-space: normal;
+  margin-right: 10px;
+
 }
 
 .request-content {
-  /* padding-top: -100px; */
   flex-grow: 1;
   display: flex;
-  /* justify-content: space-between; */
   flex-direction: column;
-  justify-content: space-between;
   position: relative;
+  word-wrap: break-word;
+  word-break: break-word;
+  width: 100%;
+  height: 110px;
 }
 
-.request-card h3,
-.request-card p {
-  padding-left: 5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  z-index: 0;
+.scroll-container {
+  height: 100%;
+  overflow-y: auto;
+  mask-image: linear-gradient(to bottom,
+      black calc(100% - 4px),
+      transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom,
+      black calc(100% - 4px),
+      transparent 100%);
+}
+
+/* Scrollbar styles */
+.scroll-container::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
+}
+
+.scroll-container:hover::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-container:hover::-webkit-scrollbar-track {
+  background: rgba(40, 16, 16, 0.05);
+  border-radius: 3px;
+  margin: 4px 0;
+}
+
+.scroll-container:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(40, 16, 16, 0.25);
+  border-radius: 3px;
 }
 
 .anonymous,
 .user-info {
-  font-style: italic;
-  color: #888;
+  /* font-style: italic; */
+  font-family: 'Lexend Deca', sans-serif;
+  color: #281010;
+  font-size: 12px;
   display: flex;
   align-items: center;
 }
 
 .user-info {
   position: absolute;
-  bottom: 40px;
-  left: 10px;
+  margin: 205px 0 16px 8px;
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   max-width: calc(100% - 60px);
   z-index: 1;
+  margin-bottom: 0;
 }
 
 .user-info span {
@@ -83,35 +113,35 @@
   height: 24px;
   border-radius: 50%;
   margin-right: 8px;
-  border: 2px solid rgb(255, 255, 255);
+  border: 1px solid #281010;
   object-fit: cover;
   z-index: 2;
 }
 
 .card-footer {
   position: absolute;
-  bottom: 10px;
-  right: 10px;
+  bottom: 27px;
+  right: 20px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 4px;
+  margin-top: 0;
 }
 
 .timestamp {
   position: absolute;
-  bottom: 10px;
-  left: 10px;
-  font-size: 0.8rem;
-  color: #666;
-  background-color: rgba(255, 255, 255, 0.8);
-  padding: 2px 4px;
-  border-radius: 3px;
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 12px;
+  color: #76746c;
+  bottom: 70px;
+  left: 20px;
   z-index: 1;
 }
 
 .like-button {
   background: none;
-  border: none;
+  border: 0px;
+  ;
   cursor: pointer;
   font-size: 1.2rem;
   color: white;
@@ -119,24 +149,7 @@
 }
 
 .like-button.liked {
-  color: red;
-}
-
-.custom-like-button {
-  font-size: 1.5rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover .anticon {
-    transform: scale(1.1);
-  }
-
-  &:active .anticon {
-    transform: scale(0.9);
-  }
-}
-
-.request-card:hover .delete-button {
-  display: block;
+  color: #EF5959;
 }
 
 .like-section {
@@ -145,10 +158,62 @@
   gap: 4px;
 }
 
+.custom-like-button {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 3px 9px !important;
+  border-radius: 8px !important;
+  border: 1px solid #281010 !important;
+  height: auto !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Not liked state */
+.custom-like-button .anticon {
+  font-size: 14px;
+  color: #281010 !important;
+}
+
+/* Liked state */
+.custom-like-button.liked {
+  background: #EF5959 !important;
+  /* border-color: #EF5959 !important; */
+}
+
+.custom-like-button.liked .anticon,
+.custom-like-button.liked .like-count {
+  color: white !important;
+}
+
 .like-count {
-  margin-left: 5px;
-  font-size: 1rem;
-  color: #666;
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 12px;
+  color: #281010;
+  margin: 0;
+  line-height: 1;
+  font-weight: 700 !important;
+}
+
+/* Liked state - made more specific */
+.custom-like-button.liked .like-count {
+  color: white !important;
+  font-weight: 700 !important;
+}
+
+/* Hover effect */
+.custom-like-button:hover {
+  background: rgba(40, 16, 16, 0.08) !important;
+  /* Slightly darker when not liked */
+}
+
+.custom-like-button.liked:hover {
+  background: #E55454 !important;
+  /* Slightly darker red when liked */
+}
+
+.request-card:hover .delete-button {
+  display: block;
 }
 
 .ant-btn.create-post-it-button {
@@ -164,11 +229,25 @@
   box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2) !important;
 }
 
-.ant-delete-button:hover {
-  color: #ff4d4f !important;
-  transform: scale(1.1);
+.ant-delete-button {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  font-size: 20px !important;
+  color: #281010 !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  opacity: 0.45 !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 2 !important;
 }
 
-.custom-like-button .anticon {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.ant-delete-button:hover {
+  opacity: 0.85 !important;
+  transform: scale(1.1) !important;
 }
