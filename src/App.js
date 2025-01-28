@@ -72,6 +72,14 @@ function BoardView() {
   }, [boardPath, user]);
 
   useEffect(() => {
+    if (boardData?.creator_name) {
+      document.title = `${boardData.creator_name}'s Board | Prysm`;
+    } else {
+      document.title = "Creator Board";
+    }
+  }, [boardData?.creator_name]);
+
+  useEffect(() => {
     const fetchUserData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
