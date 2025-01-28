@@ -7,12 +7,8 @@ import RequestCard from "./components/RequestCard";
 import "./App.css";
 import { Button, Checkbox, Form } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-<<<<<<< Updated upstream
 import { lightenColor } from './utils/colorUtils'; // Import the lightenColor function
-=======
-import Icons from './img/Icons.svg'; // Adjust the path as necessary
-// import { supabase, GoogleSignInButton } from "../supabaseClient";
->>>>>>> Stashed changes
+import { GoogleSignInButton } from './supabaseClient';
 
 // HomePage component
 function HomePage() {
@@ -40,13 +36,10 @@ function BoardView() {
   const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
   const [isQuestionPopupOpen, setIsQuestionPopupOpen] = useState(false);
   const [isBoardOwner, setIsBoardOwner] = useState(false);
-<<<<<<< Updated upstream
   const [totalPosts, setTotalPosts] = useState(0);
   const [navbarColor, setNavbarColor] = useState('#b43144'); // Default color
   const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
-=======
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
->>>>>>> Stashed changes
 
   const colors = [
     "#FFC1074D",  
@@ -346,14 +339,12 @@ function BoardView() {
     };
   }, [isProfilePopupOpen, isQuestionPopupOpen]);
 
-<<<<<<< Updated upstream
   useEffect(() => {
     if (navbarColor) {
       const lightShade = lightenColor(navbarColor, 75); // Lighten by 75%
       setBackgroundColor(lightShade);
     }
   }, [navbarColor]);
-=======
   const handleJoinClick = () => {
     setIsJoinPopupOpen(true);
   };
@@ -361,19 +352,15 @@ function BoardView() {
   const handleClosePopup = () => {
     setIsJoinPopupOpen(false);
   };
->>>>>>> Stashed changes
 
   return (
     <div className="app" style={{ backgroundColor }}>
       <Navbar
         onProfileClick={handleProfileClick}
         onQuestionClick={handleQuestionClick}
-<<<<<<< Updated upstream
         title={boardData?.title}
         color={navbarColor}
-=======
         onJoinClick={handleJoinClick}
->>>>>>> Stashed changes
       />
       <div className="main-content">
         <Sidebar
@@ -412,7 +399,7 @@ function BoardView() {
             <Button
               type="primary"
               shape="circle"
-              icon={<img src={Icons} alt="Create Post" style={{ width: '24px', height: '24px' }} />}
+              icon={<PlusOutlined style={{ fontSize: '24px', color: 'white' }} />}
               onClick={handlePostItClick}
               className="create-post-it-button"
               style={{
@@ -478,7 +465,6 @@ function BoardView() {
 
       {isProfilePopupOpen && (
         <div className="profile-popup">
-<<<<<<< Updated upstream
           <h2>Hello, {user?.user_metadata?.name || 'Visitor'}!</h2>
           <p>Total Requests Made: {totalRequests}</p>
           {user?.created_at && (
@@ -489,12 +475,6 @@ function BoardView() {
             })}</p>
           )}
           <button className="logout-button">Log Out</button>
-=======
-          <h2>Hello, {user?.user_metadata?.name || "User"}!</h2>
-          <p>Requests Made: XX</p>
-          <p>Joined Jan 12, 2025</p>
-          <button className="logout-button" onClick={() => supabase.auth.signOut()}>Log Out</button>
->>>>>>> Stashed changes
         </div>
       )}
 

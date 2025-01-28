@@ -62,12 +62,8 @@
     transform: translateX(-50%);
     font-weight: bold;
     color: white;
-<<<<<<< Updated upstream
-    font-size: 16px;
-=======
     font-size: 23px;
     /* size: 400px; */
->>>>>>> Stashed changes
 }
 
 .divider {
@@ -100,9 +96,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-<<<<<<< Updated upstream
     font-size: 12px;
-=======
 }
 
 .google-profile-button {
@@ -157,5 +151,4 @@
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
->>>>>>> Stashed changes
 }
