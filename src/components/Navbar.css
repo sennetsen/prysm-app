@@ -4,6 +4,7 @@
     justify-content: space-between;
     padding: 0px 20px;
     background-color: #b43144;
+    /* background-color: #1C1C1C; */
     color: white;
     height: 8vh;
     position: fixed;
@@ -61,7 +62,8 @@
     transform: translateX(-50%);
     font-weight: bold;
     color: white;
-    font-size: 16px;
+    font-size: 23px;
+    /* size: 400px; */
 }
 
 .divider {
@@ -95,4 +97,58 @@
     align-items: center;
     gap: 8px;
     font-size: 12px;
+}
+
+.google-profile-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.join-button {
+    background: linear-gradient(135deg, #d5dcfa, #feeaa5, #FFCFCF);
+    border: none;
+    border-radius: 10px;
+    padding: 8px 16px;
+    color: #000;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .join-button-text {
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+.join-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  width: 35vw;
+  height: 40vh;
+  z-index: 1000;
+  text-align: center;
+}
+
+.close-popup {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
 }

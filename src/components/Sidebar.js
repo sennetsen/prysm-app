@@ -24,59 +24,62 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
   const remainingPosts = Math.max(0, totalPosts - 4);
 
   return (
-    <div className={`sidebar ${isHidden ? "hidden" : ""}`}>
-      {!isHidden && (
-        <div className="sidebar-content">
-          {/* Profile Picture */}
-          <div className="profile-picture">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Profile" className="profile-img" />
-            ) : (
-              <img src={fallbackImg} alt="Fallback" className="profile-img" />
-            )}
-          </div>
+    <>
+      <div className={`sidebar ${isHidden ? "hidden" : ""}`}>
+        {!isHidden && (
+          <div className="sidebar-content">
+            {/* Profile Picture */}
+            <div className="profile-picture">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Profile" className="profile-img" />
+              ) : (
+                <img src={fallbackImg} alt="Fallback" className="profile-img" />
+              )}
+            </div>
 
-          {/* Creator Info */}
-          <h2 className="creator-name">
-            {creatorName || "Creator"}
-            <img
-              src={verifiedIcon}
-              alt="Verified Creator"
-              className="verified-icon"
-            />
-          </h2>
-          <p className="creator-bio">{bio || ""}</p>
-
-          {/* Requests Section */}
-          <p className="requests-title">
-            {totalPosts} {totalPosts === 1 ? "Request" : "Requests"}
-          </p>
-          <div className="requests-avatars">
-            {getPostAvatars().map((post, index) => (
+            {/* Creator Info */}
+            <h2 className="creator-name">
+              {creatorName || "Creator"}
               <img
-                key={index}
-                src={post.isAnonymous ? fallbackImg : post.avatar}
-                alt={`Post ${index + 1}`}
-                className="avatar"
+                src={verifiedIcon}
+                alt="Verified Creator"
+                className="verified-icon"
               />
-            ))}
-            {remainingPosts > 0 && (
-              <span className="more-requests">+{remainingPosts}</span>
-            )}
+            </h2>
+            <p className="creator-bio">{bio || ""}</p>
+
+            {/* Requests Section */}
+            <p className="requests-title">
+              {totalPosts} {totalPosts === 1 ? "Request" : "Requests"}
+            </p>
+            <div className="requests-avatars">
+              {getPostAvatars().map((post, index) => (
+                <img
+                  key={index}
+                  src={post.isAnonymous ? fallbackImg : post.avatar}
+                  alt={`Post ${index + 1}`}
+                  className="avatar"
+                />
+              ))}
+              {remainingPosts > 0 && (
+                <span className="more-requests">+{remainingPosts}</span>
+              )}
+            </div>
+
+            {/* Description */}
+            <p className="description-text">
+              {description || ""}
+            </p>
           </div>
-
-          {/* Description */}
-          <p className="description-text">
-            {description || ""}
-          </p>
-        </div>
-      )}
-
-      {/* Toggle Button */}
-      <button className="toggle-button" onClick={toggleSidebar}>
+        )}
+      </div>
+      <button 
+        className="toggle-button" 
+        onClick={toggleSidebar}
+      >
         {isHidden ? ">" : "<"}
       </button>
-    </div>
+    </>
   );
 }
 

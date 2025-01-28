@@ -8,6 +8,7 @@ import "./App.css";
 import { Button, Checkbox, Form } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { lightenColor } from './utils/colorUtils'; // Import the lightenColor function
+import { GoogleSignInButton } from './supabaseClient';
 
 // HomePage component
 function HomePage() {
@@ -38,8 +39,13 @@ function BoardView() {
   const [totalPosts, setTotalPosts] = useState(0);
   const [navbarColor, setNavbarColor] = useState('#b43144'); // Default color
   const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
+  const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
 
-  const colors = ["#d5dcfa", "#feeaa5", "#FFCFCF"];
+  const colors = [
+    "#FFC1074D",  
+    "#8000204D",   
+    "#7080904D" 
+  ];
 
   useEffect(() => {
     const fetchBoardData = async () => {
@@ -339,6 +345,13 @@ function BoardView() {
       setBackgroundColor(lightShade);
     }
   }, [navbarColor]);
+  const handleJoinClick = () => {
+    setIsJoinPopupOpen(true);
+  };
+
+  const handleClosePopup = () => {
+    setIsJoinPopupOpen(false);
+  };
 
   return (
     <div className="app" style={{ backgroundColor }}>
@@ -347,6 +360,7 @@ function BoardView() {
         onQuestionClick={handleQuestionClick}
         title={boardData?.title}
         color={navbarColor}
+        onJoinClick={handleJoinClick}
       />
       <div className="main-content">
         <Sidebar
@@ -385,7 +399,7 @@ function BoardView() {
             <Button
               type="primary"
               shape="circle"
-              icon={<PlusOutlined />}
+              icon={<PlusOutlined style={{ fontSize: '24px', color: 'white' }} />}
               onClick={handlePostItClick}
               className="create-post-it-button"
               style={{
@@ -473,6 +487,16 @@ function BoardView() {
           <div className="placeholder-box">[SVG Placeholder]</div>
         </div>
       )}
+
+      {isJoinPopupOpen && (
+        <div className="join-popup">
+          <button className="close-popup" onClick={handleClosePopup}>×</button>
+          <h2>Welcome!</h2>
+          <p>Sign in or sign up to interact with this board</p>
+          <GoogleSignInButton />
+        </div>
+      )}
+
     </div>
   );
 }
