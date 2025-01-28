@@ -42,9 +42,13 @@ function BoardView() {
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
 
   const colors = [
-    "#FFC1074D",  
-    "#8000204D",   
-    "#7080904D" 
+    "#FEEAA4",
+    "#D4D6F9",
+    "#FECFCF"
+    
+    // "#FFC107",  
+    // "#8000204D",   
+    // "#7080904D" 
   ];
 
   useEffect(() => {
@@ -282,7 +286,7 @@ function BoardView() {
 
   const handleLike = async (postId, isCurrentlyLiked) => {
     if (!user) return;
-
+    
     try {
       const { data: currentReactions, error: fetchError } = await supabase
         .from('reactions')
@@ -425,7 +429,7 @@ function BoardView() {
 
       {isModalOpen && (
         <div className="modal-overlay">
-          <div className="modal post-it-modal" style={{ backgroundColor: modalColor }}>
+          <div className="modal post-it-modal" style={{ backgroundColor: modalColor, opacity: 1 }}>
             <button className="close-modal-button" onClick={handleModalClose}>
               &times;
             </button>
