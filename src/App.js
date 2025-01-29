@@ -7,10 +7,10 @@ import Sidebar from "./components/Sidebar";
 import RequestCard from "./components/RequestCard";
 import "./App.css";
 import { Button, Checkbox, Form } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
 import { lightenColor } from './utils/colorUtils'; // Import the lightenColor function
 import { GoogleSignInButton } from './supabaseClient';
-
+import postbutton from './img/postbutton.svg';
+import helpmascot from './img/helpmascot.jpg';
 
 // BoardView component
 function BoardView() {
@@ -206,7 +206,7 @@ function BoardView() {
     setIsProfilePopupOpen(false);
   };
 
-  const canAddPost = user;
+  // const canAddPost = user && (isBoardOwner || !isBoardOwner);
 
   const handlePostItClick = () => {
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -408,23 +408,16 @@ function BoardView() {
               reactions={card.reactions || []}
             />
           ))}
-          {canAddPost && (
-            <Button
-              type="primary"
-              shape="circle"
-              icon={<PlusOutlined style={{ fontSize: '24px', color: 'white' }} />}
-              onClick={handlePostItClick}
-              className="create-post-it-button"
-              style={{
-                backgroundColor: '#b43144',
-                borderColor: '#9c2938',
-                width: 50,
-                height: 50,
-                fontSize: '24px',
-                boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)'
-              }}
-            />
-          )}
+          <Button
+            className="create-post-it-button"
+            onClick={user ? handlePostItClick : handleJoinClick}
+            style={{
+              backgroundColor: navbarColor,
+              '--navbar-color': navbarColor
+            }}
+          >
+            <img src={postbutton} alt="Create post" />
+          </Button>
         </div>
       </div>
 
@@ -492,12 +485,13 @@ function BoardView() {
       )}
 
       {isQuestionPopupOpen && (
-        <div className="question-popup">
+        <div className="help-popup">
           <h2>Thanks for using us!</h2>
           <p>Prysm is still in private beta.</p>
           <p>Find us at <a href="https://prysmapp.com">prysmapp.com</a></p>
-          <p>or contact us at <a href="mailto:getprysm@gmail.com">getprysm@gmail.com</a></p>
-          <div className="placeholder-box">[SVG Placeholder]</div>
+          <p>or contact us at</p>
+          <p><a href="mailto:getprysm@gmail.com">getprysm@gmail.com</a></p>
+          <img src={helpmascot} alt="Prysm Mascot" className="help-mascot" />
         </div>
       )}
 
