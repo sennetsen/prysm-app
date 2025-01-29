@@ -42,9 +42,13 @@ function BoardView() {
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
 
   const colors = [
-    "#FFC1074D",  
-    "#8000204D",   
-    "#7080904D" 
+    "#FEEAA4",
+    "#D4D6F9",
+    "#FECFCF"
+
+    // "#FFC107",  
+    // "#8000204D",   
+    // "#7080904D" 
   ];
 
   useEffect(() => {
@@ -69,7 +73,15 @@ function BoardView() {
     if (boardPath) {
       fetchBoardData();
     }
-  }, [boardPath, user]);
+  }, [boardPath]);
+
+  useEffect(() => {
+    if (boardData?.creator_name) {
+      document.title = `${boardData.creator_name}'s Board | Prysm`;
+    } else {
+      document.title = "Creator Board";
+    }
+  }, [boardData?.creator_name]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -202,7 +214,7 @@ function BoardView() {
     setIsProfilePopupOpen(false);
   };
 
-  const canAddPost = user && (isBoardOwner || !isBoardOwner);
+  const canAddPost = user;
 
   const handlePostItClick = () => {
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -273,7 +285,10 @@ function BoardView() {
   };
 
   const handleLike = async (postId, isCurrentlyLiked) => {
-    if (!user) return;
+    if (!user) {
+      setIsJoinPopupOpen(true);
+      return;
+    }
 
     try {
       const { data: currentReactions, error: fetchError } = await supabase
@@ -417,7 +432,7 @@ function BoardView() {
 
       {isModalOpen && (
         <div className="modal-overlay">
-          <div className="modal post-it-modal" style={{ backgroundColor: modalColor }}>
+          <div className="modal post-it-modal" style={{ backgroundColor: modalColor, opacity: 1 }}>
             <button className="close-modal-button" onClick={handleModalClose}>
               &times;
             </button>
@@ -489,11 +504,19 @@ function BoardView() {
       )}
 
       {isJoinPopupOpen && (
-        <div className="join-popup">
-          <button className="close-popup" onClick={handleClosePopup}>×</button>
-          <h2>Welcome!</h2>
-          <p>Sign in or sign up to interact with this board</p>
-          <GoogleSignInButton />
+        <div className="modal-overlay">
+          <div style={{ height: '25%' }} className="post-it-modal">
+            <button className="close-modal-button" onClick={handleClosePopup}>
+              &times;
+            </button>
+            <div className="join-popup-content">
+              <h2>Welcome!</h2>
+              <p style={{ marginTop: '-8px' }}>Sign in or sign up to interact with this board.</p>
+              <div className="google-signin-container">
+                <GoogleSignInButton />
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

@@ -44,7 +44,7 @@ function GoogleSignInButton() {
           buttonRef.current,
           {
             type: "standard",
-            theme: "outline",
+            theme: "filled_black",
             size: "large",
             text: "signin_with",
             shape: "pill",

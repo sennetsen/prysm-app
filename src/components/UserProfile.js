@@ -15,6 +15,11 @@ function UserProfile({ user, onSignOut, totalUserRequests }) {
 
       // Only attempt to sign out if there's an active session
       const { error: signOutError } = await supabase.auth.signOut();
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.revoke(user.email, () => {
+          console.log('Google session revoked');
+        });
+      }
       if (signOutError) throw signOutError;
 
       onSignOut();
