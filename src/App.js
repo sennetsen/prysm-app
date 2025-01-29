@@ -10,15 +10,6 @@ import { PlusOutlined } from '@ant-design/icons';
 import { lightenColor } from './utils/colorUtils'; // Import the lightenColor function
 import { GoogleSignInButton } from './supabaseClient';
 
-// HomePage component
-function HomePage() {
-  return (
-    <div className="app">
-      <h1>Welcome to Prysm</h1>
-      {/* Add your homepage content here */}
-    </div>
-  );
-}
 
 // BoardView component
 function BoardView() {
