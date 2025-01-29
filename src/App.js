@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from "react-router-dom";
+import HomePage from './CompanySite/HomePage';
 import { supabase } from "./supabaseClient";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
@@ -56,6 +57,7 @@ function BoardView() {
         return;
       }
 
+
       setBoardData(data);
       setNavbarColor(data.color);
       setIsBoardOwner(user?.id === data.owner_id);
@@ -64,7 +66,7 @@ function BoardView() {
     if (boardPath) {
       fetchBoardData();
     }
-  }, [boardPath]);
+  }, [boardPath, user?.id]);
 
   useEffect(() => {
     if (boardData?.creator_name) {
@@ -194,7 +196,6 @@ function BoardView() {
     };
   }, [boardData?.id]);
 
-  // Add your other existing functions here (handleDelete, handleSubmit, etc.)
   const handleProfileClick = () => {
     setIsProfilePopupOpen(!isProfilePopupOpen);
     setIsQuestionPopupOpen(false);
@@ -359,6 +360,12 @@ function BoardView() {
     setIsJoinPopupOpen(false);
   };
 
+
+  if (boardNotFound) {
+    return <Navigate to="/" />; // Redirect if board not found
+  }
+
+
   return (
     <div className="app" style={{ backgroundColor }}>
       <Navbar
@@ -520,7 +527,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<div />} /> {/* Empty element since content is in index.html */}
+        <Route path="/" element={<HomePage />} />
         <Route path="/:boardPath" element={<BoardView />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
