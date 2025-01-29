@@ -129,7 +129,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, .1);
+  background-color: rgba(0, 0, 0, .2);
   border-radius: 12px;
   display: flex;
   justify-content: center;
@@ -139,10 +139,12 @@
   animation: fadeIn 0.2s ease;
 }
 
+
 @keyframes fadeIn {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -168,6 +170,7 @@
     transform: scale(0.8);
     opacity: 0;
   }
+
   to {
     transform: scale(1);
     opacity: 1;
@@ -184,6 +187,29 @@
   cursor: pointer;
   color: #281010;
 }
+
+.join-popup-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8x;
+}
+
+.google-signin-container {
+  width: 100%;
+  max-width: 200px;
+  margin-top: 16px;
+}
+
+.google-signin-container > div {
+  width: 100% !important;
+  display: flex;
+  justify-content: center;
+}
+
+
 
 .title-input,
 .content-input {

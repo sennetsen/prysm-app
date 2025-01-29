@@ -45,7 +45,7 @@ function BoardView() {
     "#FEEAA4",
     "#D4D6F9",
     "#FECFCF"
-    
+
     // "#FFC107",  
     // "#8000204D",   
     // "#7080904D" 
@@ -73,7 +73,7 @@ function BoardView() {
     if (boardPath) {
       fetchBoardData();
     }
-  }, [boardPath, user]);
+  }, [boardPath]);
 
   useEffect(() => {
     if (boardData?.creator_name) {
@@ -214,7 +214,7 @@ function BoardView() {
     setIsProfilePopupOpen(false);
   };
 
-  const canAddPost = user && (isBoardOwner || !isBoardOwner);
+  const canAddPost = user;
 
   const handlePostItClick = () => {
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -285,8 +285,11 @@ function BoardView() {
   };
 
   const handleLike = async (postId, isCurrentlyLiked) => {
-    if (!user) return;
-    
+    if (!user) {
+      setIsJoinPopupOpen(true);
+      return;
+    }
+
     try {
       const { data: currentReactions, error: fetchError } = await supabase
         .from('reactions')
@@ -501,11 +504,19 @@ function BoardView() {
       )}
 
       {isJoinPopupOpen && (
-        <div className="join-popup">
-          <button className="close-popup" onClick={handleClosePopup}>×</button>
-          <h2>Welcome!</h2>
-          <p>Sign in or sign up to interact with this board</p>
-          <GoogleSignInButton />
+        <div className="modal-overlay">
+          <div style={{ height: '25%' }} className="post-it-modal">
+            <button className="close-modal-button" onClick={handleClosePopup}>
+              &times;
+            </button>
+            <div className="join-popup-content">
+              <h2>Welcome!</h2>
+              <p style={{ marginTop: '-8px' }}>Sign in or sign up to interact with this board.</p>
+              <div className="google-signin-container">
+                <GoogleSignInButton />
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
