@@ -506,7 +506,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<div />} /> {/* Empty element since content is in index.html */}
         <Route path="/:boardPath" element={<BoardView />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
