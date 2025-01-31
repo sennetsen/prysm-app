@@ -1,8 +1,25 @@
-import React, { useEffect } from 'react';
+import {React, useEffect, useState } from 'react';
 import './styles.css';
 import logo from "../img/Vector (1).svg";
 
 function HomePage() {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  const handleScroll = () => {
+    if (window.scrollY > 0) {
+      setIsScrolled(true);
+    } else {
+      setIsScrolled(false);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   useEffect(() => {
     // Check if the widget script is already loaded
     if (!document.querySelector('script[src="https://getlaunchlist.com/js/widget.js"]')) {
@@ -23,7 +40,7 @@ function HomePage() {
 
   return (
     <>
-      <nav>
+      <nav className={isScrolled ? 'scrolled' : ''}>
         <div className="logo">
           <img src={logo} alt="Prysm Logo" className="logo" />
         </div>

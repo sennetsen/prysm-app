@@ -23,12 +23,14 @@ function UserProfile({ user, onSignOut, totalUserRequests }) {
       if (signOutError) throw signOutError;
 
       onSignOut();
+      window.location.reload();
     } catch (error) {
       if (error.message !== 'Auth session missing!') {
         console.error('Error signing out:', error);
       }
       // Always call onSignOut to ensure UI state is updated
       onSignOut();
+      window.location.reload();
     }
   };
 

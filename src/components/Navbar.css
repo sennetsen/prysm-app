@@ -3,7 +3,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0px 20px;
-    background-color: #b43144;
+    /* background-color: #b43144; */
     /* background-color: #1C1C1C; */
     color: white;
     height: 8vh;
@@ -13,11 +13,6 @@
     right: 0;
     z-index: 1000;
     transition: box-shadow 0.3s ease;
-    /* Smooth transition for shadow */
-}
-
-.navbar.scrolled {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 .logo {
@@ -54,6 +49,16 @@
     align-items: center;
     gap: 6px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+
+}
+
+.share-button:hover {
+    transform: scale(1.03);
+}
+
+.share-button:active {
+    transform: scale(0.95);
 }
 
 .navbar-title {
@@ -64,6 +69,14 @@
     color: white;
     font-size: 23px;
     /* size: 400px; */
+    user-select: none;
+    /* Standard syntax */
+    -webkit-user-select: none;
+    /* Safari */
+    -moz-user-select: none;
+    /* Firefox */
+    -ms-user-select: none;
+    /* IE/Edge */
 }
 
 .divider {
@@ -121,34 +134,44 @@
     align-items: center;
     gap: 10px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .join-button-text {
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+
+}
+
+.join-button:hover {
+    transform: scale(1.03);
+}
+
+.join-button:active {
+    transform: scale(0.95);
+}
+
+.join-button-text {
     font-size: 14px;
     font-weight: bold;
-  }
+}
 
 .join-popup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: white;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  width: 35vw;
-  height: 40vh;
-  z-index: 1000;
-  text-align: center;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    width: 35vw;
+    height: 40vh;
+    z-index: 1000;
+    text-align: center;
 }
 
 .close-popup {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
 }

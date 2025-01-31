@@ -12,7 +12,8 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
   const [cachedProfilePicture, setCachedProfilePicture] = useState(null);
 
   const navbarStyle = {
-    backgroundColor: color || "#b43144", // Fallback color
+    backgroundColor: color || "#b43144",
+    boxShadow: isScrolled ? `0 4px 20px ${color || "#b43144"}` : 'none',
   };
 
   const handleScroll = () => {

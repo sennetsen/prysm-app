@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from "react-router-dom";
 import HomePage from './CompanySite/HomePage';
 import { supabase } from "./supabaseClient";
@@ -6,7 +6,7 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import RequestCard from "./components/RequestCard";
 import "./App.css";
-import { Button, Checkbox, Form } from 'antd';
+import { Button, Checkbox, Form, Tooltip } from 'antd';
 import { lightenColor } from './utils/colorUtils'; // Import the lightenColor function
 import { GoogleSignInButton } from './supabaseClient';
 import postbutton from './img/postbutton.svg';
@@ -31,12 +31,13 @@ function BoardView() {
   const [isQuestionPopupOpen, setIsQuestionPopupOpen] = useState(false);
   const [isBoardOwner, setIsBoardOwner] = useState(false);
   const [totalPosts, setTotalPosts] = useState(0);
-  const [navbarColor, setNavbarColor] = useState('#b43144'); // Default color
+  const [navbarColor, setNavbarColor] = useState('#b43144');
   const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
   const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
+  const [postColors, setPostColors] = useState([]);
 
-  const colors = [
+  const defaultColors = useMemo(() => [
     "#FEEAA4",
     "#D4D6F9",
     "#FECFCF"
@@ -44,7 +45,7 @@ function BoardView() {
     // "#FFC107",  
     // "#8000204D",   
     // "#7080904D" 
-  ];
+  ], []);
 
   useEffect(() => {
     const fetchBoardData = async () => {
@@ -64,12 +65,13 @@ function BoardView() {
       setBoardData(data);
       setNavbarColor(data.color);
       setIsBoardOwner(user?.id === data.owner_id);
+      setPostColors(data.post_colors || defaultColors);
     };
 
     if (boardPath) {
       fetchBoardData();
     }
-  }, [boardPath, user?.id]);
+  }, [boardPath, user?.id, defaultColors]);
 
   useEffect(() => {
     if (boardData?.creator_name) {
@@ -177,7 +179,8 @@ function BoardView() {
             ...prev,
             {
               ...newPost,
-              likesCount: newPost.reactions.filter(r => r.reaction_type === 'like').length
+              likesCount: newPost.reactions.filter(r => r.reaction_type === 'like').length,
+              isNew: true
             }
           ]);
           setTotalPosts(prev => prev + 1);
@@ -189,8 +192,11 @@ function BoardView() {
         table: 'posts',
         filter: `board_id=eq.${boardData.id}`
       }, (payload) => {
-        setCards(prev => prev.filter(card => card.id !== payload.old.id));
-        setTotalPosts(prev => prev - 1);
+        // Update local state only after animation completes
+        setTimeout(() => {
+          setCards(prev => prev.filter(card => card.id !== payload.old.id));
+          setTotalPosts(prev => prev - 1);
+        }, 300); // Match animation duration
       })
       .subscribe();
 
@@ -212,7 +218,7 @@ function BoardView() {
   // const canAddPost = user && (isBoardOwner || !isBoardOwner);
 
   const handlePostItClick = () => {
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    const randomColor = postColors[Math.floor(Math.random() * postColors.length)];
     setModalColor(randomColor);
     setIsModalOpen(true);
   };
@@ -248,10 +254,18 @@ function BoardView() {
       if (error) {
         console.error('Error adding post:', error);
       } else if (data && data.length > 0) {
-        // Update the posts state with the new post
-        setCards(prevCards => [...prevCards, { ...data[0], author: { full_name: user.user_metadata.full_name, avatar_url: user.user_metadata.avatar_url } }]);
+        // Initialize reactions as an empty array
+        const newPost = {
+          ...data[0],
+          author: {
+            full_name: user.user_metadata.full_name,
+            avatar_url: user.user_metadata.avatar_url
+          },
+          reactions: []
+        };
+        setCards(prevCards => [...prevCards, newPost]);
         setTotalPosts(prev => prev + 1);
-        handleModalClose(); // Close the modal after successful submission
+        handleModalClose();
       } else {
         console.error('No data returned from insert operation');
       }
@@ -266,16 +280,21 @@ function BoardView() {
   };
 
   const handleDelete = async (id) => {
-    const { error } = await supabase
-      .from('posts')
-      .delete()
-      .eq('id', id);
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', id);
 
-    if (error) {
+      if (error) {
+        console.error('Error deleting post:', error);
+      } else {
+        // Update local state only after successful deletion
+        setCards(cards.filter(card => card.id !== id));
+        setTotalPosts(prev => prev - 1);
+      }
+    } catch (error) {
       console.error('Error deleting post:', error);
-    } else {
-      setCards(cards.filter(card => card.id !== id));
-      setTotalPosts(prev => prev - 1);
     }
   };
 
@@ -319,7 +338,8 @@ function BoardView() {
       // Update local state without sorting
       setCards(prevCards => prevCards.map(card => {
         if (card.id === postId) {
-          const newLikesCount = isCurrentlyLiked ? card.likesCount - 1 : card.likesCount + 1;
+          const currentLikes = Number.isInteger(card.likesCount) ? card.likesCount : 0;
+          const newLikesCount = isCurrentlyLiked ? currentLikes - 1 : currentLikes + 1;
           const newReactions = isCurrentlyLiked
             ? card.reactions.filter(r => r.user_id !== user.id)
             : [...card.reactions, { user_id: user.id, reaction_type: 'like' }];
@@ -406,7 +426,7 @@ function BoardView() {
           {cards.length === 0 && (
             <p className="empty-board-message">No posts yet. Click the button to add one!</p>
           )}
-          {cards.map((card) => (
+          {cards.map((card, index) => (
             <RequestCard
               key={card.id}
               id={card.id}
@@ -423,18 +443,21 @@ function BoardView() {
               onLike={handleLike}
               likesCount={card.likesCount}
               reactions={card.reactions || []}
+              index={index}
             />
           ))}
-          <Button
-            className="create-post-it-button"
-            onClick={user ? handlePostItClick : handleJoinClick}
-            style={{
-              backgroundColor: navbarColor,
-              '--navbar-color': navbarColor
-            }}
-          >
-            <img src={postbutton} alt="Create post" />
-          </Button>
+          <Tooltip title="Make a Request" placement="right">
+            <Button
+              className="create-post-it-button"
+              onClick={user ? handlePostItClick : handleJoinClick}
+              style={{
+                backgroundColor: navbarColor,
+                '--navbar-color': navbarColor
+              }}
+            >
+              <img src={postbutton} alt="Create post" />
+            </Button>
+          </Tooltip>
         </div>
       </div>
 
@@ -506,7 +529,7 @@ function BoardView() {
           <p>Find us at <a href="https://prysmapp.com">prysmapp.com</a></p>
           <p>or contact us at</p>
           <p><a href="mailto:getprysm@gmail.com">getprysm@gmail.com</a></p>
-          <img src={helpmascot} className="help-mascot" />
+          <img src={helpmascot} className="help-mascot" alt="Help mascot" />
         </div>
       )}
 
@@ -519,14 +542,16 @@ function BoardView() {
               </button>
               <h2>Welcome!</h2>
               <p>Sign in or sign up to interact</p>
-              <p>with this board</p>
+              <p>with this board.</p>
               <div className="google-signin-container">
-                <button className="google-signin-button">
-                  <img src={googleIcon} className="google-icon" />
+                <button
+                  className="google-signin-button"
+                >
+                  <img src={googleIcon} className="google-icon" alt="Google sign-in button" />
                   Continue with Google
                 </button>
               </div>
-              <img src={joinmascot} className="join-mascot" />
+              <img src={joinmascot} className="join-mascot" alt="Join mascot" />
             </div>
           </div>
         </div>

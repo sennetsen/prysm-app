@@ -1,3 +1,39 @@
+@keyframes bubbleScale {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  /* 50% {
+    transform: scale(.75);
+    opacity: 1;
+  } */
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes bubbleOut {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+
+  100% {
+    transform: scale(0.75);
+    opacity: 0;
+  }
+}
+
+.request-card.deleting {
+  animation: bubbleOut 0.2s ease-out;
+  animation-fill-mode: both;
+  pointer-events: none;
+}
+
 .request-card {
   background-color: #fff;
   border-radius: 8px;
@@ -9,12 +45,22 @@
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: bubbleScale 0.5s ease-out;
+  animation-fill-mode: both;
+  backface-visibility: hidden;
+  will-change: transform;
 }
 
 .request-card:hover {
-  transform: scale(1.03);
-  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
+  transform: scale(1.03) translateZ(0) !important;
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15) !important;
+  will-change: tranform;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.request-card.animate-in {
+  animation: bubbleScale 0.5s ease-out;
+  animation-fill-mode: both;
 }
 
 .request-card h3 {
@@ -49,6 +95,11 @@
   height: 110px;
 }
 
+.new-card {
+  animation: bubbleScale 0.5s ease-out;
+  animation-fill-mode: both;
+}
+
 .scroll-container {
   height: 100%;
   overflow-y: auto;
@@ -58,25 +109,26 @@
   -webkit-mask-image: linear-gradient(to bottom,
       black calc(100% - 4px),
       transparent 100%);
+
 }
 
 /* Scrollbar styles */
 .scroll-container::-webkit-scrollbar {
-  width: 0;
+  width: 0px;
   background: transparent;
 }
 
-.scroll-container:hover::-webkit-scrollbar {
+.scroll-container::-webkit-scrollbar {
   width: 6px;
 }
 
-.scroll-container:hover::-webkit-scrollbar-track {
+.scroll-container::-webkit-scrollbar-track {
   background: rgba(40, 16, 16, 0.05);
   border-radius: 3px;
   margin: 4px 0;
 }
 
-.scroll-container:hover::-webkit-scrollbar-thumb {
+.scroll-container::-webkit-scrollbar-thumb {
   background-color: rgba(40, 16, 16, 0.25);
   border-radius: 3px;
 }
@@ -93,7 +145,7 @@
 
 .user-info {
   position: absolute;
-  margin: 205px 0 16px 8px;
+  margin: 186px 0 16px 8px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -133,7 +185,7 @@
   font-family: 'Lexend Deca', sans-serif;
   font-size: 12px;
   color: #76746c;
-  bottom: 70px;
+  bottom: 60px;
   left: 20px;
   z-index: 1;
 }
@@ -167,6 +219,10 @@
   border: 1px solid #281010 !important;
   height: auto !important;
   transition: all 0.2s ease !important;
+}
+
+.custom-like-button:active {
+  transform: scale(0.85);
 }
 
 /* Not liked state */
@@ -229,25 +285,33 @@
   box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2) !important;
 }
 
-.ant-delete-button {
-  position: absolute !important;
-  top: 8px !important;
-  right: 8px !important;
-  font-size: 20px !important;
-  color: #281010 !important;
-  transition: all 0.2s ease !important;
-  cursor: pointer !important;
-  opacity: 0.45 !important;
-  background: transparent !important;
-  border: none !important;
-  padding: 4px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  z-index: 2 !important;
+.ant-delete-button-wrapper {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 20px;
+  color: #281010;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  opacity: 0.45;
+  background: transparent;
+  border: none;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
 }
 
-.ant-delete-button:hover {
-  opacity: 0.85 !important;
-  transform: scale(1.1) !important;
+.ant-delete-button-wrapper:active {
+  transform: scale(0.75);
+}
+
+.ant-delete-button-wrapper:hover {
+  opacity: 0.85;
+  transform: scale(1.1);
+}
+
+.ant-delete-button-wrapper .anticon {
+  display: block;
 }

@@ -4,12 +4,14 @@
   top: 50%;
   transform: translateY(-50%);
   width: 320px;
+  max-height: 80vh;
   background-color: #FDFCFC;
   border-radius: 12px;
   box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.25);
   padding: 25px;
   z-index: 10;
   transition: all 0.3s ease-in-out;
+  overflow-y: auto;
 }
 
 .sidebar.hidden {
@@ -21,6 +23,36 @@
   flex-direction: column;
   align-items: flex-start;
 }
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 280px;
+    /* Reduce width on smaller screens */
+    top: 20px;
+    /* Move down from top */
+    transform: none;
+    /* Remove vertical centering */
+    max-height: calc(100vh - 40px);
+    /* Adjust max height */
+  }
+
+  .sidebar.hidden {
+    transform: translateX(-100%);
+  }
+
+  .toggle-button {
+    left: 280px;
+    /* Adjust toggle button position */
+    top: 20px;
+    transform: none;
+  }
+
+  .sidebar.hidden+.toggle-button {
+    left: 0;
+  }
+}
+
+
 
 /* Profile Picture */
 .profile-picture {
@@ -51,7 +83,7 @@
   color: #281010;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .verified-icon {
@@ -64,7 +96,7 @@
   font-size: 1.125rem;
   color: #98a2b3;
   text-align: center;
-  margin-top: -15px;
+  margin-top: 15px;
   font-family: 'Lexend Deca', sans-serif;
 }
 
@@ -72,7 +104,7 @@
 /* Requests Section */
 .requests-title {
   font-size: 1rem;
-  margin-top: 0px;
+  margin-top: 15px;
   font-family: 'Lexend Deca', sans-serif;
   color: #281010;
 }
@@ -81,6 +113,7 @@
 .requests-avatars {
   display: flex;
   align-items: center;
+  margin-top: 10px;
   margin-bottom: 20px;
 }
 
@@ -117,7 +150,8 @@
   white-space: pre-wrap;
   line-height: 1.6;
   overflow-y: auto;
-  max-height: 200px; /* Adjust this value as needed */
+  max-height: 200px;
+  /* Adjust this value as needed */
   padding-right: 10px;
   scrollbar-width: thin;
   scrollbar-color: #888 #f0f0f0;
@@ -145,7 +179,8 @@
 .toggle-button {
   position: fixed;
   top: 50%;
-  left: 360px; /* Default position: edge of visible sidebar */
+  left: 360px;
+  /* Default position: edge of visible sidebar */
   transform: translateY(-50%);
   background-color: white;
   border: none;
@@ -163,8 +198,9 @@
   transition: all 0.3s ease-in-out;
 }
 
-.sidebar.hidden + .toggle-button {
-  left: 0; /* Move to edge of screen when sidebar is hidden */
+.sidebar.hidden+.toggle-button {
+  left: 0;
+  /* Move to edge of screen when sidebar is hidden */
 }
 
 .toggle-button:hover {
