@@ -82,6 +82,14 @@ function BoardView() {
   }, [boardData?.creator_name]);
 
   useEffect(() => {
+    // Update the meta theme color
+    const metaThemeColor = document.querySelector("meta[name='theme-color']");
+    if (metaThemeColor && navbarColor) {
+      metaThemeColor.setAttribute("content", navbarColor);
+    }
+  }, [navbarColor]);
+
+  useEffect(() => {
     const fetchUserData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
