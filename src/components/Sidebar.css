@@ -179,7 +179,7 @@
 .toggle-button {
   position: fixed;
   top: 50%;
-  left: 360px;
+  left: 310px;
   /* Default position: edge of visible sidebar */
   transform: translateY(-50%);
   background-color: white;
