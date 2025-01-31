@@ -11,6 +11,8 @@ import { lightenColor } from './utils/colorUtils'; // Import the lightenColor fu
 import { GoogleSignInButton } from './supabaseClient';
 import postbutton from './img/postbutton.svg';
 import helpmascot from './img/helpmascot.jpg';
+import googleIcon from './img/google-icon.svg';
+import joinmascot from './img/join-mascot.jpg';
 
 // BoardView component
 function BoardView() {
@@ -32,6 +34,7 @@ function BoardView() {
   const [navbarColor, setNavbarColor] = useState('#b43144'); // Default color
   const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
+  const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
 
   const colors = [
     "#FEEAA4",
@@ -360,6 +363,19 @@ function BoardView() {
     setIsJoinPopupOpen(false);
   };
 
+  const handleShare = () => {
+    const boardUrl = window.location.href;
+    navigator.clipboard.writeText(boardUrl);
+    setIsSharePopupOpen(true);
+    setTimeout(() => {
+      setIsSharePopupOpen(false);
+    }, 5000); // Hide after 2 seconds
+
+    if (isSharePopupOpen) {
+      setIsSharePopupOpen(false);
+      return;
+    }
+  };
 
   if (boardNotFound) {
     return <Navigate to="/" />; // Redirect if board not found
@@ -374,6 +390,7 @@ function BoardView() {
         title={boardData?.title}
         color={navbarColor}
         onJoinClick={handleJoinClick}
+        onShare={handleShare}
       />
       <div className="main-content">
         <Sidebar
@@ -424,7 +441,7 @@ function BoardView() {
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal post-it-modal" style={{ backgroundColor: modalColor, opacity: 1 }}>
-            <button className="close-modal-button" onClick={handleModalClose}>
+            <button className="request-close-button" onClick={handleModalClose}>
               &times;
             </button>
             <h3 className="modal-title">
@@ -471,15 +488,13 @@ function BoardView() {
 
       {isProfilePopupOpen && (
         <div className="profile-popup">
-          <h2>Hello, {user?.user_metadata?.name || 'Visitor'}!</h2>
-          <p>Total Requests Made: {totalRequests}</p>
-          {user?.created_at && (
-            <p>Joined {new Date(user.created_at).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-            })}</p>
-          )}
+          <h2>Hello, {(user?.user_metadata?.name || 'NAME').split(' ')[0]}!</h2>
+          <p>Requests Made: {totalRequests || 'XX'}</p>
+          <p>Joined {new Date(user?.created_at || Date.now()).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          })}</p>
           <button className="logout-button">Log Out</button>
         </div>
       )}
@@ -491,23 +506,37 @@ function BoardView() {
           <p>Find us at <a href="https://prysmapp.com">prysmapp.com</a></p>
           <p>or contact us at</p>
           <p><a href="mailto:getprysm@gmail.com">getprysm@gmail.com</a></p>
-          <img src={helpmascot} alt="Prysm Mascot" className="help-mascot" />
+          <img src={helpmascot} className="help-mascot" />
         </div>
       )}
 
       {isJoinPopupOpen && (
         <div className="modal-overlay">
-          <div style={{ height: '25%' }} className="post-it-modal">
-            <button className="close-modal-button" onClick={handleClosePopup}>
-              &times;
-            </button>
+          <div className="post-it-modal">
             <div className="join-popup-content">
+              <button className="join-popup-close" onClick={handleClosePopup}>
+                &times;
+              </button>
               <h2>Welcome!</h2>
-              <p style={{ marginTop: '-8px' }}>Sign in or sign up to interact with this board.</p>
+              <p>Sign in or sign up to interact</p>
+              <p>with this board</p>
               <div className="google-signin-container">
-                <GoogleSignInButton />
+                <button className="google-signin-button">
+                  <img src={googleIcon} className="google-icon" />
+                  Continue with Google
+                </button>
               </div>
+              <img src={joinmascot} className="join-mascot" />
             </div>
+          </div>
+        </div>
+      )}
+
+      {isSharePopupOpen && (
+        <div className="share-popup">
+          <h3>Link Copied!</h3>
+          <div className="link-container">
+            <span className="link-text">{window.location.href}</span>
           </div>
         </div>
       )}

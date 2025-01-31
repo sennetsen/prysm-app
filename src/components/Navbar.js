@@ -5,7 +5,8 @@ import helpIcon from "../img/Vector.svg";
 import shareIcon from "../img/Icon.svg";
 import { supabase, GoogleSignInButton } from "../supabaseClient";
 import { Link } from "react-router-dom";
-function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color }) {
+
+function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, onShare }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [user, setUser] = useState(null);
   const [cachedProfilePicture, setCachedProfilePicture] = useState(null);
@@ -59,9 +60,9 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color }) 
         )}
         <button className="profile-icon" onClick={onProfileClick}>
           {cachedProfilePicture ? (
-            <img 
-              src={cachedProfilePicture} 
-              alt="Profile" 
+            <img
+              src={cachedProfilePicture}
+              alt="Profile"
               className="profile-pic"
               style={{
                 width: '36px',
@@ -78,13 +79,9 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color }) 
           <GoogleSignInButton />
         </button>
         <div className="divider"></div>
-        <button className="share-button">
-          <div className="share-button-icon">
-            <img src={shareIcon} alt="Share Icon" />
-          </div>
-          <div className="share-button-text">
-            Share
-          </div>
+        <button className="share-button" onClick={onShare}>
+          <img src={shareIcon} alt="Share" />
+          Share
         </button>
       </div>
     </nav>

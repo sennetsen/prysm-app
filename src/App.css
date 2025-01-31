@@ -66,12 +66,13 @@
   position: fixed;
   top: 53px;
   right: 60px;
-  background-color: white;
+  background-color: #FDFCFC;
   border-radius: 16px;
   box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.08);
   width: 395px !important;
   padding: 24px 24px 32px;
   z-index: 1000;
+  animation: fadeIn 0.2s ease;
 }
 
 .help-popup h2 {
@@ -83,7 +84,6 @@
   text-align: left;
   position: relative;
   z-index: 1250;
-
 }
 
 .help-popup p {
@@ -91,8 +91,7 @@
   font-size: 14px;
   color: #281010;
   text-align: left;
-  line-height: 1.4;
-  margin-top: 1px;
+  line-height: 1.5;
   position: relative;
   z-index: 1250;
 }
@@ -193,7 +192,7 @@
   }
 }
 
-.close-modal-button {
+.request-close-button {
   position: absolute;
   top: 16px;
   right: 16px;
@@ -202,30 +201,103 @@
   font-size: 24px;
   cursor: pointer;
   color: #281010;
+  z-index: 1001;
+}
+
+.join-popup-close {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #281010;
+  z-index: 1001;
+  color: #281010;
+  animation: fadeIn 0.2s ease;
 }
 
 .join-popup-content {
+  position: relative;
   display: flex;
+  background-color: #FDFCFC;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  border-radius: 16px;
+  box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.08);
+  width: 395px !important;
   height: 100%;
-  gap: 8x;
+  padding: 24px 24px 32px;
+  z-index: 1000;
+  justify-content: center;
+}
+
+.join-popup-content h2 {
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 42px;
+  font-weight: 800;
+  color: #281010;
+  margin-top: 18px;
+  margin-bottom: 8px;
+}
+
+
+
+.join-popup-content p {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  color: #B39898;
+  /* color: #98A2B3; */
+  line-height: 1.4;
 }
 
 .google-signin-container {
-  width: 100%;
-  max-width: 200px;
-  margin-top: 16px;
-}
-
-.google-signin-container>div {
-  width: 100% !important;
   display: flex;
   justify-content: center;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  margin-top: 15px;
 }
 
+.google-signin-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #281010;
+  border-radius: 8px;
+  background-color: white;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333333;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
 
+.google-signin-button:hover {
+  background-color: #f8f9fa;
+}
+
+.google-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+}
+
+.join-mascot {
+  position: absolute;
+  bottom: 55px;
+  left: 10px;
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  transform: scaleX(-1);
+  rotate: -10deg;
+}
 
 .title-input,
 .content-input {
@@ -315,25 +387,59 @@ p {
 }
 
 .profile-popup {
-  position: absolute;
-  top: 60px;
+  position: fixed;
+  top: 53px;
   right: 20px;
-  background-color: #fff;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  width: 200px;
+  background-color: #FDFCFC;
+  padding: 24px;
+  border-radius: 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
+  min-width: 250px;
+  animation: fadeIn 0.2s ease;
+
 }
 
-.logout-button {
-  background-color: #f97373;
+.profile-popup h2 {
+  margin: 2px 0 10px 0;
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: #281010;
+}
+
+.profile-popup p {
+  margin: 8px 0;
+}
+
+.profile-popup p:first-of-type {
+  color: #2D1810;
+  font-size: 16px;
+  font-family: 'Lexend Deca', sans-serif;
+
+}
+
+.profile-popup p:last-of-type {
+  color: #9B8B95;
+  font-size: 15px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.profile-popup .logout-button {
+  background-color: #F15A59;
+  color: white;
   border: none;
-  border-radius: 5px;
-  padding: 5px 10px;
-  color: #fff;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-family: 'Lexend Deca', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 6px;
+}
+
+.profile-popup .logout-button:hover {
+  background-color: #E54847;
 }
 
 .placeholder-box {
@@ -429,4 +535,60 @@ p {
   width: 80%;
   max-width: 300px;
   margin: 20px 0;
+}
+
+.share-popup {
+  position: fixed;
+  top: 53px;
+  right: 20px;
+  background-color: #FDFCFC;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  min-width: 300px;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.share-popup h3 {
+  color: #2D1810;
+  font-size: 18px;
+  margin: 0 0 12px 0;
+  font-weight: bold;
+}
+
+.share-popup .link-container {
+  background-color: #F8F8F8;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #281010;
+  word-break: break-all;
+}
+
+.share-popup .link-container span {
+  color: #645d5d;
+  font-size: 14px;
+}
+
+.link-text {
+  cursor: pointer;
+  user-select: text;
+  transition: background-color 0.3s;
+}
+
+.link-text::selection {
+  background-color: #FF8E87;
+  color: white;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
