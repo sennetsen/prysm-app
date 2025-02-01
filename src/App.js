@@ -554,6 +554,11 @@ function BoardView() {
               <div className="google-signin-container">
                 <button
                   className="google-signin-button"
+                  onClick={() => {
+                    if (window.google?.accounts?.id) {
+                      window.google.accounts.id.prompt();
+                    }
+                  }}
                 >
                   <img src={googleIcon} className="google-icon" alt="Google sign-in button" />
                   Continue with Google

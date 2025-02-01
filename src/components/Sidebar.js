@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import "./Sidebar.css";
 import fallbackImg from '../img/fallback.png'; // Import the fallback image
 import verifiedIcon from '../img/verified.svg';
-import Upscaler from 'upscaler';
-
 
 function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }) {
   const [isHidden, setIsHidden] = useState(false); // Tracks sidebar visibility
@@ -26,34 +24,6 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
   // Calculate the remaining posts count
   const remainingPosts = Math.max(0, totalPosts - 4);
 
-  useEffect(() => {
-    const upscaleImage = async (imageUrl) => {
-      try {
-        console.log('Upscaling image:', imageUrl); // Debugging
-        const upscaler = new Upscaler();
-        const img = new Image();
-        img.src = imageUrl;
-        img.crossOrigin = "Anonymous";
-
-        img.onload = async () => {
-          console.log('Image loaded, starting upscaling...'); // Debugging
-          const upscaledImage = await upscaler.upscale(img);
-          console.log('Upscaling complete:', upscaledImage.src); // Debugging
-          setUpscaledAvatarUrl(upscaledImage.src);
-        };
-      } catch (error) {
-        console.error('Error upscaling image:', error);
-        setUpscaledAvatarUrl(avatarUrl); // Fallback to original image
-      }
-    };
-
-    if (avatarUrl) {
-      upscaleImage(avatarUrl);
-    } else {
-      setUpscaledAvatarUrl(fallbackImg); // Use fallback if no avatarUrl
-    }
-  }, [avatarUrl]);
-
   return (
     <>
       <div className={`sidebar ${isHidden ? "hidden" : ""}`}>
@@ -62,7 +32,7 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
             {/* Profile Picture */}
             <div className="profile-picture">
               {avatarUrl ? (
-                <img src={upscaledAvatarUrl} alt="Profile" className="profile-img" />
+                <img src={avatarUrl} alt="Profile" className="profile-img" />
               ) : (
                 <img src={fallbackImg} alt="Fallback" className="profile-img" />
               )}
