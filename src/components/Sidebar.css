@@ -12,6 +12,10 @@
   z-index: 10;
   transition: all 0.3s ease-in-out;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Enables elastic scrolling on iOS */
+  overscroll-behavior: contain;
+  /* Prevents overscroll from affecting parent elements */
 }
 
 .sidebar.hidden {
@@ -34,6 +38,9 @@
     /* Remove vertical centering */
     max-height: calc(100vh - 40px);
     /* Adjust max height */
+    transform: translateZ(0);
+    /* Force hardware acceleration */
+
   }
 
   .sidebar.hidden {
@@ -71,6 +78,10 @@
   height: 140px;
   border-radius: 50%;
   object-fit: cover;
+  image-rendering: -webkit-optimize-contrast;
+  /* For Chrome/Safari */
+  image-rendering: crisp-edges;
+  /* For Firefox */
 }
 
 /* Creator Info */

@@ -99,11 +99,13 @@ export default React.memo(
       <div className={`request-card ${isNew ? 'new-card' : ''} ${isDeleting ? 'deleting' : ''}`} style={{ backgroundColor: color, '--card-color': color }}>
         {canDelete && (
           <Tooltip title="Delete Post" placement="top">
-            <CloseCircleFilled
-              className="ant-delete-button-wrapper"
+            <button
+              className="thin-x-button"
               onClick={handleDelete}
               aria-label="Delete post"
-            />
+            >
+              ×
+            </button>
           </Tooltip>
         )}
         <div className="card-content">

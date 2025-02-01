@@ -22,6 +22,8 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
 
   // Calculate the remaining posts count
   const remainingPosts = Math.max(0, totalPosts - 4);
+  const highResAvatarUrl = avatarUrl ? avatarUrl + '=s400-c' : "";
+
 
   return (
     <>
@@ -31,7 +33,7 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
             {/* Profile Picture */}
             <div className="profile-picture">
               {avatarUrl ? (
-                <img src={avatarUrl} alt="Profile" className="profile-img" />
+                <img src={highResAvatarUrl} alt="Profile" className="profile-img" />
               ) : (
                 <img src={fallbackImg} alt="Fallback" className="profile-img" />
               )}
@@ -73,8 +75,8 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
           </div>
         )}
       </div>
-      <button 
-        className="toggle-button" 
+      <button
+        className="toggle-button"
         onClick={toggleSidebar}
       >
         {isHidden ? ">" : "<"}
