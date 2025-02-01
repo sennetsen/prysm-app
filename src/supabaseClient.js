@@ -125,7 +125,7 @@ function GoogleSignInButton({ onClick }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '4px'
+        padding: '4px',
       }}
       onClick={onClick}
     />

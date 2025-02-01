@@ -543,7 +543,6 @@ function BoardView() {
 
       {isJoinPopupOpen && (
         <div className="modal-overlay">
-          <div className="post-it-modal">
             <div className="join-popup-content">
               <button className="join-popup-close" onClick={handleClosePopup}>
                 &times;
@@ -552,22 +551,13 @@ function BoardView() {
               <p>Sign in or sign up to interact</p>
               <p>with this board.</p>
               <div className="google-signin-container">
-                <button
-                  className="google-signin-button"
-                  onClick={() => {
-                    if (window.google?.accounts?.id) {
-                      window.google.accounts.id.prompt();
-                    }
-                  }}
-                >
-                  <img src={googleIcon} className="google-icon" alt="Google sign-in button" />
-                  Continue with Google
-                </button>
+                <div className="mascot-overlay">
+                  <img src={joinmascot} className="join-mascot" alt="Join mascot" />
+                </div>
+                <GoogleSignInButton />
               </div>
-              <img src={joinmascot} className="join-mascot" alt="Join mascot" />
             </div>
           </div>
-        </div>
       )}
 
       {isSharePopupOpen && (
