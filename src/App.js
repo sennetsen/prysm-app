@@ -31,7 +31,7 @@ function BoardView() {
   const [isQuestionPopupOpen, setIsQuestionPopupOpen] = useState(false);
   const [isBoardOwner, setIsBoardOwner] = useState(false);
   const [totalPosts, setTotalPosts] = useState(0);
-  const [navbarColor, setNavbarColor] = useState('#b43144');
+  const [navbarColor, setNavbarColor] = useState('#FFFFFF');
   const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
   const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
@@ -232,10 +232,16 @@ function BoardView() {
   };
 
   const handleModalClose = () => {
-    setIsModalOpen(false);
-    setNewPostContent("");
-    setNewPostTitle("");
-    setIsAnonymous(false);
+    const requestModal = document.querySelector('.post-it-modal');
+    requestModal.classList.add('scale-out');
+
+    setTimeout(() => {
+      setIsModalOpen(false);
+      setNewPostContent("");
+      setNewPostTitle("");
+      setIsAnonymous(false);
+      requestModal.classList.remove('scale-out');
+    }, 200); // Match the animation duration
   };
 
   const handlePostSubmit = async () => {
@@ -388,7 +394,19 @@ function BoardView() {
   };
 
   const handleClosePopup = () => {
-    setIsJoinPopupOpen(false);
+    const joinPopup = document.querySelector('.join-popup-content');
+    const overlay = document.querySelector('.modal-overlay');
+
+    // Add fade-out animations to both the popup and overlay
+    joinPopup.classList.add('fade-out');
+    overlay.classList.add('fade-out');
+
+    // Wait for the animation to complete before updating state
+    setTimeout(() => {
+      setIsJoinPopupOpen(false);
+      joinPopup.classList.remove('fade-out');
+      overlay.classList.remove('fade-out');
+    }, 200); // Match the animation duration
   };
 
   const handleShare = () => {
@@ -543,21 +561,24 @@ function BoardView() {
 
       {isJoinPopupOpen && (
         <div className="modal-overlay">
-            <div className="join-popup-content">
-              <button className="join-popup-close" onClick={handleClosePopup}>
-                &times;
-              </button>
-              <h2>Welcome!</h2>
-              <p>Sign in or sign up to interact</p>
-              <p>with this board.</p>
-              <div className="google-signin-container">
-                <div className="mascot-overlay">
-                  <img src={joinmascot} className="join-mascot" alt="Join mascot" />
-                </div>
-                <GoogleSignInButton />
+          <div className="join-popup-content">
+            <button className="join-popup-close" onClick={handleClosePopup}>
+              &times;
+            </button>
+            <h2>Welcome!</h2>
+            <p>Sign in or sign up to interact</p>
+            <p>with this board.</p>
+            <div className="google-signin-container">
+              <div className="mascot-overlay">
+                <img src={joinmascot} className="join-mascot" alt="Join mascot" />
               </div>
+              <GoogleSignInButton onSuccess={() => {
+                handleClosePopup();
+                window.location.reload();
+              }} />
             </div>
           </div>
+        </div>
       )}
 
       {isSharePopupOpen && (

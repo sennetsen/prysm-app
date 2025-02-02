@@ -248,7 +248,7 @@ img {
   box-shadow: 0px 4px 24px rgba(0, 0, 0, 0.08);
   width: 395px !important;
   height: 40%;
-  padding: 24px 24px 32px;
+  padding: 24px 24px 20px;
   z-index: 1000;
   justify-content: center;
 }
@@ -258,11 +258,9 @@ img {
   font-size: 42px;
   font-weight: 800;
   color: #281010;
-  margin-top: 18px;
+  margin-top: 65px;
   margin-bottom: 8px;
 }
-
-
 
 .join-popup-content p {
   font-family: 'Poppins', sans-serif;
@@ -270,6 +268,16 @@ img {
   color: #B39898;
   /* color: #98A2B3; */
   line-height: 1.4;
+}
+
+/* Add fade-out class for join modal */
+.join-popup-content.fade-out {
+  animation: fadeOut 0.2s ease forwards;
+}
+
+/* Add scale-out class for request modal */
+.post-it-modal.scale-out {
+  animation: scaleOut 0.2s ease forwards;
 }
 
 .google-signin-container {
@@ -310,12 +318,13 @@ img {
 
 .join-mascot {
   position: absolute;
-  bottom: 55px;
-  left: 10px;
+  top: 22px;
+  /* Move above the modal */
+  left: 50%;
+  transform: translateX(-50%) scaleX(-1);
   width: 70px;
   height: 70px;
   object-fit: contain;
-  transform: scaleX(-1);
   rotate: -10deg;
 }
 
@@ -617,5 +626,28 @@ p {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+/* Add scaleOut keyframes */
+@keyframes scaleOut {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  to {
+    transform: scale(0.8);
+    opacity: 0;
   }
 }

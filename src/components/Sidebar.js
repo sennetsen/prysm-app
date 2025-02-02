@@ -40,7 +40,7 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
 
             {/* Creator Info */}
             <h2 className="creator-name">
-              {creatorName || "Creator"}
+              {creatorName || ""}
               <img
                 src={verifiedIcon}
                 alt="Verified Creator"
