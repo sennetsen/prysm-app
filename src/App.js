@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from "react-router-dom";
 import HomePage from './CompanySite/HomePage';
 import { supabase } from "./supabaseClient";
@@ -13,6 +13,7 @@ import postbutton from './img/postbutton.svg';
 import helpmascot from './img/helpmascot.jpg';
 import googleIcon from './img/google-icon.svg';
 import joinmascot from './img/join-mascot.jpg';
+import { handleSignOut } from './components/UserProfile';
 
 // BoardView component
 function BoardView() {
@@ -21,6 +22,8 @@ function BoardView() {
   const [boardNotFound, setBoardNotFound] = useState(false);
   const [user, setUser] = useState(null);
   const [totalRequests, setTotalRequests] = useState(0);
+  const profileRef = useRef(null);
+
   const [cards, setCards] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
@@ -544,7 +547,8 @@ function BoardView() {
             day: 'numeric',
             year: 'numeric'
           })}</p>
-          <button className="logout-button">Log Out</button>
+          <button className="logout-button" onClick={() => handleSignOut(() => setUser(null), user)}
+          >Log Out</button>
         </div>
       )}
 

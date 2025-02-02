@@ -6,7 +6,7 @@ import shareIcon from "../img/Icon.svg";
 import { supabase, GoogleSignInButton } from "../supabaseClient";
 import { Link } from "react-router-dom";
 
-function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, onShare }) {
+function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, onShare, profileRef }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [user, setUser] = useState(null);
   const [cachedProfilePicture, setCachedProfilePicture] = useState(null);
@@ -59,26 +59,49 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
             <div className="join-button-text">Join</div>
           </button>
         )}
-        <button className="profile-icon" onClick={onProfileClick}>
-          {cachedProfilePicture ? (
-            <img
-              src={cachedProfilePicture}
-              alt="Profile"
-              className="profile-pic"
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                border: '2px solid white'
-              }}
-            />
-          ) : (
-            "👤"
-          )}
-        </button>
-        <button className="google-profile-button" onClick={onProfileClick}>
-          <GoogleSignInButton />
-        </button>
+        {user && (
+          <div style={{ position: 'relative' }} ref={profileRef}>
+            <button className="profile-icon" onClick={onProfileClick} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {cachedProfilePicture ? (
+                <img
+                  src={cachedProfilePicture}
+                  alt="Profile"
+                  className="profile-pic"
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    border: '2px solid white'
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  border: '2px solid white',
+                  backgroundColor: '#ffffff33',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.2rem',
+                  fontWeight: '500'
+                }}>
+                  {user?.user_metadata?.name ? user.user_metadata.name[0].toUpperCase() : '?'}
+                </div>
+              )}
+              <span style={{
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: '500',
+              }}>
+                {user.user_metadata?.name}
+              </span>
+            </button>
+          </div>
+        )}
+
         <div className="divider"></div>
         <button className="share-button" onClick={onShare}>
           <img src={shareIcon} alt="Share" />

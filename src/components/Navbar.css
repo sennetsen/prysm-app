@@ -100,6 +100,15 @@
     border: none;
     cursor: pointer;
     color: white;
+    transition: transform 0.2s ease;
+}
+
+.profile-icon:hover {
+    transform: scale(1.03);
+}
+
+.profile-icon:active {
+    transform: scale(0.98);
 }
 
 .google-signin {

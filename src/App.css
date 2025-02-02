@@ -72,7 +72,7 @@ img {
 
 .help-popup {
   position: fixed;
-  top: 53px;
+  top: 8.5vh;
   right: 60px;
   background-color: #FDFCFC;
   border-radius: 16px;
@@ -424,8 +424,9 @@ p {
 
 .profile-popup {
   position: fixed;
-  top: 53px;
-  right: 20px;
+  top: 7.5vh;
+  /* Position directly below the parent element */
+  right: 16vh;
   background-color: #FDFCFC;
   padding: 24px;
   border-radius: 24px;
@@ -433,7 +434,7 @@ p {
   z-index: 1000;
   min-width: 250px;
   animation: fadeIn 0.2s ease;
-
+  margin-top: 10px;
 }
 
 .profile-popup h2 {
@@ -472,10 +473,16 @@ p {
   font-size: 16px;
   cursor: pointer;
   margin-top: 6px;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
 .profile-popup .logout-button:hover {
   background-color: #E54847;
+  transform: scale(1.03);
+}
+
+.profile-popup .logout-button:active {
+  transform: scale(0.95);
 }
 
 .placeholder-box {
@@ -575,8 +582,8 @@ p {
 
 .share-popup {
   position: fixed;
-  top: 53px;
-  right: 20px;
+  top: 8.5vh;
+  right: 1vh;
   background-color: #FDFCFC;
   padding: 20px;
   border-radius: 16px;
