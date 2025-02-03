@@ -155,6 +155,9 @@ export default React.memo(
                     src={author.avatar_url}
                     alt="Profile"
                     className="profile-pic"
+                    onError={(e) => {
+                      e.target.src = fallbackImg;
+                    }}
                   />
                 ) : (
                   <img

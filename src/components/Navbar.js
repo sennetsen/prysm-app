@@ -3,13 +3,13 @@ import "./Navbar.css";
 import logo from "../img/Vector (1).svg";
 import helpIcon from "../img/Vector.svg";
 import shareIcon from "../img/Icon.svg";
+import fallbackImg from '../img/fallback.png';
 import { supabase, GoogleSignInButton } from "../supabaseClient";
 import { Link } from "react-router-dom";
 
 function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, onShare, profileRef }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [user, setUser] = useState(null);
-  const [cachedProfilePicture, setCachedProfilePicture] = useState(null);
 
   const navbarStyle = {
     backgroundColor: color || "#b43144",
@@ -34,11 +34,6 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
-      if (session?.user) {
-        const userId = session.user.id;
-        const cachedPic = localStorage.getItem(`profilePicture_${userId}`);
-        setCachedProfilePicture(cachedPic);
-      }
     });
 
     return () => subscription.unsubscribe();
@@ -61,10 +56,10 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
         )}
         {user && (
           <div style={{ position: 'relative' }} ref={profileRef}>
-            <button className="profile-icon" onClick={onProfileClick} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {cachedProfilePicture ? (
+            <button className="profile-icon" onClick={onProfileClick} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+              {user?.user_metadata?.picture ? (
                 <img
-                  src={cachedProfilePicture}
+                  src={user.user_metadata.picture}
                   alt="Profile"
                   className="profile-pic"
                   style={{
@@ -72,6 +67,9 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
                     height: '36px',
                     borderRadius: '50%',
                     border: '2px solid white'
+                  }}
+                  onError={(e) => {
+                    e.target.src = fallbackImg;
                   }}
                 />
               ) : (
@@ -93,10 +91,10 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
               )}
               <span style={{
                 color: 'white',
-                fontSize: '1.1rem',
+                fontSize: '1rem',
                 fontWeight: '500',
               }}>
-                {user.user_metadata?.name}
+                {user?.user_metadata?.name}
               </span>
             </button>
           </div>

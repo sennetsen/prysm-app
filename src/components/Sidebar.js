@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./Sidebar.css";
-import fallbackImg from '../img/fallback.png'; // Import the fallback image
+import fallbackImg from '../img/fallback.png';
 import verifiedIcon from '../img/verified.svg';
 
 function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }) {
@@ -31,11 +31,14 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
           <div className="sidebar-content">
             {/* Profile Picture */}
             <div className="profile-picture">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Profile" className="profile-img" />
-              ) : (
-                <img src={fallbackImg} alt="Fallback" className="profile-img" />
-              )}
+              <img
+                src={avatarUrl || fallbackImg}
+                alt="Profile"
+                className="profile-img"
+                onError={(e) => {
+                  e.target.src = fallbackImg;
+                }}
+              />
             </div>
 
             {/* Creator Info */}
@@ -60,6 +63,9 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
                   src={post.isAnonymous ? fallbackImg : post.avatar}
                   alt={`Post ${index + 1}`}
                   className="avatar"
+                  onError={(e) => {
+                    e.target.src = fallbackImg;
+                  }}
                 />
               ))}
               {remainingPosts > 0 && (
