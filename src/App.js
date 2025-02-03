@@ -539,7 +539,7 @@ function BoardView() {
 
       {isProfilePopupOpen && (
         <div className="profile-popup">
-          <h2>Hello, {(user?.user_metadata?.name || 'NAME').split(' ')[0]}!</h2>
+          <h2>Hello{user?.user_metadata?.name ? `, ${user.user_metadata.name.split(' ')[0]}` : ''}!</h2>
           <p>Requests Made: {totalRequests || '0'}</p>
           <p>Joined {new Date(user?.created_at || Date.now()).toLocaleDateString('en-US', {
             month: 'short',
