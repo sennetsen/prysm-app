@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from "react-router-dom";
 import HomePage from './CompanySite/HomePage';
 import { supabase } from "./supabaseClient";
@@ -11,18 +11,15 @@ import { lightenColor } from './utils/colorUtils'; // Import the lightenColor fu
 import { GoogleSignInButton } from './supabaseClient';
 import postbutton from './img/postbutton.svg';
 import helpmascot from './img/helpmascot.jpg';
-import googleIcon from './img/google-icon.svg';
 import joinmascot from './img/join-mascot.jpg';
 import { handleSignOut } from './components/UserProfile';
 
-// BoardView component
 function BoardView() {
   const { boardPath } = useParams();
   const [boardData, setBoardData] = useState(null);
   const [boardNotFound, setBoardNotFound] = useState(false);
   const [user, setUser] = useState(null);
   const [totalRequests, setTotalRequests] = useState(0);
-  const profileRef = useRef(null);
 
   const [cards, setCards] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -80,7 +77,7 @@ function BoardView() {
     if (boardData?.creator_name) {
       document.title = `${boardData.creator_name}'s Board | Prysm`;
     } else {
-      document.title = "Creator Board";
+      document.title = "Prysm";
     }
   }, [boardData?.creator_name]);
 

@@ -1,10 +1,89 @@
+/* Mobile styles */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0 10px;
+    }
+
+    .logo {
+        height: 30px;
+        width: 80px;
+        margin-right: 10px;
+    }
+
+    .navbar-title {
+        display: none;
+    }
+
+    .navbar-icons {
+        gap: 8px;
+    }
+
+    .profile-pic {
+        width: 30px;
+        height: 30px;
+    }
+
+    .share-button {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+
+    .join-button {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .profile-icon span {
+        display: none;
+    }
+
+    .divider {
+        display: none;
+    }
+}
+
+.navbar-title-container {
+    flex: 1;
+    min-width: 0;
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
+}
+
+@media (max-width: 480px) {
+    .navbar-title {
+        font-size: 40px;
+        max-width: 60px;
+    }
+
+    .navbar {
+        height: 60px;
+    }
+
+    .navbar-icons {
+        gap: 5px;
+    }
+
+    .share-button {
+        display: none;
+    }
+
+    .join-button {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+
+    .profile-pic {
+        width: 25px;
+        height: 25px;
+    }
+}
+
 .navbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0px 20px;
-    /* background-color: #b43144; */
-    /* background-color: #1C1C1C; */
     color: white;
     height: 8vh;
     position: fixed;
@@ -17,10 +96,9 @@
 
 .logo {
     height: 40px;
-    margin-right: 20px;
     width: 100px;
     align-self: center;
-    margin-top: 5px;
+    
 }
 
 .navbar-icons {

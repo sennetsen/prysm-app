@@ -4,7 +4,7 @@ import logo from "../img/Vector (1).svg";
 import helpIcon from "../img/Vector.svg";
 import shareIcon from "../img/Icon.svg";
 import fallbackImg from '../img/fallback.png';
-import { supabase, GoogleSignInButton } from "../supabaseClient";
+import { supabase } from "../supabaseClient";
 import { Link } from "react-router-dom";
 
 function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, onShare, profileRef }) {
@@ -44,8 +44,9 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
       <Link to="/">
         <img src={logo} alt="Logo" className="logo" />
       </Link>
-      <div className="navbar-title">{title || "Request Board"}</div>
-      <div className="navbar-icons">
+      <div className="navbar-title-container">
+        <div className="navbar-title">{title || "Request Board"}</div>
+      </div>      <div className="navbar-icons">
         <button className="question-icon" onClick={onQuestionClick}>
           <img src={helpIcon} alt="Help Icon" />
         </button>

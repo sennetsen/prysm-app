@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./RequestCard.css";
-import { HeartFilled, HeartOutlined, CloseCircleFilled } from "@ant-design/icons";
+import { HeartFilled, HeartOutlined } from "@ant-design/icons";
 import { Button, Tooltip } from "antd";
 import fallbackImg from '../img/fallback.png';
 
@@ -22,7 +22,6 @@ export default React.memo(
     reactions = [],
     index
   }) {
-    const animationDelay = `${index * 0.1}s`;
     const [timestamp, setTimestamp] = useState('');
     const [isNew, setIsNew] = useState(true);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -46,19 +45,6 @@ export default React.memo(
       const updateTimestamp = () => {
         const now = new Date();
         const diffInSeconds = Math.floor((now - createdTime) / 1000);
-
-        // if (diffInSeconds < 60) {
-        //   setTimestamp('just now');
-        // } else if (diffInSeconds < 3600) {
-        //   const minutes = Math.floor(diffInSeconds / 60);
-        //   setTimestamp(`${minutes} minute${minutes > 1 ? 's' : ''} ago`);
-        // } else if (diffInSeconds < 86400) {
-        //   const hours = Math.floor(diffInSeconds / 3600);
-        //   setTimestamp(`${hours} hour${hours > 1 ? 's' : ''} ago`);
-        // } else {
-        //   const days = Math.floor(diffInSeconds / 86400);
-        //   setTimestamp(`${days} day${days > 1 ? 's' : ''} ago`);
-        // }
 
         if (diffInSeconds < 60) {
           setTimestamp('just now');

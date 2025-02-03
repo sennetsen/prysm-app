@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import "./Sidebar.css";
 import fallbackImg from '../img/fallback.png';
 import verifiedIcon from '../img/verified.svg';
 
 function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }) {
   const [isHidden, setIsHidden] = useState(false); // Tracks sidebar visibility
-  const [upscaledAvatarUrl, setUpscaledAvatarUrl] = useState(avatarUrl);
 
   const toggleSidebar = () => {
     setIsHidden(!isHidden);
