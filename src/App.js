@@ -282,6 +282,7 @@ function BoardView() {
         };
         setCards(prevCards => [...prevCards, newPost]);
         setTotalPosts(prev => prev + 1);
+        setTotalRequests(prev => prev + 1);
         handleModalClose();
       } else {
         console.error('No data returned from insert operation');
@@ -309,6 +310,7 @@ function BoardView() {
         // Update local state only after successful deletion
         setCards(cards.filter(card => card.id !== id));
         setTotalPosts(prev => prev - 1);
+        setTotalRequests(prev => prev - 1);
       }
     } catch (error) {
       console.error('Error deleting post:', error);
@@ -541,7 +543,7 @@ function BoardView() {
       {isProfilePopupOpen && (
         <div className="profile-popup">
           <h2>Hello, {(user?.user_metadata?.name || 'NAME').split(' ')[0]}!</h2>
-          <p>Requests Made: {totalRequests || 'XX'}</p>
+          <p>Requests Made: {totalRequests || '0'}</p>
           <p>Joined {new Date(user?.created_at || Date.now()).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
