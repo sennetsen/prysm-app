@@ -74,8 +74,8 @@ function BoardView() {
   }, [boardPath, user?.id, defaultColors]);
 
   useEffect(() => {
-    if (boardData?.creator_name) {
-      document.title = `${boardData.creator_name}'s Board | Prysm`;
+    if (boardData?.creator_name && boardData?.title) {
+      document.title = `${boardData.title} | ${boardData.creator_name} | Prysm`;
     } else {
       document.title = "Prysm";
     }
