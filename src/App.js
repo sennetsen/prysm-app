@@ -20,7 +20,6 @@ function BoardView() {
   const [boardNotFound, setBoardNotFound] = useState(false);
   const [user, setUser] = useState(null);
   const [totalRequests, setTotalRequests] = useState(0);
-
   const [cards, setCards] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
@@ -216,14 +215,22 @@ function BoardView() {
   const handleProfileClick = () => {
     setIsProfilePopupOpen(!isProfilePopupOpen);
     setIsQuestionPopupOpen(false);
+    setIsSharePopupOpen(false);
   };
 
   const handleQuestionClick = () => {
     setIsQuestionPopupOpen(!isQuestionPopupOpen);
     setIsProfilePopupOpen(false);
+    setIsSharePopupOpen(false);
   };
 
-  // const canAddPost = user && (isBoardOwner || !isBoardOwner);
+  const handleShareClick = () => {
+    const boardUrl = window.location.href;
+    navigator.clipboard.writeText(boardUrl);
+    setIsSharePopupOpen(!isSharePopupOpen);
+    setIsProfilePopupOpen(false);
+    setIsQuestionPopupOpen(false);
+  };
 
   const handlePostItClick = () => {
     const randomColor = postColors[Math.floor(Math.random() * postColors.length)];
@@ -288,9 +295,15 @@ function BoardView() {
   };
 
   const handleOutsideClick = (e) => {
-    if (!e.target.closest('.profile-popup') && !e.target.closest('.question-popup') && !e.target.closest('.profile-icon') && !e.target.closest('.question-icon')) {
+    if (!e.target.closest('.profile-popup') &&
+      !e.target.closest('.question-popup') &&
+      !e.target.closest('.share-popup') &&
+      !e.target.closest('.profile-icon') &&
+      !e.target.closest('.question-icon') &&
+      !e.target.closest('.share-button')) {
       setIsProfilePopupOpen(false);
       setIsQuestionPopupOpen(false);
+      setIsSharePopupOpen(false);
     }
   };
 
@@ -374,7 +387,7 @@ function BoardView() {
   };
 
   useEffect(() => {
-    if (isProfilePopupOpen || isQuestionPopupOpen) {
+    if (isProfilePopupOpen || isQuestionPopupOpen || isSharePopupOpen) {
       document.addEventListener('click', handleOutsideClick);
     } else {
       document.removeEventListener('click', handleOutsideClick);
@@ -383,7 +396,7 @@ function BoardView() {
     return () => {
       document.removeEventListener('click', handleOutsideClick);
     };
-  }, [isProfilePopupOpen, isQuestionPopupOpen]);
+  }, [isProfilePopupOpen, isQuestionPopupOpen, isSharePopupOpen]);
 
   useEffect(() => {
     if (navbarColor) {
@@ -411,20 +424,6 @@ function BoardView() {
     }, 200); // Match the animation duration
   };
 
-  const handleShare = () => {
-    const boardUrl = window.location.href;
-    navigator.clipboard.writeText(boardUrl);
-    setIsSharePopupOpen(true);
-    setTimeout(() => {
-      setIsSharePopupOpen(false);
-    }, 5000); // Hide after 2 seconds
-
-    if (isSharePopupOpen) {
-      setIsSharePopupOpen(false);
-      return;
-    }
-  };
-
   if (boardNotFound) {
     return <Navigate to="/" />; // Redirect if board not found
   }
@@ -438,7 +437,7 @@ function BoardView() {
         title={boardData?.title}
         color={navbarColor}
         onJoinClick={handleJoinClick}
-        onShare={handleShare}
+        onShare={handleShareClick}
       />
       <div className="main-content">
         <Sidebar
