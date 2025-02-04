@@ -1,6 +1,9 @@
 import {React, useEffect, useState } from 'react';
 import './styles.css';
 import logo from "../img/Vector (1).svg";
+import frame48 from "./img/Frame 48.svg";
+import frame49 from "./img/Frame 49.svg";
+import boardImage from "./img/Board.svg";
 
 function HomePage() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -57,10 +60,24 @@ function HomePage() {
           <p>The all-in-one platform for creators to take audience requests,<br />monetize fan inputs, and deliver personalized<br />experiences at scale.</p>
           <button type="button"><a href="#waitlist">Get Early Access</a></button>
         </div>
+        <div className="images">
+          <div className="column left-column">
+            <img src={frame48} alt="Frame 46" className="frame" />
+            <img src={frame48} alt="Frame 46" className="frame" />
+            <img src={frame48} alt="Frame 46" className="frame" />
+            <img src={frame48} alt="Frame 46" className="frame" />
+          </div>
+          <div className="column right-column">
+            <img src={frame49} alt="Frame 47" className="frame" />
+            <img src={frame49} alt="Frame 47" className="frame" />
+            <img src={frame49} alt="Frame 47" className="frame" />
+            <img src={frame49} alt="Frame 47" className="frame" />
+          </div>
+        </div>
       </section>
 
       <section id="demo">
-        <img src="img/Untitled (48 x 24 in).png" alt="" className="dm" />
+        <img src={boardImage} alt="" className="dm" />
       </section>
 
       <section id="features">
@@ -100,7 +117,7 @@ function HomePage() {
         </div>
       </section>
 
-      <section id="waitlist">
+      {/* <section id="waitlist">
         <div className="waitlist-box">
           <div className="text">
             <div className="launchlist-container">
@@ -108,6 +125,45 @@ function HomePage() {
             </div>
           </div>
         </div>
+      </section> */}
+      
+      <section id="testimonials">
+        <div className="testimonial-container">
+          <h2>For all creators</h2>
+          <div className="testimonial-row">
+            <p>Cosplayers <span className="highlight"> Artists</span> Crafters Designers Photographers</p>
+          </div>
+          <div className="testimonial-row">
+            <p>Shows <span className="highlight"> Influencers</span> YouTubers TikTokers Podcasters</p>
+          </div>
+          <div className="testimonial-row">
+            <p>Authors <span className="highlight"> Musicians</span> Bloggers Developers Singers</p>
+          </div>
+          <div className="testimonial-row">
+            <p>Speakers <span className="highlight"> Business</span> Entrepreneurs Coaches Marketers</p>
+          </div>
+          <div className="testimonial-row">
+            <p>Educators <span className="highlight"> Lifestyle</span> Fashion Food Beauty Advice</p>
+          </div>
+          <div className="testimonial-row">
+            <p>Relationships <span className="highlight"> Fitness</span> Self-Help Travel Sports Finance</p>
+          </div>
+          <div className="testimonial-row">
+            <p>Reviewers <span className="highlight"> Gamers</span> Streamers Communities Hosts</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="waitlist">
+        <div className="waitlist-box">
+          <div className="waitlist-content">
+            {/* <img src="path/to/your/image.png" alt="Creator Icon" className="creator-icon" /> */}
+            <h2>For all creators</h2>
+            <div className="launchlist-container">
+              <div className="launchlist-widget" data-key-id="UpeyL8" data-height="180px"></div>
+            </div>
+          </div>
+        </div>  
       </section>
     </>
   );
