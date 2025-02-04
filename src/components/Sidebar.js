@@ -3,11 +3,18 @@ import "./Sidebar.css";
 import fallbackImg from '../img/fallback.png';
 import verifiedIcon from '../img/verified.svg';
 
-function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }) {
-  const [isHidden, setIsHidden] = useState(false); // Tracks sidebar visibility
+function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, posts }) {
+  const [isHidden, setIsHidden] = useState(false);
 
   const toggleSidebar = () => {
     setIsHidden(!isHidden);
+  };
+
+  const getAvatarUrl = () => {
+    if (creatorAvatar) {
+      return `https://cbzociyywxxvaciwwhwy.supabase.co/storage/v1/object/public/creator-avatars/${creatorAvatar}`;
+    }
+    return fallbackImg;
   };
 
   // Get the first 4 posts' profile pictures
@@ -28,10 +35,9 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
       <div className={`sidebar ${isHidden ? "hidden" : ""}`}>
         {!isHidden && (
           <div className="sidebar-content">
-            {/* Profile Picture */}
             <div className="profile-picture">
               <img
-                src={avatarUrl || fallbackImg}
+                src={getAvatarUrl()}
                 alt="Profile"
                 className="profile-img"
                 onError={(e) => {

@@ -51,7 +51,7 @@ function BoardView() {
     const fetchBoardData = async () => {
       const { data, error } = await supabase
         .from('boards')
-        .select('*, owner:users(avatar_url, email)')
+        .select('*, owner:users(avatar_url)')
         .eq('url_path', boardPath)
         .maybeSingle();
 
@@ -447,6 +447,7 @@ function BoardView() {
           totalPosts={totalPosts}
           creatorName={boardData?.creator_name}
           avatarUrl={boardData?.owner?.avatar_url}
+          creatorAvatar={boardData?.creator_avatar}
           posts={cards}
           color={boardData?.color}
         />
