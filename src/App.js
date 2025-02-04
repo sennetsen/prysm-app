@@ -51,7 +51,7 @@ function BoardView() {
     const fetchBoardData = async () => {
       const { data, error } = await supabase
         .from('boards')
-        .select('*, owner:users(avatar_url)')
+        .select('*, owner:users(avatar_url, email)')
         .eq('url_path', boardPath)
         .maybeSingle();
 
@@ -64,7 +64,7 @@ function BoardView() {
 
       setBoardData(data);
       setNavbarColor(data.color);
-      setIsBoardOwner(user?.id === data.owner_id);
+      setIsBoardOwner(user?.email === data.email);
       setPostColors(data.post_colors || defaultColors);
     };
 
