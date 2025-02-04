@@ -1,13 +1,20 @@
 import React, { useState } from "react";
 import "./Sidebar.css";
-import fallbackImg from '../img/fallback.png'; // Import the fallback image
+import fallbackImg from '../img/fallback.png';
 import verifiedIcon from '../img/verified.svg';
 
-function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }) {
-  const [isHidden, setIsHidden] = useState(false); // Tracks sidebar visibility
+function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, posts }) {
+  const [isHidden, setIsHidden] = useState(false);
 
   const toggleSidebar = () => {
     setIsHidden(!isHidden);
+  };
+
+  const getAvatarUrl = () => {
+    if (creatorAvatar) {
+      return `https://cbzociyywxxvaciwwhwy.supabase.co/storage/v1/object/public/creator-avatars/${creatorAvatar}`;
+    }
+    return fallbackImg;
   };
 
   // Get the first 4 posts' profile pictures
@@ -28,18 +35,20 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
       <div className={`sidebar ${isHidden ? "hidden" : ""}`}>
         {!isHidden && (
           <div className="sidebar-content">
-            {/* Profile Picture */}
             <div className="profile-picture">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Profile" className="profile-img" />
-              ) : (
-                <img src={fallbackImg} alt="Fallback" className="profile-img" />
-              )}
+              <img
+                src={getAvatarUrl()}
+                alt="Profile"
+                className="profile-img"
+                onError={(e) => {
+                  e.target.src = fallbackImg;
+                }}
+              />
             </div>
 
             {/* Creator Info */}
             <h2 className="creator-name">
-              {creatorName || "Creator"}
+              {creatorName || ""}
               <img
                 src={verifiedIcon}
                 alt="Verified Creator"
@@ -59,6 +68,9 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
                   src={post.isAnonymous ? fallbackImg : post.avatar}
                   alt={`Post ${index + 1}`}
                   className="avatar"
+                  onError={(e) => {
+                    e.target.src = fallbackImg;
+                  }}
                 />
               ))}
               {remainingPosts > 0 && (
@@ -73,8 +85,8 @@ function Sidebar({ description, bio, totalPosts, creatorName, avatarUrl, posts }
           </div>
         )}
       </div>
-      <button 
-        className="toggle-button" 
+      <button
+        className="toggle-button"
         onClick={toggleSidebar}
       >
         {isHidden ? ">" : "<"}

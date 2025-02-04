@@ -11,7 +11,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // Export the GoogleSignInButton component
 export { GoogleSignInButton };
 
-function GoogleSignInButton() {
+function GoogleSignInButton({ onClick, onSuccess }) {
   const [user, setUser] = useState(null);
   const buttonRef = useRef(null);
 
@@ -109,6 +109,9 @@ function GoogleSignInButton() {
       }
 
       setUser(user);
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error('Error in handleSignInWithGoogle:', error);
     }
@@ -125,8 +128,9 @@ function GoogleSignInButton() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '4px'
+        padding: '4px',
       }}
+      onClick={onClick}
     />
   );
 }

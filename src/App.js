@@ -11,10 +11,9 @@ import { lightenColor } from './utils/colorUtils'; // Import the lightenColor fu
 import { GoogleSignInButton } from './supabaseClient';
 import postbutton from './img/postbutton.svg';
 import helpmascot from './img/helpmascot.jpg';
-import googleIcon from './img/google-icon.svg';
 import joinmascot from './img/join-mascot.jpg';
+import { handleSignOut } from './components/UserProfile';
 
-// BoardView component
 function BoardView() {
   const { boardPath } = useParams();
   const [boardData, setBoardData] = useState(null);
@@ -31,7 +30,7 @@ function BoardView() {
   const [isQuestionPopupOpen, setIsQuestionPopupOpen] = useState(false);
   const [isBoardOwner, setIsBoardOwner] = useState(false);
   const [totalPosts, setTotalPosts] = useState(0);
-  const [navbarColor, setNavbarColor] = useState('#b43144');
+  const [navbarColor, setNavbarColor] = useState('#FFFFFF');
   const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
   const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
@@ -64,7 +63,7 @@ function BoardView() {
 
       setBoardData(data);
       setNavbarColor(data.color);
-      setIsBoardOwner(user?.id === data.owner_id);
+      setIsBoardOwner(user?.email === data.email);
       setPostColors(data.post_colors || defaultColors);
     };
 
@@ -74,12 +73,20 @@ function BoardView() {
   }, [boardPath, user?.id, defaultColors]);
 
   useEffect(() => {
-    if (boardData?.creator_name) {
-      document.title = `${boardData.creator_name}'s Board | Prysm`;
+    if (boardData?.creator_name && boardData?.title) {
+      document.title = `${boardData.title} | ${boardData.creator_name} | Prysm`;
     } else {
-      document.title = "Creator Board";
+      document.title = "Prysm";
     }
   }, [boardData?.creator_name]);
+
+  useEffect(() => {
+    // Update the meta theme color
+    const metaThemeColor = document.querySelector("meta[name='theme-color']");
+    if (metaThemeColor && navbarColor) {
+      metaThemeColor.setAttribute("content", navbarColor);
+    }
+  }, [navbarColor]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -208,14 +215,22 @@ function BoardView() {
   const handleProfileClick = () => {
     setIsProfilePopupOpen(!isProfilePopupOpen);
     setIsQuestionPopupOpen(false);
+    setIsSharePopupOpen(false);
   };
 
   const handleQuestionClick = () => {
     setIsQuestionPopupOpen(!isQuestionPopupOpen);
     setIsProfilePopupOpen(false);
+    setIsSharePopupOpen(false);
   };
 
-  // const canAddPost = user && (isBoardOwner || !isBoardOwner);
+  const handleShareClick = () => {
+    const boardUrl = window.location.href;
+    navigator.clipboard.writeText(boardUrl);
+    setIsSharePopupOpen(!isSharePopupOpen);
+    setIsProfilePopupOpen(false);
+    setIsQuestionPopupOpen(false);
+  };
 
   const handlePostItClick = () => {
     const randomColor = postColors[Math.floor(Math.random() * postColors.length)];
@@ -224,10 +239,16 @@ function BoardView() {
   };
 
   const handleModalClose = () => {
-    setIsModalOpen(false);
-    setNewPostContent("");
-    setNewPostTitle("");
-    setIsAnonymous(false);
+    const requestModal = document.querySelector('.post-it-modal');
+    requestModal.classList.add('scale-out');
+
+    setTimeout(() => {
+      setIsModalOpen(false);
+      setNewPostContent("");
+      setNewPostTitle("");
+      setIsAnonymous(false);
+      requestModal.classList.remove('scale-out');
+    }, 200); // Match the animation duration
   };
 
   const handlePostSubmit = async () => {
@@ -265,6 +286,7 @@ function BoardView() {
         };
         setCards(prevCards => [...prevCards, newPost]);
         setTotalPosts(prev => prev + 1);
+        setTotalRequests(prev => prev + 1);
         handleModalClose();
       } else {
         console.error('No data returned from insert operation');
@@ -273,9 +295,15 @@ function BoardView() {
   };
 
   const handleOutsideClick = (e) => {
-    if (!e.target.closest('.profile-popup') && !e.target.closest('.question-popup') && !e.target.closest('.profile-icon') && !e.target.closest('.question-icon')) {
+    if (!e.target.closest('.profile-popup') &&
+      !e.target.closest('.question-popup') &&
+      !e.target.closest('.share-popup') &&
+      !e.target.closest('.profile-icon') &&
+      !e.target.closest('.question-icon') &&
+      !e.target.closest('.share-button')) {
       setIsProfilePopupOpen(false);
       setIsQuestionPopupOpen(false);
+      setIsSharePopupOpen(false);
     }
   };
 
@@ -292,6 +320,7 @@ function BoardView() {
         // Update local state only after successful deletion
         setCards(cards.filter(card => card.id !== id));
         setTotalPosts(prev => prev - 1);
+        setTotalRequests(prev => prev - 1);
       }
     } catch (error) {
       console.error('Error deleting post:', error);
@@ -358,7 +387,7 @@ function BoardView() {
   };
 
   useEffect(() => {
-    if (isProfilePopupOpen || isQuestionPopupOpen) {
+    if (isProfilePopupOpen || isQuestionPopupOpen || isSharePopupOpen) {
       document.addEventListener('click', handleOutsideClick);
     } else {
       document.removeEventListener('click', handleOutsideClick);
@@ -367,7 +396,7 @@ function BoardView() {
     return () => {
       document.removeEventListener('click', handleOutsideClick);
     };
-  }, [isProfilePopupOpen, isQuestionPopupOpen]);
+  }, [isProfilePopupOpen, isQuestionPopupOpen, isSharePopupOpen]);
 
   useEffect(() => {
     if (navbarColor) {
@@ -380,21 +409,19 @@ function BoardView() {
   };
 
   const handleClosePopup = () => {
-    setIsJoinPopupOpen(false);
-  };
+    const joinPopup = document.querySelector('.join-popup-content');
+    const overlay = document.querySelector('.modal-overlay');
 
-  const handleShare = () => {
-    const boardUrl = window.location.href;
-    navigator.clipboard.writeText(boardUrl);
-    setIsSharePopupOpen(true);
+    // Add fade-out animations to both the popup and overlay
+    joinPopup.classList.add('fade-out');
+    overlay.classList.add('fade-out');
+
+    // Wait for the animation to complete before updating state
     setTimeout(() => {
-      setIsSharePopupOpen(false);
-    }, 5000); // Hide after 2 seconds
-
-    if (isSharePopupOpen) {
-      setIsSharePopupOpen(false);
-      return;
-    }
+      setIsJoinPopupOpen(false);
+      joinPopup.classList.remove('fade-out');
+      overlay.classList.remove('fade-out');
+    }, 200); // Match the animation duration
   };
 
   if (boardNotFound) {
@@ -410,7 +437,7 @@ function BoardView() {
         title={boardData?.title}
         color={navbarColor}
         onJoinClick={handleJoinClick}
-        onShare={handleShare}
+        onShare={handleShareClick}
       />
       <div className="main-content">
         <Sidebar
@@ -419,6 +446,7 @@ function BoardView() {
           totalPosts={totalPosts}
           creatorName={boardData?.creator_name}
           avatarUrl={boardData?.owner?.avatar_url}
+          creatorAvatar={boardData?.creator_avatar}
           posts={cards}
           color={boardData?.color}
         />
@@ -511,14 +539,15 @@ function BoardView() {
 
       {isProfilePopupOpen && (
         <div className="profile-popup">
-          <h2>Hello, {(user?.user_metadata?.name || 'NAME').split(' ')[0]}!</h2>
-          <p>Requests Made: {totalRequests || 'XX'}</p>
+          <h2>Hello{user?.user_metadata?.name ? `, ${user.user_metadata.name.split(' ')[0]}` : ''}!</h2>
+          <p>Requests Made: {totalRequests || '0'}</p>
           <p>Joined {new Date(user?.created_at || Date.now()).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
             year: 'numeric'
           })}</p>
-          <button className="logout-button">Log Out</button>
+          <button className="logout-button" onClick={() => handleSignOut(() => setUser(null), user)}
+          >Log Out</button>
         </div>
       )}
 
@@ -535,23 +564,21 @@ function BoardView() {
 
       {isJoinPopupOpen && (
         <div className="modal-overlay">
-          <div className="post-it-modal">
-            <div className="join-popup-content">
-              <button className="join-popup-close" onClick={handleClosePopup}>
-                &times;
-              </button>
-              <h2>Welcome!</h2>
-              <p>Sign in or sign up to interact</p>
-              <p>with this board.</p>
-              <div className="google-signin-container">
-                <button
-                  className="google-signin-button"
-                >
-                  <img src={googleIcon} className="google-icon" alt="Google sign-in button" />
-                  Continue with Google
-                </button>
+          <div className="join-popup-content">
+            <button className="join-popup-close" onClick={handleClosePopup}>
+              &times;
+            </button>
+            <h2>Welcome!</h2>
+            <p>Sign in or sign up to interact</p>
+            <p>with this board.</p>
+            <div className="google-signin-container">
+              <div className="mascot-overlay">
+                <img src={joinmascot} className="join-mascot" alt="Join mascot" />
               </div>
-              <img src={joinmascot} className="join-mascot" alt="Join mascot" />
+              <GoogleSignInButton onSuccess={() => {
+                handleClosePopup();
+                window.location.reload();
+              }} />
             </div>
           </div>
         </div>

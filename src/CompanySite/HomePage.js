@@ -1,12 +1,18 @@
-import {React, useEffect, useState } from 'react';
+import { React, useEffect, useState } from 'react';
 import './styles.css';
 import logo from "../img/Vector (1).svg";
 import frame48 from "./img/Frame 48.svg";
 import frame49 from "./img/Frame 49.svg";
 import boardImage from "./img/Board.svg";
+import { Link } from "react-router-dom";
 
 function HomePage() {
   const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    // Set the document title
+    document.title = "Prysm - Transform Fan Requests into Reality";
+  }, []);
 
   const handleScroll = () => {
     if (window.scrollY > 0) {
@@ -42,17 +48,18 @@ function HomePage() {
   }, []);
 
   return (
-    <>
-      <nav className={isScrolled ? 'scrolled' : ''}>
-        <div className="logo">
+    <>      <nav className={isScrolled ? 'scrolled' : ''}>
+      <div className="logo">
+        <Link to="/">
           <img src={logo} alt="Prysm Logo" className="logo" />
-        </div>
-        <div className="waitlist-btn">
-          <button type="button">
-            <a href="#waitlist">Get Early Access</a>
-          </button>
-        </div>
-      </nav>
+        </Link>
+      </div>
+      <div className="waitlist-btn">
+        <button type="button">
+          <a href="#waitlist">Get Early Access</a>
+        </button>
+      </div>
+    </nav>
 
       <section className="home">
         <div className="text">

@@ -9,48 +9,6 @@ function Board({ boardId }) {
   const [boardData, setBoardData] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
 
-  // useEffect(() => {
-  //   const fetchBoardData = async () => {
-  //     const { data: { session } } = await supabase.auth.getSession();
-  //     if (session) {
-  //       setCurrentUser(session.user);
-
-  //       // Fetch board data including creator_name and avatar_url
-  //       const { data: board, error: boardError } = await supabase
-  //         .from("boards")
-  //         .select("*, owner:users(avatar_url)")
-  //         .eq("id", boardId)
-  //         .single();
-
-  //       if (!boardError) {
-  //         setBoardData(board);
-  //       }
-
-  //       // Fetch posts with author_id explicitly
-  //       const { data: posts, error: postsError } = await supabase
-  //         .from("posts")
-  //         .select(`
-  //           id,
-  //           title,
-  //           content,
-  //           is_anonymous,
-  //           color,
-  //           created_at,
-  //           author_id,
-  //           reactions(*)
-  //         `)
-  //         .eq("board_id", boardId);
-
-  //       if (!postsError) {
-  //         console.log("Fetched Posts:", posts);
-  //         setPosts(posts);
-  //       }
-  //     }
-  //   };
-
-  //   fetchBoardData();
-  // }, [boardId]);
-
   useEffect(() => {
     const fetchBoardData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -61,7 +19,7 @@ function Board({ boardId }) {
         const [boardResponse, postsResponse] = await Promise.all([
           supabase
             .from("boards")
-            .select("*, owner:users(avatar_url)")
+            .select("*, owner:users(avatar_url), creator_avatar")
             .eq("id", boardId)
             .single(),
           supabase
@@ -109,6 +67,7 @@ function Board({ boardId }) {
         bio={boardData?.bio}
         totalPosts={posts.length}
         creatorName={boardData?.creator_name}
+        creatorAvatar={boardData?.creator_avatar}
         avatarUrl={boardData?.owner?.avatar_url}
       />
       {posts.map((post) => (
