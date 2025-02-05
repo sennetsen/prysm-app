@@ -126,7 +126,7 @@ function BoardView() {
       .from('posts')
       .select(`
         *,
-        author:users(full_name, avatar_url),
+        author:public_users(full_name, avatar_url),
         reactions(reaction_type, user_id)
       `)
       .eq('board_id', boardData.id);
@@ -139,10 +139,7 @@ function BoardView() {
         return {
           ...post,
           likesCount,
-          author: {
-            ...post.author,
-            avatar_url: post.author?.avatar_url || null
-          }
+          author: post.author || { full_name: 'Unknown', avatar_url: null }
         };
       });
 

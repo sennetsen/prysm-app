@@ -122,40 +122,38 @@ export default React.memo(
                 alt="Anonymous"
                 className="profile-pic"
               />
-              <span>Anonymous</span>
+              <span>bjhbjbcjdshbvrkvjrnwrvnkeunrkenghjnwjhnbjnjnkrwg</span>
             </div>
           </Tooltip>
         ) : (
-          author && (
-            <Tooltip
-              title={new Date(created_at).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
-              placement="bottom"
-            >
-              <div className="user-info">
-                {author.avatar_url ? (
-                  <img
-                    src={author.avatar_url}
-                    alt="Profile"
-                    className="profile-pic"
-                    onError={(e) => {
-                      e.target.src = fallbackImg;
-                    }}
-                  />
-                ) : (
-                  <img
-                    src={fallbackImg}
-                    alt="Profile"
-                    className="profile-pic"
-                  />
-                )}
-                <span>{author.full_name}</span>
-              </div>
-            </Tooltip>
-          )
+          <Tooltip
+            title={new Date(created_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
+            placement="bottom"
+          >
+            <div className="user-info">
+              {author?.avatar_url ? (
+                <img
+                  src={author.avatar_url}
+                  alt="Profile"
+                  className="profile-pic"
+                  onError={(e) => {
+                    e.target.src = fallbackImg;
+                  }}
+                />
+              ) : (
+                <img
+                  src={fallbackImg}
+                  alt="Profile"
+                  className="profile-pic"
+                />
+              )}
+              <span>{author?.full_name || 'Unknown'}</span>
+            </div>
+          </Tooltip>
         )}
 
         <div className="card-footer">

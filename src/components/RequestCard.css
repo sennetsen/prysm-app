@@ -142,6 +142,7 @@
   font-size: 12px;
   display: flex;
   align-items: center;
+  max-width: calc(100% - 100px);
 }
 
 .user-info {
@@ -151,14 +152,16 @@
   align-items: center;
   gap: 4px;
   max-width: calc(100% - 60px);
+  width: calc(100% - 130px); 
   z-index: 1;
   margin-bottom: 0;
 }
 
 .user-info span {
   white-space: nowrap;
-  overflow: hidden;
+  overflow: clip;
   text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .profile-pic {
