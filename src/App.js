@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import HomePage from './CompanySite/HomePage';
 import { supabase } from "./supabaseClient";
 import Navbar from "./components/Navbar";
@@ -120,7 +121,7 @@ function BoardView() {
 
   const fetchPosts = useCallback(async () => {
     if (!boardData?.id) return;
-  
+
     const { data, error } = await supabase
       .from('posts')
       .select(`
@@ -130,7 +131,7 @@ function BoardView() {
         reaction_counts
       `)
       .eq('board_id', boardData.id);
-  
+
     if (error) {
       console.error('Error fetching posts:', error);
     } else {
@@ -142,7 +143,7 @@ function BoardView() {
           author: post.author || { full_name: 'Unknown', avatar_url: null }
         };
       });
-  
+
       const sortedPosts = postsWithLikes.sort((a, b) => b.likesCount - a.likesCount);
       setCards(sortedPosts);
       setTotalPosts(sortedPosts.length);
@@ -639,6 +640,7 @@ function App() {
         <Route path="/:boardPath" element={<BoardView />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+      <Analytics />
     </Router>
   );
 }
