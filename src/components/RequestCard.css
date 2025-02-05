@@ -152,7 +152,7 @@
   align-items: center;
   gap: 4px;
   max-width: calc(100% - 60px);
-  width: calc(100% - 130px); 
+  width: calc(100% - 145px); 
   z-index: 1;
   margin-bottom: 0;
 }
@@ -223,7 +223,6 @@
   border: 1px solid #281010 !important;
   height: auto !important;
   transition: all 0.2s ease !important;
-  max-width: 55px; /* Set maximum width */
 }
 
 .custom-like-button:active {

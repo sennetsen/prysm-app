@@ -123,7 +123,6 @@ export default React.memo(
                 alt="Anonymous"
                 className="profile-pic"
               />
-              <span>bjhbjbcjdshbvrkvjrnwrvnkeunrkenghjnwjhnbjnjnkrwg</span>
             </div>
           </Tooltip>
         ) : (
