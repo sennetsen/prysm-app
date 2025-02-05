@@ -14,8 +14,7 @@ function Board({ boardId }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setCurrentUser(session.user);
-
-        // Fetch board and posts in parallel
+    
         const [boardResponse, postsResponse] = await Promise.all([
           supabase
             .from("boards")
@@ -32,15 +31,16 @@ function Board({ boardId }) {
               color,
               created_at,
               author_id,
-              reactions(*)
+              reactions(*),
+              reaction_counts
             `)
             .eq("board_id", boardId)
         ]);
-
+    
         if (!boardResponse.error) {
           setBoardData(boardResponse.data);
         }
-
+    
         if (!postsResponse.error) {
           setPosts(postsResponse.data);
         }

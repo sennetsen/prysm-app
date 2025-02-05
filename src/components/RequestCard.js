@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./RequestCard.css";
+import { bigNumberFormatter, formatNumberWithCommas } from '../utils/bigNumberFormatter';
 import { HeartFilled, HeartOutlined } from "@ant-design/icons";
 import { Button, Tooltip } from "antd";
 import fallbackImg from '../img/fallback.png';
@@ -158,14 +159,27 @@ export default React.memo(
 
         <div className="card-footer">
           <div className="like-section">
-            <Button
-              type="text"
-              icon={hasLiked ? <HeartFilled /> : <HeartOutlined />}
-              onClick={() => onLike(id, hasLiked)}
-              className={`custom-like-button ${hasLiked ? 'liked' : ''}`}
-            >
-              <span className="like-count">{likesCount}</span>
-            </Button>
+            {likesCount >= 1000 ? (
+              <Tooltip title={`${formatNumberWithCommas(likesCount)} likes`} placement="bottom">
+                <Button
+                  type="text"
+                  icon={hasLiked ? <HeartFilled /> : <HeartOutlined />}
+                  onClick={() => onLike(id, hasLiked)}
+                  className={`custom-like-button ${hasLiked ? 'liked' : ''}`}
+                >
+                  <span className="like-count">{bigNumberFormatter(likesCount)}</span>
+                </Button>
+              </Tooltip>
+            ) : (
+              <Button
+                type="text"
+                icon={hasLiked ? <HeartFilled /> : <HeartOutlined />}
+                onClick={() => onLike(id, hasLiked)}
+                className={`custom-like-button ${hasLiked ? 'liked' : ''}`}
+              >
+                <span className="like-count">{bigNumberFormatter(likesCount)}</span>
+              </Button>
+            )}
           </div>
         </div>
       </div>

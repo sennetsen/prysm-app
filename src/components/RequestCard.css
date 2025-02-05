@@ -223,6 +223,7 @@
   border: 1px solid #281010 !important;
   height: auto !important;
   transition: all 0.2s ease !important;
+  max-width: 55px; /* Set maximum width */
 }
 
 .custom-like-button:active {

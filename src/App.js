@@ -118,31 +118,31 @@ function BoardView() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Your existing fetchPosts function
   const fetchPosts = useCallback(async () => {
     if (!boardData?.id) return;
-
+  
     const { data, error } = await supabase
       .from('posts')
       .select(`
         *,
         author:public_users(full_name, avatar_url),
-        reactions(reaction_type, user_id)
+        reactions(reaction_type, user_id),
+        reaction_counts
       `)
       .eq('board_id', boardData.id);
-
+  
     if (error) {
       console.error('Error fetching posts:', error);
     } else {
       const postsWithLikes = data.map(post => {
-        const likesCount = post.reactions.filter(r => r.reaction_type === 'like').length;
+        const likesCount = post.reaction_counts?.like || 0;
         return {
           ...post,
           likesCount,
           author: post.author || { full_name: 'Unknown', avatar_url: null }
         };
       });
-
+  
       const sortedPosts = postsWithLikes.sort((a, b) => b.likesCount - a.likesCount);
       setCards(sortedPosts);
       setTotalPosts(sortedPosts.length);
@@ -348,6 +348,23 @@ function BoardView() {
           .eq('id', currentReactions[0].id);
 
         if (deleteError) throw deleteError;
+
+        // Decrement like count in reaction_counts
+        const { data: postData } = await supabase
+          .from('posts')
+          .select('reaction_counts')
+          .eq('id', postId)
+          .single();
+
+        const currentCount = postData.reaction_counts?.like || 0;
+        const newCount = Math.max(0, currentCount - 1);
+
+        await supabase
+          .from('posts')
+          .update({
+            reaction_counts: { ...postData.reaction_counts, like: newCount }
+          })
+          .eq('id', postId);
       } else {
         // If no like exists, create it
         const { error: insertError } = await supabase
@@ -359,6 +376,23 @@ function BoardView() {
           }]);
 
         if (insertError) throw insertError;
+
+        // Increment like count in reaction_counts
+        const { data: postData } = await supabase
+          .from('posts')
+          .select('reaction_counts')
+          .eq('id', postId)
+          .single();
+
+        const currentCount = postData.reaction_counts?.like || 0;
+        const newCount = currentCount + 1;
+
+        await supabase
+          .from('posts')
+          .update({
+            reaction_counts: { ...postData.reaction_counts, like: newCount }
+          })
+          .eq('id', postId);
       }
 
       // Update local state without sorting
@@ -382,7 +416,6 @@ function BoardView() {
       console.error('Error handling reaction:', error);
     }
   };
-
   useEffect(() => {
     if (isProfilePopupOpen || isQuestionPopupOpen || isSharePopupOpen) {
       document.addEventListener('click', handleOutsideClick);
