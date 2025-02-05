@@ -13,9 +13,8 @@
   transition: all 0.3s ease-in-out;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  /* Enables elastic scrolling on iOS */
   overscroll-behavior: contain;
-  /* Prevents overscroll from affecting parent elements */
+  scrollbar-width: thin;
 }
 
 .sidebar.hidden {
@@ -134,26 +133,10 @@
   /* Adjust this value as needed */
   padding-right: 10px;
   scrollbar-width: thin;
-  scrollbar-color: #888 #f0f0f0;
 }
 
-/* Custom scrollbar styles */
 .description-text::-webkit-scrollbar {
   width: 6px;
-}
-
-.description-text::-webkit-scrollbar-track {
-  background: #f0f0f0;
-  border-radius: 3px;
-}
-
-.description-text::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
-}
-
-.description-text::-webkit-scrollbar-thumb:hover {
-  background: #666;
 }
 
 .toggle-button {

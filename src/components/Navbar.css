@@ -85,7 +85,7 @@
     justify-content: space-between;
     padding: 0px 20px;
     color: white;
-    height: 8vh;
+    height: 64px;
     position: fixed;
     top: 0;
     left: 0;
@@ -98,7 +98,7 @@
     height: 40px;
     width: 100px;
     align-self: center;
-    
+
 }
 
 .navbar-icons {
@@ -127,7 +127,7 @@
     align-items: center;
     gap: 4px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    transition: transform 0.2s ease, box-shadow 0.1s ease;
 }
 
 .share-button:hover {
@@ -157,9 +157,15 @@
 }
 
 .divider {
-    width: 0.5px;
-    height: 7.5vh;
-    background-color: #fff;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.8) 50%,
+            rgba(255, 255, 255, 0) 100%);
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+    margin: 0 8px;
+    position: relative;
 }
 
 .navbar-icons img {
@@ -171,7 +177,11 @@
     font-weight: bold;
 }
 
-.help-icon,
+.question-icon {
+    transition: transform 0.2s ease;
+
+}
+
 .profile-icon {
     background: none;
     border: none;
@@ -180,10 +190,12 @@
     transition: transform 0.2s ease;
 }
 
+.question-icon:hover,
 .profile-icon:hover {
     transform: scale(1.03);
 }
 
+.question-icon:active,
 .profile-icon:active {
     transform: scale(0.98);
 }
@@ -220,7 +232,7 @@
     align-items: center;
     gap: 10px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    transition: transform 0.2s ease, box-shadow 0.1s ease;
 }
 
 .join-button:hover {

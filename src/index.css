@@ -11,3 +11,11 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+html {
+  scrollbar-color: rgba(40, 16, 16, 0.25) var(--scrollbar-track-color);
+}
+
+html::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-color);
+}

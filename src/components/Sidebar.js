@@ -3,7 +3,7 @@ import "./Sidebar.css";
 import fallbackImg from '../img/fallback.png';
 import verifiedIcon from '../img/verified.svg';
 
-function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, posts }) {
+function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, posts, color }) {
   const [isHidden, setIsHidden] = useState(false);
 
   const toggleSidebar = () => {
@@ -32,7 +32,10 @@ function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, pos
 
   return (
     <>
-      <div className={`sidebar ${isHidden ? "hidden" : ""}`}>
+      <div className={`sidebar ${isHidden ? "hidden" : ""}`}
+        style={{
+          scrollbarColor: `${color} transparent`, // For Firefox
+        }}>
         {!isHidden && (
           <div className="sidebar-content">
             <div className="profile-picture">
@@ -79,7 +82,9 @@ function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, pos
             </div>
 
             {/* Description */}
-            <p className="description-text">
+            <p className="description-text" style={{
+              scrollbarColor: `${color} transparent`, // For Firefox
+            }}>
               {description || ""}
             </p>
           </div>

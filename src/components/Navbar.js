@@ -10,6 +10,9 @@ import { Link } from "react-router-dom";
 function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, onShare, profileRef }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [user, setUser] = useState(null);
+  const handleLinkClick = () => {
+    window.location.href = '/';
+  };
 
   const navbarStyle = {
     backgroundColor: color || "#b43144",
@@ -41,12 +44,13 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
 
   return (
     <nav style={navbarStyle} className={`navbar ${isScrolled ? "scrolled" : ""}`}>
-      <Link to="/">
+      <a href="/" onClick={handleLinkClick}>
         <img src={logo} alt="Logo" className="logo" />
-      </Link>
+      </a>
       <div className="navbar-title-container">
         <div className="navbar-title">{title || "Request Board"}</div>
-      </div>      <div className="navbar-icons">
+      </div>
+      <div className="navbar-icons">
         <button className="question-icon" onClick={onQuestionClick}>
           <img src={helpIcon} alt="Help Icon" />
         </button>

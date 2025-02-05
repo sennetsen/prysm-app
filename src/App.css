@@ -72,7 +72,7 @@ img {
 
 .help-popup {
   position: fixed;
-  top: 8.5vh;
+  top: 64px;
   right: 60px;
   background-color: #FDFCFC;
   border-radius: 16px;
@@ -432,9 +432,9 @@ p {
 
 .profile-popup {
   position: fixed;
-  top: 7.5vh;
+  top: 54px;
   /* Position directly below the parent element */
-  right: 12vh;
+  right: 140px;
   background-color: #FDFCFC;
   padding: 24px;
   border-radius: 24px;
@@ -597,7 +597,7 @@ p {
 
 .share-popup {
   position: fixed;
-  top: 8.5vh;
+  top: 64px;
   right: 1vh;
   background-color: #FDFCFC;
   padding: 20px;

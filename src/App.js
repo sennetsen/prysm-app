@@ -400,10 +400,13 @@ function BoardView() {
 
   useEffect(() => {
     if (navbarColor) {
-      const lightShade = lightenColor(navbarColor, 75); // Lighten by 75%
+      const lightShade = lightenColor(navbarColor, 75);
       setBackgroundColor(lightShade);
+      document.documentElement.style.setProperty('--scrollbar-track-color', lightShade);
     }
   }, [navbarColor]);
+
+
   const handleJoinClick = () => {
     setIsJoinPopupOpen(true);
   };

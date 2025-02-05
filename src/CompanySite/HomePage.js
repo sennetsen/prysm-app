@@ -8,6 +8,9 @@ import { Link } from "react-router-dom";
 
 function HomePage() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const handleLinkClick = () => {
+    window.location.href='/';
+  };
 
   useEffect(() => {
     // Set the document title
@@ -50,9 +53,9 @@ function HomePage() {
   return (
     <>      <nav className={isScrolled ? 'scrolled' : ''}>
       <div className="logo">
-        <Link to="/">
+        <a href="/" onClick={handleLinkClick}>
           <img src={logo} alt="Prysm Logo" className="logo" />
-        </Link>
+        </a>
       </div>
       <div className="waitlist-btn">
         <button type="button">
@@ -124,16 +127,6 @@ function HomePage() {
         </div>
       </section>
 
-      {/* <section id="waitlist">
-        <div className="waitlist-box">
-          <div className="text">
-            <div className="launchlist-container">
-              <div className="launchlist-widget" data-key-id="UpeyL8" data-height="180px"></div>
-            </div>
-          </div>
-        </div>
-      </section> */}
-      
       <section id="testimonials">
         <div className="testimonial-container">
           <h2>For all creators</h2>
@@ -170,7 +163,7 @@ function HomePage() {
               <div className="launchlist-widget" data-key-id="UpeyL8" data-height="180px"></div>
             </div>
           </div>
-        </div>  
+        </div>
       </section>
     </>
   );
