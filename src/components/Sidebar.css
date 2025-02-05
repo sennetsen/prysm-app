@@ -1,7 +1,7 @@
 .sidebar {
   position: fixed;
   left: 0;
-  top: 50%;
+  top: calc(64px + (100vh - 64px) / 2);
   transform: translateY(-50%);
   width: 320px;
   max-height: 80vh;
@@ -141,7 +141,7 @@
 
 .toggle-button {
   position: fixed;
-  top: 50%;
+  top: calc(64px + (100vh - 64px) / 2);
   left: 320px;
   /* Default position: edge of visible sidebar */
   transform: translateY(-50%);

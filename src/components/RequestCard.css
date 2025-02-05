@@ -322,3 +322,9 @@
   transform: scale(0.85);
 
 }
+
+@media (max-width: 768px) {
+  .ant-tooltip {
+    display: none !important;
+  }
+}
