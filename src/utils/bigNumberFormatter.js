@@ -1,4 +1,8 @@
 export const bigNumberFormatter = (count) => {
+  if (count >= 1e15) {
+    return '--';
+  }
+
   if (count < 1000) {
     return count.toString();
   }
