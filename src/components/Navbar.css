@@ -25,7 +25,7 @@
 
     .share-button {
         padding: 4px 8px;
-        font-size: 10px;
+        font-size: 14px;
     }
 
     .join-button {
@@ -125,7 +125,7 @@
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease, box-shadow 0.1s ease;
 }
@@ -178,8 +178,25 @@
 }
 
 .question-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #FCFcFc;
     transition: transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
 
+.question-icon img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.question-icon:hover {
+    transform: scale(1.03);
 }
 
 .profile-icon {
@@ -220,7 +237,7 @@
 }
 
 .join-button {
-    background: linear-gradient(135deg, #d5dcfa, #feeaa5, #FFCFCF);
+    background: #FCFcFc;
     border: none;
     border-radius: 10px;
     padding: 8px 16px;

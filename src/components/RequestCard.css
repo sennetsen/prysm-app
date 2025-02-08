@@ -152,9 +152,14 @@
   align-items: center;
   gap: 4px;
   max-width: calc(100% - 60px);
-  width: calc(100% - 145px); 
+  width: calc(100% - 145px);
   z-index: 1;
   margin-bottom: 0;
+  transition: transform 0.2s ease;
+}
+
+.user-info:hover {
+  transform: scale(1.01);
 }
 
 .user-info span {
@@ -172,6 +177,12 @@
   border: 1px solid #281010;
   object-fit: cover;
   z-index: 2;
+  transition: transform 0.2s ease;
+}
+
+.user-info:hover .profile-pic,
+.user-info:hover span {
+  transform: scale(1.05);
 }
 
 .card-footer {

@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 function HomePage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const handleLinkClick = () => {
-    window.location.href='/';
+    window.location.href = '/';
   };
 
   useEffect(() => {
@@ -157,7 +157,6 @@ function HomePage() {
       <section id="waitlist">
         <div className="waitlist-box">
           <div className="waitlist-content">
-            {/* <img src="path/to/your/image.png" alt="Creator Icon" className="creator-icon" /> */}
             <h2>For all creators</h2>
             <div className="launchlist-container">
               <div className="launchlist-widget" data-key-id="UpeyL8" data-height="180px"></div>
