@@ -5,12 +5,17 @@ import frame48 from "./img/Frame 48.svg";
 import frame49 from "./img/Frame 49.svg";
 import boardImage from "./img/Board.svg";
 import { Link } from "react-router-dom";
+import { GoogleSignInButton } from '../supabaseClient';
+import joinmascot from '../img/join-mascot.jpg';
+import frame1 from "./img/Frame 1 (1).svg";
+import frame2 from "./img/Frame 2.svg";
 
 function HomePage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const handleLinkClick = () => {
     window.location.href='/';
   };
+  const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
 
   useEffect(() => {
     // Set the document title
@@ -18,10 +23,10 @@ function HomePage() {
   }, []);
 
   const handleScroll = () => {
-    if (window.scrollY > 0) {
-      setIsScrolled(true);
-    } else {
-      setIsScrolled(false);
+    const howItWorksSection = document.querySelector('#how-it-works');
+    if (howItWorksSection) {
+      const scrollPosition = window.scrollY + window.innerHeight;
+      setIsScrolled(scrollPosition > howItWorksSection.offsetTop);
     }
   };
 
@@ -50,6 +55,52 @@ function HomePage() {
     }
   }, []);
 
+  useEffect(() => {
+    const postits = document.querySelectorAll('.postit');
+    const featuresSection = document.getElementById('features');
+    
+    const handleScroll = () => {
+        const scrollTop = window.scrollY - featuresSection.offsetTop;
+        const sectionHeight = featuresSection.offsetHeight;
+        const scrollProgress = scrollTop / sectionHeight;
+
+        postits.forEach((postit, index) => {
+            // Each postit gets its own scroll segment (0-0.33, 0.33-0.66, 0.66-1)
+            const segmentStart = index * 0.33;
+            const segmentEnd = (index + 1) * 0.33;
+            
+            if (scrollProgress >= segmentStart) {
+                const progressInSegment = (scrollProgress - segmentStart) / 0.33;
+                const yOffset = 100 - (progressInSegment * 100);
+                postit.style.transform = `translateY(${Math.min(yOffset, 0)}vh)`;
+            } else {
+                postit.style.transform = 'translateY(100vh)';
+            }
+        });
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleJoinClick = () => {
+    setIsJoinPopupOpen(true);
+  };
+
+  const handleClosePopup = () => {
+    const joinPopup = document.querySelector('.join-popup-content');
+    const overlay = document.querySelector('.modal-overlay');
+    
+    joinPopup.classList.add('fade-out');
+    overlay.classList.add('fade-out');
+    
+    setTimeout(() => {
+      setIsJoinPopupOpen(false);
+      joinPopup.classList.remove('fade-out');
+      overlay.classList.remove('fade-out');
+    }, 200);
+  };
+
   return (
     <>      <nav className={isScrolled ? 'scrolled' : ''}>
       <div className="logo">
@@ -57,32 +108,51 @@ function HomePage() {
           <img src={logo} alt="Prysm Logo" className="logo" />
         </a>
       </div>
-      <div className="waitlist-btn">
-        <button type="button">
-          <a href="#waitlist">Get Early Access</a>
+      <div className="navbar-icons">
+        <button className="join-button" onClick={handleJoinClick}>
+          <span className="join-button-text">Sign In</span>
         </button>
+        <div className="waitlist-btn">
+          <button type="button">
+            <a href="#waitlist">Get Early Access</a>
+          </button>
+        </div>
       </div>
     </nav>
 
       <section className="home">
         <div className="text">
           <h1>Transform Fan<br /> Requests into Reality.</h1>
-          <p>The all-in-one platform for creators to take audience requests,<br />monetize fan inputs, and deliver personalized<br />experiences at scale.</p>
-          <button type="button"><a href="#waitlist">Get Early Access</a></button>
+          <p>The all-in-one platform for creators to take audience requests, monetize fan inputs, and deliver personalized experiences at scale.</p>
+          {/* <button type="button"><a href="#waitlist">Get Early Access</a></button> */}
+          <div class="launchlist-widget" data-key-id="UpeyL8" data-height="180px"></div>
         </div>
         <div className="images">
-          <div className="column left-column">
-            <img src={frame48} alt="Frame 46" className="frame" />
-            <img src={frame48} alt="Frame 46" className="frame" />
-            <img src={frame48} alt="Frame 46" className="frame" />
-            <img src={frame48} alt="Frame 46" className="frame" />
-          </div>
-          <div className="column right-column">
-            <img src={frame49} alt="Frame 47" className="frame" />
-            <img src={frame49} alt="Frame 47" className="frame" />
-            <img src={frame49} alt="Frame 47" className="frame" />
-            <img src={frame49} alt="Frame 47" className="frame" />
-          </div>
+          {window.innerWidth > 768 ? (
+            <>
+              <div className="column left-column">
+                <img src={frame48} alt="Desktop Frame 1" className="frame" />
+                <img src={frame48} alt="Desktop Frame 2" className="frame" />
+              </div>
+              <div className="column right-column">
+                <img src={frame49} alt="Desktop Frame 3" className="frame" />
+                <img src={frame49} alt="Desktop Frame 4" className="frame" />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="column left-column">
+                <img src={frame1} alt="Mobile Frame 1" className="frame" />
+                <img src={frame2} alt="Mobile Frame 2" className="frame" />
+                <img src={frame1} alt="Mobile Frame 1" className="frame" />
+                <img src={frame2} alt="Mobile Frame 2" className="frame" />
+              </div>
+              <div className="column right-column">
+                {/* <img src={frame2} alt="Mobile Frame 3" className="frame" /> */}
+                {/* <img src={frame2} alt="Mobile Frame 4" className="frame" /> */}
+              </div>
+            </>
+          )}
         </div>
       </section>
 
@@ -95,7 +165,7 @@ function HomePage() {
           <div className="postit p1">
             <div className="content">
               <h3>Take (& Monetize)<br />Any Request</h3>
-              <p>Unlock new income opportunities with Atarea,<br />whether they're simple follower suggestions or<br />complex project commissions.</p>
+              <p>Unlock new income opportunities with Prysm,<br />whether they're simple follower suggestions or<br />complex project commissions.</p>
               <p>Set your own terms, choose which requests to<br />fulfill, and start building your new income stream.</p>
               <button className="button">
                 <a href="#waitlist">Get Early Access</a>
@@ -106,7 +176,7 @@ function HomePage() {
           <div className="postit p2">
             <div className="content">
               <h3>Unlock Your<br />Community Data</h3>
-              <p>Atarea's request congregation provide deep<br />insights into your community's preferences.</p>
+              <p>Prysm's request congregation provide deep<br />insights into your community's preferences.</p>
               <p>Use real-time data to understand trends,<br />optimize your offerings, and create content<br />that ensures every project hits the mark.</p>
               <button className="button">
                 <a href="#waitlist">Get Early Access</a>
@@ -157,14 +227,41 @@ function HomePage() {
       <section id="waitlist">
         <div className="waitlist-box">
           <div className="waitlist-content">
-            {/* <img src="path/to/your/image.png" alt="Creator Icon" className="creator-icon" /> */}
+            
             <h2>For all creators</h2>
             <div className="launchlist-container">
               <div className="launchlist-widget" data-key-id="UpeyL8" data-height="180px"></div>
             </div>
           </div>
-        </div>
+        </div>  
       </section>
+
+      {isJoinPopupOpen && (
+        <div className="modal-overlay">
+          <div className="join-popup-content">
+            <button className="join-popup-close" onClick={handleClosePopup}>
+              &times;
+            </button>
+            <h2>Welcome!</h2>
+            <p>Sign in if you're a creator with an existing Prysm account.</p>
+            {/* <p>to Prysm's creator platform.</p> */}
+            <div className="google-signin-container">
+              <div className="mascot-overlay">
+                <img src={joinmascot} className="join-mascot" alt="Join mascot" />
+              </div>
+              <GoogleSignInButton onSuccess={handleClosePopup} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <footer className="footer">
+        <div className="footer-content">
+          <p>Contact: getprysm@gmail.com</p>
+          {/* <p>© 2024 Atarea. All rights reserved.</p> */}
+          <p>Follow us: @getprysm</p>
+        </div>
+      </footer>
     </>
   );
 }
