@@ -20,7 +20,8 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
   };
 
   const handleScroll = () => {
-    if (window.scrollY > 0) {
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent && mainContent.scrollTop > 0) {
       setIsScrolled(true);
     } else {
       setIsScrolled(false);
@@ -28,10 +29,13 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
   };
 
   useEffect(() => {
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+      mainContent.addEventListener("scroll", handleScroll);
+      return () => {
+        mainContent.removeEventListener("scroll", handleScroll);
+      };
+    }
   }, []);
 
   useEffect(() => {

@@ -45,10 +45,6 @@ function BoardView() {
     "#FEEAA4",
     "#D4D6F9",
     "#FECFCF"
-
-    // "#FFC107",  
-    // "#8000204D",   
-    // "#7080904D" 
   ], []);
 
   useEffect(() => {
@@ -70,6 +66,7 @@ function BoardView() {
       setNavbarColor(data.color);
       setIsBoardOwner(user?.email === data.email);
       setPostColors(data.post_colors || defaultColors);
+      document.documentElement.style.setProperty('--navbar-color', data.color);
     };
 
     if (boardPath) {
@@ -467,15 +464,43 @@ function BoardView() {
   };
 
   const handleContactCardToggle = (card) => {
-    setContactCardData(card);
+    if (!user) {
+      setIsJoinPopupOpen(true);
+      return;
+    }
+
+    // Ensure author object has all necessary fields
+    const authorData = {
+      ...card.author,
+      created_at: card.author?.created_at || card.created_at
+    };
+
+    setContactCardData({
+      ...card,
+      author: authorData
+    });
     setIsContactCardOpen(!isContactCardOpen);
+  };
+
+  const handleContactCardClose = () => {
+    const contactPopup = document.querySelector('.contact-card-popup');
+    const overlay = document.querySelector('.modal-overlay');
+
+    // Add fade-out animations to both the popup and overlay
+    contactPopup.classList.add('fade-out');
+    overlay.classList.add('fade-out');
+
+    // Wait for the animation to complete before updating state
+    setTimeout(() => {
+      setIsContactCardOpen(false);
+      contactPopup.classList.remove('fade-out');
+      overlay.classList.remove('fade-out');
+    }, 200); // Match the animation duration
   };
 
   if (boardNotFound) {
     return <Navigate to="/" />; // Redirect if board not found
   }
-
-  console.log('Contact Card Data:', contactCardData);
 
   return (
     <div className="app" style={{ backgroundColor }}>
@@ -650,25 +675,35 @@ function BoardView() {
       {isContactCardOpen && contactCardData && (
         <div className="modal-overlay">
           <div className="contact-card-popup">
-            <button className="close-popup" onClick={() => setIsContactCardOpen(false)}>&times;</button>
+            <button className="close-popup" onClick={handleContactCardClose}>&times;</button>
             <div className="profile-picture">
               <img
-                src={contactCardData.author?.avatar_url || fallbackImg}
+                src={contactCardData.is_anonymous && !isBoardOwner ? fallbackImg : contactCardData.author?.avatar_url || fallbackImg}
                 alt="Profile"
               />
             </div>
             <div className="contact-info">
-              <h2>{contactCardData.author?.full_name || 'Anonymous'}</h2>
-              <p className="email">
-                <img src={mailicon} alt="Mail icon" style={{ width: '16px', height: '16px', marginRight: '8px' }} />
-                {contactCardData.author?.email || 'No email available'}
-              </p>
-              <p>Total Requests: {cards.filter(card => card.author_id === contactCardData.author_id).length}</p>
-              <p>Joined: {new Date(contactCardData.author?.created_at).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-              })}</p>
+              <h2>
+                {contactCardData.is_anonymous && !isBoardOwner ? 'Anonymous' : contactCardData.author?.full_name || 'Anonymous'}
+              </h2>
+              {isBoardOwner && contactCardData.author?.email && (
+                <p className="email">
+                  <img src={mailicon} alt="Mail icon" style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+                  <a href={`mailto:${contactCardData.author.email}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                    {contactCardData.author.email}
+                  </a>
+                </p>
+              )}
+              {!contactCardData.is_anonymous || isBoardOwner ? (
+                <>
+                  <p>Total Requests: {cards.filter(card => card.author_id === contactCardData.author_id).length}</p>
+                  <p>Joined: {new Date(contactCardData.author?.created_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}</p>
+                </>
+              ) : null}
             </div>
           </div>
         </div>

@@ -13,7 +13,7 @@ code {
 }
 
 html {
-  scrollbar-color: rgba(40, 16, 16, 0.25) var(--scrollbar-track-color);
+  scrollbar-color: var(--navbar-color, rgba(40, 16, 16, 0.25)) var(--scrollbar-track-color);
 }
 
 html::-webkit-scrollbar-track {

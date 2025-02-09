@@ -9,7 +9,8 @@
   background-color: rgba(28, 28, 28, 0.8);
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background-color: #FFFFFF;
 }
 
@@ -28,8 +29,13 @@ img {
   justify-content: center;
   align-items: flex-start;
   padding: 30px;
-  flex-grow: 1;
-  margin-top: 8vh;
+  height: calc(100vh - 64px);
+  margin-top: 64px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: auto;
+  scrollbar-color: var(--navbar-color, rgba(40, 16, 16, 0.25)) var(--scrollbar-track-color);
+  z-index: 1;
 }
 
 .board {
@@ -261,11 +267,11 @@ img {
   padding: 24px 24px 20px;
   z-index: 1000;
   justify-content: center;
-
 }
 
-@media (max-width: 385px) {
+@media (max-width: 768px) {
   .join-popup-content {
+    padding: 24px 16px 20px;
     width: 90%;
   }
 }
@@ -765,4 +771,9 @@ p {
   font-size: 24px;
   cursor: pointer;
   color: #281010;
+}
+
+.fade-out {
+  animation: fadeOut 0.2s ease;
+  animation-fill-mode: both;
 }
