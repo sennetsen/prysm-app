@@ -14,6 +14,8 @@ import postbutton from './img/postbutton.svg';
 import helpmascot from './img/helpmascot.jpg';
 import joinmascot from './img/join-mascot.jpg';
 import { handleSignOut } from './components/UserProfile';
+import fallbackImg from './img/fallback.png';
+import mailicon from './img/mail.svg';
 
 function BoardView() {
   const { boardPath } = useParams();
@@ -36,15 +38,13 @@ function BoardView() {
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
   const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
   const [postColors, setPostColors] = useState([]);
+  const [isContactCardOpen, setIsContactCardOpen] = useState(false);
+  const [contactCardData, setContactCardData] = useState(null);
 
   const defaultColors = useMemo(() => [
     "#FEEAA4",
     "#D4D6F9",
     "#FECFCF"
-
-    // "#FFC107",  
-    // "#8000204D",   
-    // "#7080904D" 
   ], []);
 
   useEffect(() => {
@@ -66,6 +66,7 @@ function BoardView() {
       setNavbarColor(data.color);
       setIsBoardOwner(user?.email === data.email);
       setPostColors(data.post_colors || defaultColors);
+      document.documentElement.style.setProperty('--navbar-color', data.color);
     };
 
     if (boardPath) {
@@ -126,9 +127,8 @@ function BoardView() {
       .from('posts')
       .select(`
         *,
-        author:public_users(full_name, avatar_url),
-        reactions(reaction_type, user_id),
-        reaction_counts
+        author:users(full_name, avatar_url, email, created_at),
+        reactions(reaction_type, user_id)
       `)
       .eq('board_id', boardData.id);
 
@@ -140,7 +140,12 @@ function BoardView() {
         return {
           ...post,
           likesCount,
-          author: post.author || { full_name: 'Unknown', avatar_url: null }
+          author: post.author || {
+            full_name: 'Anonymous',
+            avatar_url: null,
+            email: null,
+            created_at: null
+          }
         };
       });
 
@@ -458,10 +463,44 @@ function BoardView() {
     }, 200); // Match the animation duration
   };
 
+  const handleContactCardToggle = (card) => {
+    if (!user) {
+      setIsJoinPopupOpen(true);
+      return;
+    }
+
+    // Ensure author object has all necessary fields
+    const authorData = {
+      ...card.author,
+      created_at: card.author?.created_at || card.created_at
+    };
+
+    setContactCardData({
+      ...card,
+      author: authorData
+    });
+    setIsContactCardOpen(!isContactCardOpen);
+  };
+
+  const handleContactCardClose = () => {
+    const contactPopup = document.querySelector('.contact-card-popup');
+    const overlay = document.querySelector('.modal-overlay');
+
+    // Add fade-out animations to both the popup and overlay
+    contactPopup.classList.add('fade-out');
+    overlay.classList.add('fade-out');
+
+    // Wait for the animation to complete before updating state
+    setTimeout(() => {
+      setIsContactCardOpen(false);
+      contactPopup.classList.remove('fade-out');
+      overlay.classList.remove('fade-out');
+    }, 200); // Match the animation duration
+  };
+
   if (boardNotFound) {
     return <Navigate to="/" />; // Redirect if board not found
   }
-
 
   return (
     <div className="app" style={{ backgroundColor }}>
@@ -506,6 +545,7 @@ function BoardView() {
               likesCount={card.likesCount}
               reactions={card.reactions || []}
               index={index}
+              onContactCardToggle={() => handleContactCardToggle(card)}
             />
           ))}
           <Tooltip title="Make a Request" placement="right">
@@ -534,8 +574,13 @@ function BoardView() {
                 type="text"
                 placeholder="Request title"
                 value={newPostTitle}
-                onChange={(e) => setNewPostTitle(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 23) {
+                    setNewPostTitle(e.target.value);
+                  }
+                }}
                 className="title-input"
+                maxLength={23}
               />
             </h3>
             <textarea
@@ -606,9 +651,9 @@ function BoardView() {
             <p>Sign in or sign up to interact</p>
             <p>with this board.</p>
             <div className="google-signin-container">
-              <div className="mascot-overlay">
+              {/* <div className="mascot-overlay">
                 <img src={joinmascot} className="join-mascot" alt="Join mascot" />
-              </div>
+              </div> */}
               <GoogleSignInButton onSuccess={() => {
                 handleClosePopup();
                 window.location.reload();
@@ -623,6 +668,43 @@ function BoardView() {
           <h3>Link Copied!</h3>
           <div className="link-container">
             <span className="link-text">{window.location.href}</span>
+          </div>
+        </div>
+      )}
+
+      {isContactCardOpen && contactCardData && (
+        <div className="modal-overlay">
+          <div className="contact-card-popup">
+            <button className="close-popup" onClick={handleContactCardClose}>&times;</button>
+            <div className="profile-picture">
+              <img
+                src={contactCardData.is_anonymous && !isBoardOwner ? fallbackImg : contactCardData.author?.avatar_url || fallbackImg}
+                alt="Profile"
+              />
+            </div>
+            <div className="contact-info">
+              <h2>
+                {contactCardData.is_anonymous && !isBoardOwner ? 'Anonymous' : contactCardData.author?.full_name || 'Anonymous'}
+              </h2>
+              {isBoardOwner && contactCardData.author?.email && (
+                <p className="email">
+                  <img src={mailicon} alt="Mail icon" style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+                  <a href={`mailto:${contactCardData.author.email}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                    {contactCardData.author.email}
+                  </a>
+                </p>
+              )}
+              {!contactCardData.is_anonymous || isBoardOwner ? (
+                <>
+                  <p>Total Requests: {cards.filter(card => card.author_id === contactCardData.author_id).length}</p>
+                  <p>Joined: {new Date(contactCardData.author?.created_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}</p>
+                </>
+              ) : null}
+            </div>
           </div>
         </div>
       )}

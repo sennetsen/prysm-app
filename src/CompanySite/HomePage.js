@@ -13,7 +13,7 @@ import frame2 from "./img/Frame 2.svg";
 function HomePage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const handleLinkClick = () => {
-    window.location.href='/';
+    window.location.href = '/';
   };
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
 
@@ -227,7 +227,6 @@ function HomePage() {
       <section id="waitlist">
         <div className="waitlist-box">
           <div className="waitlist-content">
-            
             <h2>For all creators</h2>
             <div className="launchlist-container">
               <div className="launchlist-widget" data-key-id="UpeyL8" data-height="180px"></div>

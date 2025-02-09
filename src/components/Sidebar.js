@@ -58,7 +58,7 @@ function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, pos
                 className="verified-icon"
               />
             </h2>
-            <p className="creator-bio">{bio || ""}</p>
+            {/* <p className="creator-bio">{bio || ""}</p> */}
 
             {/* Requests Section */}
             <p className="requests-title">

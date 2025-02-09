@@ -21,7 +21,8 @@ export default React.memo(
     onLike,
     likesCount = 0,
     reactions = [],
-    index
+    index,
+    onContactCardToggle
   }) {
     const [timestamp, setTimestamp] = useState('');
     const [isNew, setIsNew] = useState(true);
@@ -96,7 +97,9 @@ export default React.memo(
           </Tooltip>
         )}
         <div className="card-content">
-          <h3>{title}</h3>
+          <h3 className="card-title">
+            {title}
+          </h3>
           <div className="request-content">
             <div className="scroll-container">
               <p>{content}</p>
@@ -106,18 +109,12 @@ export default React.memo(
 
         <span className="timestamp">{timestamp}</span>
 
-
-
         {isAnonymous ? (
           <Tooltip
-            title={new Date(created_at).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
+            title="Click for Contact"
             placement="bottom"
           >
-            <div className="user-info">
+            <div className="user-info" onClick={onContactCardToggle}>
               <img
                 src={fallbackImg}
                 alt="Anonymous"
@@ -126,34 +123,32 @@ export default React.memo(
             </div>
           </Tooltip>
         ) : (
-          <Tooltip
-            title={new Date(created_at).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-            placement="bottom"
-          >
-            <div className="user-info">
-              {author?.avatar_url ? (
-                <img
-                  src={author.avatar_url}
-                  alt="Profile"
-                  className="profile-pic"
-                  onError={(e) => {
-                    e.target.src = fallbackImg;
-                  }}
-                />
-              ) : (
-                <img
-                  src={fallbackImg}
-                  alt="Profile"
-                  className="profile-pic"
-                />
-              )}
-              <span>{author?.full_name || 'Unknown'}</span>
-            </div>
-          </Tooltip>
+          author && (
+            <Tooltip
+              title="Click for Contact"
+              placement="bottom"
+            >
+              <div className="user-info" onClick={onContactCardToggle}>
+                {author.avatar_url ? (
+                  <img
+                    src={author.avatar_url}
+                    alt="Profile"
+                    className="profile-pic"
+                    onError={(e) => {
+                      e.target.src = fallbackImg;
+                    }}
+                  />
+                ) : (
+                  <img
+                    src={fallbackImg}
+                    alt="Profile"
+                    className="profile-pic"
+                  />
+                )}
+                <span>{author.full_name}</span>
+              </div>
+            </Tooltip>
+          )
         )}
 
         <div className="card-footer">
