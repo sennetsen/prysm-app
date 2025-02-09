@@ -12,7 +12,6 @@ import { lightenColor } from './utils/colorUtils'; // Import the lightenColor fu
 import { GoogleSignInButton } from './supabaseClient';
 import postbutton from './img/postbutton.svg';
 import helpmascot from './img/helpmascot.jpg';
-import joinmascot from './img/join-mascot.jpg';
 import { handleSignOut } from './components/UserProfile';
 import fallbackImg from './img/fallback.png';
 import mailicon from './img/mail.svg';

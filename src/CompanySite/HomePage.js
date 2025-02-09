@@ -9,6 +9,8 @@ import { GoogleSignInButton } from '../supabaseClient';
 import joinmascot from '../img/join-mascot.jpg';
 import frame1 from "./img/Frame 1 (1).svg";
 import frame2 from "./img/Frame 2.svg";
+import { supabase } from '../supabaseClient';
+import { handleSignOut } from '../components/UserProfile';
 
 function HomePage() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -16,6 +18,9 @@ function HomePage() {
     window.location.href = '/';
   };
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
+  const [isSignInPopupOpen, setIsSignInPopupOpen] = useState(false);
+  const [isCreatorAccount, setIsCreatorAccount] = useState(true);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     // Set the document title
@@ -58,25 +63,25 @@ function HomePage() {
   useEffect(() => {
     const postits = document.querySelectorAll('.postit');
     const featuresSection = document.getElementById('features');
-    
-    const handleScroll = () => {
-        const scrollTop = window.scrollY - featuresSection.offsetTop;
-        const sectionHeight = featuresSection.offsetHeight;
-        const scrollProgress = scrollTop / sectionHeight;
 
-        postits.forEach((postit, index) => {
-            // Each postit gets its own scroll segment (0-0.33, 0.33-0.66, 0.66-1)
-            const segmentStart = index * 0.33;
-            const segmentEnd = (index + 1) * 0.33;
-            
-            if (scrollProgress >= segmentStart) {
-                const progressInSegment = (scrollProgress - segmentStart) / 0.33;
-                const yOffset = 100 - (progressInSegment * 100);
-                postit.style.transform = `translateY(${Math.min(yOffset, 0)}vh)`;
-            } else {
-                postit.style.transform = 'translateY(100vh)';
-            }
-        });
+    const handleScroll = () => {
+      const scrollTop = window.scrollY - featuresSection.offsetTop;
+      const sectionHeight = featuresSection.offsetHeight;
+      const scrollProgress = scrollTop / sectionHeight;
+
+      postits.forEach((postit, index) => {
+        // Each postit gets its own scroll segment (0-0.33, 0.33-0.66, 0.66-1)
+        const segmentStart = index * 0.33;
+        const segmentEnd = (index + 1) * 0.33;
+
+        if (scrollProgress >= segmentStart) {
+          const progressInSegment = (scrollProgress - segmentStart) / 0.33;
+          const yOffset = 100 - (progressInSegment * 100);
+          postit.style.transform = `translateY(${Math.min(yOffset, 0)}vh)`;
+        } else {
+          postit.style.transform = 'translateY(100vh)';
+        }
+      });
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -90,16 +95,73 @@ function HomePage() {
   const handleClosePopup = () => {
     const joinPopup = document.querySelector('.join-popup-content');
     const overlay = document.querySelector('.modal-overlay');
-    
+
     joinPopup.classList.add('fade-out');
     overlay.classList.add('fade-out');
-    
+
     setTimeout(() => {
       setIsJoinPopupOpen(false);
       joinPopup.classList.remove('fade-out');
       overlay.classList.remove('fade-out');
     }, 200);
   };
+
+  const handleSignInClick = () => {
+    setIsSignInPopupOpen(true);
+  };
+
+  const handleCloseSignInPopup = () => {
+    const signInPopup = document.querySelector('.join-popup-content');
+    const overlay = document.querySelector('.modal-overlay');
+
+    signInPopup.classList.add('fade-out');
+    overlay.classList.add('fade-out');
+
+    setTimeout(() => {
+      setIsSignInPopupOpen(false);
+      signInPopup.classList.remove('fade-out');
+      overlay.classList.remove('fade-out');
+    }, 200);
+  };
+
+  const handleGoogleSignInSuccess = async (response) => {
+    if (!response || !response.user) {
+      console.error('No user found in response');
+      return;
+    }
+
+    const user = response.user;
+
+    try {
+      const { data: boardData, error } = await supabase
+        .from('boards')
+        .select('url_path')
+        .eq('email', user.email)
+        .single();
+
+      if (error || !boardData) {
+        console.log('No board found for user:', user.email);
+        setIsCreatorAccount(false);
+        return;
+      }
+
+      // Creator found - redirect to their board
+      console.log('Board found, redirecting to:', boardData.url_path);
+      handleCloseSignInPopup();
+      window.location.href = `/${boardData.url_path}`;
+    } catch (error) {
+      console.error('Error checking creator status:', error);
+      setIsCreatorAccount(false);
+    }
+  };
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <>      <nav className={isScrolled ? 'scrolled' : ''}>
@@ -109,9 +171,7 @@ function HomePage() {
         </a>
       </div>
       <div className="navbar-icons">
-        <button className="join-button" onClick={handleJoinClick}>
-          <span className="join-button-text">Sign In</span>
-        </button>
+        <button className="sign-in-button" onClick={handleSignInClick}>Creator Sign In</button>
         <div className="waitlist-btn">
           <button type="button">
             <a href="#waitlist">Get Early Access</a>
@@ -232,23 +292,48 @@ function HomePage() {
               <div className="launchlist-widget" data-key-id="UpeyL8" data-height="180px"></div>
             </div>
           </div>
-        </div>  
+        </div>
       </section>
 
-      {isJoinPopupOpen && (
+
+      {isSignInPopupOpen && (
         <div className="modal-overlay">
           <div className="join-popup-content">
-            <button className="join-popup-close" onClick={handleClosePopup}>
+            <button className="join-popup-close" onClick={handleCloseSignInPopup}>
               &times;
             </button>
-            <h2>Welcome!</h2>
-            <p>Sign in if you're a creator with an existing Prysm account.</p>
-            {/* <p>to Prysm's creator platform.</p> */}
+            {isCreatorAccount !== false ? (
+              <>
+                <h2>Welcome!</h2>
+                <p>If you're a creator with a</p>
+                <p>Prysm account ready to go,</p>
+                <p>sign in to access your board.</p>
+              </>
+            ) : (
+              <>
+                <h2>Oops!</h2>
+                <p>Sorry, this account is not an </p>
+                <p>existing creator account on Prysm.</p>
+                <p>Get early access by joining our waitlist!</p>
+                <button
+                  className="logout-button"
+                  onClick={async () => {
+                    await handleSignOut(() => {
+                      window.location.reload();
+                      handleCloseSignInPopup();
+                      setTimeout(() => {
+                      }, 200);
+                    }, user);
+                  }}
+                >
+                  Log Out
+                </button>
+              </>
+            )}
             <div className="google-signin-container">
-              <div className="mascot-overlay">
-                <img src={joinmascot} className="join-mascot" alt="Join mascot" />
-              </div>
-              <GoogleSignInButton onSuccess={handleClosePopup} />
+              <GoogleSignInButton onSuccess={(response) => {
+                handleGoogleSignInSuccess(response);
+              }} />
             </div>
           </div>
         </div>
@@ -257,7 +342,7 @@ function HomePage() {
       <footer className="footer">
         <div className="footer-content">
           <p>Contact: getprysm@gmail.com</p>
-          {/* <p>© 2024 Atarea. All rights reserved.</p> */}
+          {/* <p>© 2024 Prysm. All rights reserved.</p> */}
           <p>Follow us: @getprysm</p>
         </div>
       </footer>

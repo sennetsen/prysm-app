@@ -110,7 +110,7 @@ function GoogleSignInButton({ onClick, onSuccess }) {
 
       setUser(user);
       if (onSuccess) {
-        onSuccess();
+        onSuccess({ user });
       }
     } catch (error) {
       console.error('Error in handleSignInWithGoogle:', error);
@@ -118,7 +118,7 @@ function GoogleSignInButton({ onClick, onSuccess }) {
   };
 
   if (user) {
-    return <UserProfile user={user} onSignOut={() => setUser(null)} />;
+    return null;
   }
 
   return (
