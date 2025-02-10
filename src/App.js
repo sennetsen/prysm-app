@@ -695,7 +695,7 @@ function BoardView() {
               )}
               {!contactCardData.is_anonymous || isBoardOwner ? (
                 <>
-                  <p>Total Requests: {cards.filter(card => card.author_id === contactCardData.author_id).length}</p>
+                  <p>Total Requests On This Board: {cards.filter(card => card.author_id === contactCardData.author_id).length}</p>
                   <p>Joined: {new Date(contactCardData.author?.created_at).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',

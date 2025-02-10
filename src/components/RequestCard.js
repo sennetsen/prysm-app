@@ -28,7 +28,6 @@ export default React.memo(
     const [isNew, setIsNew] = useState(true);
     const [isDeleting, setIsDeleting] = useState(false);
 
-
     const canDelete = isBoardOwner || (currentUserId && authorId === currentUserId);
     const hasLiked = reactions.some(r =>
       r.user_id === currentUserId &&
@@ -83,6 +82,15 @@ export default React.memo(
       }
     };
 
+    const formatDate = (dateString) => {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    };
+
     return (
       <div className={`request-card ${isNew ? 'new-card' : ''} ${isDeleting ? 'deleting' : ''}`} style={{ backgroundColor: color, '--card-color': color }}>
         {canDelete && (
@@ -111,7 +119,7 @@ export default React.memo(
 
         {isAnonymous ? (
           <Tooltip
-            title="Click for Contact"
+            title={<span>Posted {formatDate(created_at)}<br />Click for Contact</span>}
             placement="bottom"
           >
             <div className="user-info" onClick={onContactCardToggle}>
@@ -125,7 +133,7 @@ export default React.memo(
         ) : (
           author && (
             <Tooltip
-              title="Click for Contact"
+              title={<span>Posted {formatDate(created_at)}<br />Click for Contact</span>}
               placement="bottom"
             >
               <div className="user-info" onClick={onContactCardToggle}>

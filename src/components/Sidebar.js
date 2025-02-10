@@ -49,7 +49,6 @@ function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, pos
               />
             </div>
 
-            {/* Creator Info */}
             <h2 className="creator-name">
               {creatorName || ""}
               <img
@@ -58,9 +57,7 @@ function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, pos
                 className="verified-icon"
               />
             </h2>
-            {/* <p className="creator-bio">{bio || ""}</p> */}
 
-            {/* Requests Section */}
             <p className="requests-title">
               {totalPosts} {totalPosts === 1 ? "Request" : "Requests"}
             </p>
@@ -81,7 +78,6 @@ function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, pos
               )}
             </div>
 
-            {/* Description */}
             <p className="description-text" style={{
               scrollbarColor: `${color} transparent`, // For Firefox
             }}>
