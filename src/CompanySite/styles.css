@@ -23,6 +23,20 @@
 
 html {
   scroll-behavior: smooth;
+  height: 100%;
+  min-height: 100vh;
+}
+
+body {
+  height: 100%;
+  min-height: 100vh;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--background);
 }
 
 nav {
@@ -134,6 +148,9 @@ nav li {
   background-color: #F7F2F2;
   border: 20px solid #EBE4E3;
   padding-top: 8vh;
+  flex: 1;
+  background-color: var(--background);
+  padding-bottom: 60px;
 }
 
 .home .text {
@@ -195,6 +212,8 @@ nav li {
 #demo {
   height: 110vh;
   background-color: var(--background);
+  flex: 1;
+  padding-bottom: 60px;
 }
 
 #demo img {
@@ -216,6 +235,8 @@ nav li {
   /* 3x viewport height for 3 post-its */
   background-color: var(--background);
   position: relative;
+  flex: 1;
+  padding-bottom: 60px;
 }
 
 #features .postit-deck {
@@ -341,6 +362,8 @@ nav li {
   background: linear-gradient(to bottom right, #88A9F7, #EF5959, #FEEAA5);
   font-family: 'Poppins', sans-serif;
   padding: 40px 0;
+  flex: 1;
+  padding-bottom: 60px;
 }
 
 .waitlist-box {
@@ -444,6 +467,8 @@ nav li {
   /* height: 100vh; */
   background-color: #281010;
   /* color: white; */
+  flex: 1;
+  padding-bottom: 60px;
 }
 
 .testimonial-container {
@@ -522,6 +547,8 @@ nav li {
     height: auto;
     padding: 8vh 5% 0;
     border: none;
+    min-height: calc(100vh - 64px);
+    padding-bottom: 80px;
   }
 
   .home .text {
@@ -591,6 +618,8 @@ nav li {
   #demo {
     height: auto;
     padding: 40px 0;
+    min-height: calc(100vh - 64px);
+    padding-bottom: 80px;
   }
 
   #demo img {
@@ -602,6 +631,8 @@ nav li {
   #features {
     min-height: auto;
     padding: 40px 0;
+    min-height: calc(100vh - 64px);
+    padding-bottom: 80px;
   }
 
   #features .postit {
@@ -731,10 +762,11 @@ nav li {
 .footer {
   background-color: #281010;
   color: #fff;
-  padding: 2rem 5%;
+  padding: 1rem 5%;
   text-align: center;
   border-top: 1px solid rgba(40, 16, 16, 0.1);
-  margin-top: 0;
+  margin-top: auto;
+  /* This pushes the footer to the bottom */
 }
 
 .footer-content {

@@ -380,10 +380,11 @@ function HomePage() {
 
       <footer className="footer">
         <div className="footer-content">
-          <p>Contact: <a href="mailto:getprysm@gmail.com"
+          <p>Questions? Send us a message at <a href="mailto:getprysm@gmail.com"
             style={{ color: 'white', textDecoration: 'underline' }}>getprysm@gmail.com</a></p>
-          {/* <p>© 2024 Prysm. All rights reserved.</p> */}
-          <p>Follow us: @getprysm</p>
+          <p>Follow us on Instagram <a href="https://instagram.com/getprysm" target="_blank" rel="noopener noreferrer" style={{ color: 'white', textDecoration: 'underline' }}>@getprysm</a></p>
+          <p>© {new Date().getFullYear()} Prysm. All rights reserved.</p>
+
         </div>
       </footer>
     </>

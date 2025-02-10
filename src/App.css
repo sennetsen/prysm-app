@@ -819,13 +819,13 @@ p {
 
   .sign-in-button,
   .get-early-access-button {
-    padding: 4px 8px;
+    padding: 4px 8px !important;
     font-size: 12px;
     height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 140px;
+    min-width: 120px;
     white-space: nowrap;
   }
 
@@ -840,5 +840,18 @@ p {
   .get-early-access-button {
     display: none;
     /* Hide on mobile */
+  }
+
+  /* TEMPORARY ON MOBILE: Hide all sections except the first page */
+  #demo,
+  #features,
+  #testimonials,
+  #waitlist {
+    display: none;
+  }
+
+  /* Hide the carousel */
+  .images {
+    display: none;
   }
 }
