@@ -777,3 +777,68 @@ p {
   animation: fadeOut 0.2s ease;
   animation-fill-mode: both;
 }
+
+.testimonial-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Center the text horizontally */
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 3rem;
+}
+
+/* Consolidated Mobile Styles */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 10px;
+  }
+
+  .logo {
+    height: 30px;
+    width: 80px;
+    margin-right: 10px;
+  }
+
+  .navbar-title {
+    display: none;
+  }
+
+  .navbar-icons {
+    gap: 8px;
+  }
+
+  .profile-pic {
+    width: 30px;
+    height: 30px;
+  }
+
+  .share-button {
+    padding: 4px 8px;
+    font-size: 14px;
+  }
+
+  .sign-in-button,
+  .get-early-access-button {
+    padding: 4px 8px;
+    font-size: 12px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 140px;
+    white-space: nowrap;
+  }
+
+  .profile-icon span {
+    display: none;
+  }
+
+  .divider {
+    display: none;
+  }
+
+  .get-early-access-button {
+    display: none;
+    /* Hide on mobile */
+  }
+}

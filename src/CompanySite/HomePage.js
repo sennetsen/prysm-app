@@ -187,7 +187,7 @@ function HomePage() {
         <div className="navbar-icons">
           <button className="sign-in-button" onClick={handleSignInClick}>Creator Sign In</button>
           <div className="waitlist-btn">
-            <button type="button">
+            <button type="button" className="get-early-access-button">
               <a href="#waitlist">Get Early Access</a>
             </button>
           </div>
@@ -380,7 +380,8 @@ function HomePage() {
 
       <footer className="footer">
         <div className="footer-content">
-          <p>Contact: getprysm@gmail.com</p>
+          <p>Contact: <a href="mailto:getprysm@gmail.com"
+            style={{ color: 'white', textDecoration: 'underline' }}>getprysm@gmail.com</a></p>
           {/* <p>© 2024 Prysm. All rights reserved.</p> */}
           <p>Follow us: @getprysm</p>
         </div>
