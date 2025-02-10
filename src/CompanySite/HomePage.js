@@ -4,7 +4,6 @@ import logo from "../img/Vector (1).svg";
 import frame48 from "./img/Frame 48.svg";
 import frame49 from "./img/Frame 49.svg";
 import boardImage from "./img/Board.svg";
-import { Link } from "react-router-dom";
 import { GoogleSignInButton } from '../supabaseClient';
 import joinmascot from '../img/join-mascot.jpg';
 import frame1 from "./img/Frame 1 (1).svg";
@@ -17,10 +16,10 @@ function HomePage() {
   const handleLinkClick = () => {
     window.location.href = '/';
   };
-  const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
   const [isSignInPopupOpen, setIsSignInPopupOpen] = useState(false);
-  const [isCreatorAccount, setIsCreatorAccount] = useState(true);
+  const [isCreatorAccount, setIsCreatorAccount] = useState(null);
   const [user, setUser] = useState(null);
+  const [boardData, setBoardData] = useState(null);
 
   useEffect(() => {
     // Set the document title
@@ -28,11 +27,8 @@ function HomePage() {
   }, []);
 
   const handleScroll = () => {
-    const howItWorksSection = document.querySelector('#how-it-works');
-    if (howItWorksSection) {
-      const scrollPosition = window.scrollY + window.innerHeight;
-      setIsScrolled(scrollPosition > howItWorksSection.offsetTop);
-    }
+    const scrollPosition = window.scrollY;
+    setIsScrolled(scrollPosition > 0);
   };
 
   useEffect(() => {
@@ -88,24 +84,6 @@ function HomePage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleJoinClick = () => {
-    setIsJoinPopupOpen(true);
-  };
-
-  const handleClosePopup = () => {
-    const joinPopup = document.querySelector('.join-popup-content');
-    const overlay = document.querySelector('.modal-overlay');
-
-    joinPopup.classList.add('fade-out');
-    overlay.classList.add('fade-out');
-
-    setTimeout(() => {
-      setIsJoinPopupOpen(false);
-      joinPopup.classList.remove('fade-out');
-      overlay.classList.remove('fade-out');
-    }, 200);
-  };
-
   const handleSignInClick = () => {
     setIsSignInPopupOpen(true);
   };
@@ -145,10 +123,33 @@ function HomePage() {
         return;
       }
 
-      // Creator found - redirect to their board
-      console.log('Board found, redirecting to:', boardData.url_path);
+      // Creator found - store board data and redirect
+      console.log('Board found:', boardData.url_path);
+      setBoardData(boardData);
+      setIsCreatorAccount(true);
       handleCloseSignInPopup();
       window.location.href = `/${boardData.url_path}`;
+    } catch (error) {
+      console.error('Error checking creator status:', error);
+      setIsCreatorAccount(false);
+    }
+  };
+
+  const checkCreatorStatus = async (userEmail) => {
+    try {
+      const { data: boardData, error } = await supabase
+        .from('boards')
+        .select('url_path')
+        .eq('email', userEmail)
+        .single();
+
+      if (error || !boardData) {
+        setIsCreatorAccount(false);
+        return;
+      }
+
+      setBoardData(boardData);
+      setIsCreatorAccount(true);
     } catch (error) {
       console.error('Error checking creator status:', error);
       setIsCreatorAccount(false);
@@ -158,27 +159,40 @@ function HomePage() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
+      if (session?.user?.email) {
+        checkCreatorStatus(session.user.email);
+      }
     });
 
+    // Check creator status on mount if user exists
+    const checkInitialStatus = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email) {
+        checkCreatorStatus(session.user.email);
+      }
+    };
+
+    checkInitialStatus();
     return () => subscription.unsubscribe();
   }, []);
 
   return (
-    <>      <nav className={isScrolled ? 'scrolled' : ''}>
-      <div className="logo">
-        <a href="/" onClick={handleLinkClick}>
-          <img src={logo} alt="Prysm Logo" className="logo" />
-        </a>
-      </div>
-      <div className="navbar-icons">
-        <button className="sign-in-button" onClick={handleSignInClick}>Creator Sign In</button>
-        <div className="waitlist-btn">
-          <button type="button">
-            <a href="#waitlist">Get Early Access</a>
-          </button>
+    <>
+      <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
+        <div className="logo">
+          <a href="/" onClick={handleLinkClick}>
+            <img src={logo} alt="Prysm Logo" className="logo" />
+          </a>
         </div>
-      </div>
-    </nav>
+        <div className="navbar-icons">
+          <button className="sign-in-button" onClick={handleSignInClick}>Creator Sign In</button>
+          <div className="waitlist-btn">
+            <button type="button">
+              <a href="#waitlist">Get Early Access</a>
+            </button>
+          </div>
+        </div>
+      </nav>
 
       <section className="home">
         <div className="text">
@@ -302,27 +316,52 @@ function HomePage() {
             <button className="join-popup-close" onClick={handleCloseSignInPopup}>
               &times;
             </button>
-            {isCreatorAccount !== false ? (
+            {!user ? (
               <>
                 <h2>Welcome!</h2>
                 <p>If you're a creator with a</p>
                 <p>Prysm account ready to go,</p>
                 <p>sign in to access your board.</p>
               </>
+            ) : isCreatorAccount === true ? (
+              <>
+                <h2 style={{ fontSize: '32px' }}>You're signed in!</h2>
+                <p>Visit your board or log out</p>
+                <p>to switch accounts.</p>
+                <div className="creator-buttons">
+                  <button
+                    className="visit-board-button"
+                    onClick={() => {
+                      window.location.href = `/${boardData?.url_path}`;
+                    }}
+                  >
+                    Visit Board
+                  </button>
+                  <button
+                    className="logout-button"
+                    onClick={async () => {
+                      await handleSignOut(() => {
+                        window.location.reload();
+                        handleCloseSignInPopup();
+                      }, user);
+                    }}
+                  >
+                    Log Out
+                  </button>
+                </div>
+              </>
             ) : (
               <>
                 <h2>Oops!</h2>
                 <p>Sorry, this account is not an </p>
                 <p>existing creator account on Prysm.</p>
-                <p>Get early access by joining our waitlist!</p>
+                <p style={{ marginBottom: '20px' }}>Get early access by joining our waitlist!</p>
                 <button
                   className="logout-button"
                   onClick={async () => {
                     await handleSignOut(() => {
                       window.location.reload();
                       handleCloseSignInPopup();
-                      setTimeout(() => {
-                      }, 200);
                     }, user);
                   }}
                 >
