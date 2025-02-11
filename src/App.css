@@ -742,6 +742,7 @@ p {
   color: #281010;
   margin: 0;
   word-wrap: break-word;
+  margin-bottom: 5px;
 }
 
 .contact-card-popup .email {
