@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import HomePage from './CompanySite/HomePage';
 import { supabase } from "./supabaseClient";
 import Navbar from "./components/Navbar";
@@ -715,14 +716,17 @@ function BoardView() {
 // Main App component
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/:boardPath" element={<BoardView />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-      <Analytics />
-    </Router>
+    <>
+      <SpeedInsights />
+      <Router>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/:boardPath" element={<BoardView />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+        <Analytics />
+      </Router>
+    </>
   );
 }
 
