@@ -177,6 +177,7 @@
 .question-icon {
     background: none;
     border: none;
+    box-shadow: none;
     cursor: pointer;
     color: #FCFcFc;
     transition: transform 0.2s ease;
@@ -203,6 +204,7 @@
 .profile-icon {
     background: none;
     border: none;
+    box-shadow: none;
     cursor: pointer;
     color: white;
     transition: transform 0.2s ease;
