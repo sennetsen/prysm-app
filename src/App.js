@@ -633,9 +633,9 @@ function BoardView() {
         <div className="help-popup">
           <h2>Thanks for using us!</h2>
           <p>Prysm is still in private beta.</p>
-          <p>Find us at <a href="https://prysmapp.com">prysmapp.com</a></p>
+          <p>Waitlist at <a href="https://prysmapp.com">prysmapp.com</a> </p>
           <p>or contact us at</p>
-          <p><a href="mailto:getprysm@gmail.com">getprysm@gmail.com</a></p>
+          <p><a href="mailto:getprysm@gmail.com">getprysm@gmail.com</a>!</p>
           <img src={helpmascot} className="help-mascot" alt="Help mascot" />
         </div>
       )}
