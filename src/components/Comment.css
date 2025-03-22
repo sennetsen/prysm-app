@@ -47,3 +47,121 @@
   text-decoration: underline;
   /* Underline on hover */
 }
+
+.comment-input-container {
+  position: absolute;
+  left: 48.49%;
+  right: 45.96%;
+  top: 60.56%;
+  bottom: 36.47%;
+  width: 874px;
+  /* Adjust width as needed */
+  height: 52px;
+  /* Height of the input box */
+  background: #FBF9F9;
+  /* Light background color */
+  border: 0.475px solid #00214E;
+  /* Border color */
+  box-shadow: 0px 0px 4px rgba(84, 52, 52, 0.25);
+  /* Shadow effect */
+  border-radius: 8px;
+  /* Rounded corners */
+  display: flex;
+  /* Flexbox for layout */
+  align-items: center;
+  /* Center items vertically */
+  padding: 0 12px;
+  /* Padding for the input area */
+}
+
+.comment-textarea {
+  flex: 1;
+  /* Take up remaining space */
+  border: none;
+  /* Remove default border */
+  background: transparent;
+  /* Transparent background */
+  font-family: 'Lexend Deca';
+  /* Font family */
+  font-style: normal;
+  /* Normal font style */
+  font-weight: 400;
+  /* Font weight */
+  font-size: 16px;
+  /* Font size */
+  line-height: 20px;
+  /* Line height */
+  color: #B39898;
+  /* Text color */
+  resize: none;
+  /* Prevent resizing */
+  padding: 10px;
+  /* Padding inside the textarea */
+}
+
+.comment-textarea::placeholder {
+  color: #B39898;
+  /* Placeholder color */
+  text-align: center;
+  /* Center the placeholder text */
+}
+
+.comment-actions {
+  display: flex;
+  /* Flexbox for action buttons */
+  justify-content: space-between;
+  /* Space between elements */
+  margin-top: 8px;
+  /* Margin above actions */
+}
+
+.file-input-button {
+  cursor: pointer;
+  /* Pointer cursor for file input */
+  display: flex;
+  /* Flexbox for layout */
+  align-items: center;
+  /* Center items vertically */
+}
+
+.send-button {
+  background-color: #007bff;
+  /* Primary color */
+  color: white;
+  /* Text color */
+  border-radius: 8px;
+  /* Rounded corners */
+}
+
+.file-list {
+  margin-top: 8px;
+  /* Margin above file list */
+}
+
+.file-item {
+  display: flex;
+  /* Flexbox for file items */
+  justify-content: space-between;
+  /* Space between file name and remove button */
+  align-items: center;
+  /* Center items vertically */
+  background: #e9ecef;
+  /* Background for file item */
+  padding: 8px;
+  /* Padding for file item */
+  border-radius: 4px;
+  /* Rounded corners */
+  margin-top: 4px;
+  /* Margin above file item */
+}
+
+.remove-file {
+  background: none;
+  /* No background for remove button */
+  border: none;
+  /* No border for remove button */
+  color: #dc3545;
+  /* Danger color for remove button */
+  cursor: pointer;
+  /* Pointer cursor for remove button */
+}
