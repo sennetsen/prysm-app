@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Button, Input, message } from 'antd';
 import { supabase } from '../supabaseClient';
 import { storage } from '../lib/storage';
+import { PaperClipOutlined, SendOutlined } from '@ant-design/icons';
+import './CommentInput.css';
 
 interface CommentInputProps {
   postId: string;
@@ -82,40 +84,48 @@ export function CommentInput({ postId, parentCommentId, onSubmit, currentUser }:
   };
 
   return (
-    <div className="comment-input">
+    <div className="comment-input-container">
       <Input.TextArea
         value={content}
         onChange={e => setContent(e.target.value)}
-        placeholder={parentCommentId ? "Write a reply..." : "Write a comment..."}
+        placeholder="Leave a comment..."
         rows={3}
+        className="comment-textarea"
       />
-      <div className="comment-input-footer">
-        <input
-          type="file"
-          multiple
-          onChange={handleFileChange}
-        />
-        {files.length > 0 && (
-          <div className="file-list">
-            {files.map((file, index) => (
-              <div key={index} className="file-item">
-                {file.name}
-                <button onClick={() => setFiles(files.filter((_, i) => i !== index))}>
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="comment-actions">
+        <label className="file-input-button">
+          <PaperClipOutlined />
+          <input
+            type="file"
+            multiple
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
+        </label>
         <Button
           type="primary"
+          icon={<SendOutlined />}
           onClick={handleSubmit}
           loading={loading}
           disabled={!content.trim() && files.length === 0}
-        >
-          {parentCommentId ? 'Reply' : 'Comment'}
-        </Button>
+          className="send-button"
+        />
       </div>
+      {files.length > 0 && (
+        <div className="file-list">
+          {files.map((file, index) => (
+            <div key={index} className="file-item">
+              <span>{file.name}</span>
+              <button
+                onClick={() => setFiles(files.filter((_, i) => i !== index))}
+                className="remove-file"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

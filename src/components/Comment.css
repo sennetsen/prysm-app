@@ -1,0 +1,49 @@
+.comment {
+  display: flex;
+  margin: 10px 0;
+  padding: 12px;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  /* Light background for comments */
+}
+
+.comment-content {
+  margin-left: 10px;
+  flex: 1;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.author-name {
+  font-weight: bold;
+  color: #333;
+  /* Darker text for author name */
+}
+
+.timestamp {
+  font-size: 0.8em;
+  color: #888;
+  /* Lighter color for timestamp */
+}
+
+.comment-actions {
+  margin-top: 8px;
+}
+
+.attachment-link {
+  display: block;
+  margin-top: 4px;
+  color: #007bff;
+  /* Link color */
+  text-decoration: none;
+}
+
+.attachment-link:hover {
+  text-decoration: underline;
+  /* Underline on hover */
+}

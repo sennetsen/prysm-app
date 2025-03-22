@@ -1,0 +1,78 @@
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
+import { Avatar } from 'antd';
+
+interface ActivityBarProps {
+  postId: string;
+}
+
+export function ActivityBar({ postId }: ActivityBarProps) {
+  const [topComments, setTopComments] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchTopComments();
+    subscribeToComments();
+  }, [postId]);
+
+  const fetchTopComments = async () => {
+    const { data, error } = await supabase
+      .from('comments')
+      .select(`
+        *,
+        author:users(full_name, avatar_url),
+        reaction_counts
+      `)
+      .eq('post_id', postId)
+      .order('reaction_counts->like', { ascending: false })
+      .limit(3);
+
+    if (!error && data) {
+      setTopComments(data);
+    }
+  };
+
+  const subscribeToComments = () => {
+    const channel = supabase
+      .channel(`top-comments:${postId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'comments',
+        filter: `post_id=eq.${postId}`
+      }, () => {
+        fetchTopComments();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
+
+  return (
+    <div className="activity-bar">
+      <h3>Top Comments</h3>
+      <div className="activity-bubbles">
+        {[0, 1, 2].map((index) => (
+          <div key={index} className="activity-bubble">
+            {topComments[index] ? (
+              <>
+                <Avatar src={topComments[index].author?.avatar_url} />
+                <div className="comment-preview">
+                  <span className="author-name">
+                    {topComments[index].is_anonymous
+                      ? 'Anonymous'
+                      : topComments[index].author?.full_name}
+                  </span>
+                  <p>{topComments[index].content}</p>
+                </div>
+              </>
+            ) : (
+              <div className="empty-bubble" />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+} 

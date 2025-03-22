@@ -1,0 +1,185 @@
+.post-popup .ant-modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.post-popup-container {
+  display: flex;
+  gap: 24px;
+  min-height: 500px;
+}
+
+.post-content-section {
+  flex: 1;
+  padding-right: 24px;
+}
+
+.post-header {
+  margin-bottom: 24px;
+}
+
+.post-meta {
+  display: flex;
+  gap: 12px;
+  color: #666;
+  font-size: 14px;
+}
+
+.post-content {
+  margin-bottom: 32px;
+}
+
+.activity-bar {
+  width: 240px;
+  border-left: 1px solid #eee;
+  padding-left: 24px;
+}
+
+.activity-bubbles {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activity-bubble {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #f8f8f8;
+  border-radius: 8px;
+}
+
+.empty-bubble {
+  height: 64px;
+  background: #f0f0f0;
+  border-radius: 8px;
+}
+
+.comment-preview {
+  flex: 1;
+  overflow: hidden;
+}
+
+.comment-preview p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Comment Box Styles */
+.comment-box {
+  background-color: #fbf9f9;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 0 4px rgba(84, 52, 52, 0.25);
+  position: relative;
+}
+
+.comment-textarea.ant-input-textarea .ant-input {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  color: #281010;
+  resize: none;
+}
+
+.comment-textarea.ant-input-textarea .ant-input::placeholder {
+  color: #b39999;
+}
+
+.comment-textarea.ant-input-textarea .ant-input:focus {
+  box-shadow: none;
+}
+
+.comment-actions {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.file-input-button {
+  width: 40px;
+  height: 40px;
+  background: #d9d9d9;
+  border-radius: 9.6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.file-input-button:hover {
+  background: #cccccc;
+}
+
+.file-input-button .anticon {
+  font-size: 14px;
+  color: #101825;
+}
+
+.send-button {
+  width: 40px;
+  height: 40px;
+  background: #d9d9d9;
+  border-radius: 9.6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.send-button .anticon {
+  font-size: 14px;
+  color: #101825;
+}
+
+.send-button:hover {
+  background: #cccccc;
+}
+
+.send-button:disabled {
+  background: #e9e9e9;
+  cursor: not-allowed;
+}
+
+.file-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: rgba(40, 16, 16, 0.05);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.remove-file {
+  background: none;
+  border: none;
+  color: #281010;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 16px;
+  opacity: 0.6;
+}
+
+.remove-file:hover {
+  opacity: 1;
+}

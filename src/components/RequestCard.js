@@ -22,7 +22,8 @@ export default React.memo(
     likesCount = 0,
     reactions = [],
     index,
-    onContactCardToggle
+    onContactCardToggle,
+    onPostClick
   }) {
     const [timestamp, setTimestamp] = useState('');
     const [isNew, setIsNew] = useState(true);
@@ -92,7 +93,17 @@ export default React.memo(
     };
 
     return (
-      <div className={`request-card ${isNew ? 'new-card' : ''} ${isDeleting ? 'deleting' : ''}`} style={{ backgroundColor: color, '--card-color': color }}>
+      <div
+        className={`request-card ${isNew ? 'new-card' : ''} ${isDeleting ? 'deleting' : ''}`}
+        style={{ backgroundColor: color, '--card-color': color }}
+        onClick={() => onPostClick({
+          id,
+          title,
+          content,
+          author,
+          created_at
+        })}
+      >
         {canDelete && (
           <Tooltip title="Delete Post" placement="top">
             <button

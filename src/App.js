@@ -16,6 +16,8 @@ import helpmascot from './img/helpmascot.jpg';
 import { handleSignOut } from './components/UserProfile';
 import fallbackImg from './img/fallback.png';
 import mailicon from './img/mail.svg';
+import { PostPopup } from './components/PostPopup';
+import './styles/PostPopup.css';
 
 function BoardView() {
   const { boardPath } = useParams();
@@ -40,6 +42,7 @@ function BoardView() {
   const [postColors, setPostColors] = useState([]);
   const [isContactCardOpen, setIsContactCardOpen] = useState(false);
   const [contactCardData, setContactCardData] = useState(null);
+  const [selectedPost, setSelectedPost] = useState(null);
 
   const defaultColors = useMemo(() => [
     "#FEEAA4",
@@ -498,6 +501,10 @@ function BoardView() {
     }, 200); // Match the animation duration
   };
 
+  const handlePostClick = (post) => {
+    setSelectedPost(post);
+  };
+
   if (boardNotFound) {
     return <Navigate to="/" />; // Redirect if board not found
   }
@@ -535,17 +542,18 @@ function BoardView() {
               content={card.content}
               isAnonymous={card.is_anonymous}
               color={card.color}
-              onDelete={handleDelete}
+              onDelete={() => handleDelete(card.id)}
               authorId={card.author_id}
               created_at={card.created_at}
               author={card.author}
               currentUserId={user?.id}
               isBoardOwner={isBoardOwner}
-              onLike={handleLike}
+              onLike={() => handleLike(card.id, true)}
               likesCount={card.likesCount}
               reactions={card.reactions || []}
               index={index}
               onContactCardToggle={() => handleContactCardToggle(card)}
+              onPostClick={handlePostClick}
             />
           ))}
           <Tooltip title="Make a Request" placement="right">
@@ -707,6 +715,15 @@ function BoardView() {
             </div>
           </div>
         </div>
+      )}
+
+      {selectedPost && (
+        <PostPopup
+          post={selectedPost}
+          isOpen={!!selectedPost}
+          onClose={() => setSelectedPost(null)}
+          currentUser={user}
+        />
       )}
 
     </div>
