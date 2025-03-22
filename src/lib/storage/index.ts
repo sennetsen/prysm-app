@@ -1,4 +1,5 @@
 import { supabase } from '../../supabaseClient';
+import 'antd';
 
 export interface StorageProvider {
   upload(file: File, path: string): Promise<string>;
