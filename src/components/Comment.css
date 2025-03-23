@@ -1,167 +1,96 @@
-.comment {
+.comment-container {
   display: flex;
-  margin: 10px 0;
-  padding: 12px;
-  border: 1px solid #eaeaea;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 870px;
+  background: #fff;
   border-radius: 8px;
-  background-color: #f9f9f9;
-  /* Light background for comments */
+  padding: 16px;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+  font-family: 'Lexend Deca', sans-serif;
 }
 
-.comment-content {
-  margin-left: 10px;
+.profile {
+  width: 33px;
+  height: 33px;
+  background: #d9d9d9;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 16px;
+}
+
+.comment-body {
+  display: flex;
+  flex-direction: column;
   flex: 1;
 }
 
-.comment-header {
+.header-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 14px;
 }
 
-.author-name {
-  font-weight: bold;
-  color: #333;
-  /* Darker text for author name */
+.username {
+  font-weight: 700;
+  font-size: 16px;
+  color: #281010;
 }
 
 .timestamp {
-  font-size: 0.8em;
-  color: #888;
-  /* Lighter color for timestamp */
+  font-size: 12px;
+  color: #B39898;
 }
 
-.comment-actions {
+.comment-text {
   margin-top: 8px;
-}
-
-.attachment-link {
-  display: block;
-  margin-top: 4px;
-  color: #007bff;
-  /* Link color */
-  text-decoration: none;
-}
-
-.attachment-link:hover {
-  text-decoration: underline;
-  /* Underline on hover */
-}
-
-.comment-input-container {
-  position: absolute;
-  left: 48.49%;
-  right: 45.96%;
-  top: 60.56%;
-  bottom: 36.47%;
-  width: 874px;
-  /* Adjust width as needed */
-  height: 52px;
-  /* Height of the input box */
-  background: #FBF9F9;
-  /* Light background color */
-  border: 0.475px solid #00214E;
-  /* Border color */
-  box-shadow: 0px 0px 4px rgba(84, 52, 52, 0.25);
-  /* Shadow effect */
-  border-radius: 8px;
-  /* Rounded corners */
-  display: flex;
-  /* Flexbox for layout */
-  align-items: center;
-  /* Center items vertically */
-  padding: 0 12px;
-  /* Padding for the input area */
-}
-
-.comment-textarea {
-  flex: 1;
-  /* Take up remaining space */
-  border: none;
-  /* Remove default border */
-  background: transparent;
-  /* Transparent background */
-  font-family: 'Lexend Deca';
-  /* Font family */
-  font-style: normal;
-  /* Normal font style */
-  font-weight: 400;
-  /* Font weight */
+  font-family: 'Poppins', sans-serif;
   font-size: 16px;
-  /* Font size */
-  line-height: 20px;
-  /* Line height */
-  color: #B39898;
-  /* Text color */
-  resize: none;
-  /* Prevent resizing */
-  padding: 10px;
-  /* Padding inside the textarea */
+  line-height: 24px;
+  color: #281010;
 }
 
-.comment-textarea::placeholder {
-  color: #B39898;
-  /* Placeholder color */
-  text-align: center;
-  /* Center the placeholder text */
-}
-
-.comment-actions {
+.actions-row {
   display: flex;
-  /* Flexbox for action buttons */
-  justify-content: space-between;
-  /* Space between elements */
-  margin-top: 8px;
-  /* Margin above actions */
-}
-
-.file-input-button {
-  cursor: pointer;
-  /* Pointer cursor for file input */
-  display: flex;
-  /* Flexbox for layout */
   align-items: center;
-  /* Center items vertically */
-}
-
-.send-button {
-  background-color: #007bff;
-  /* Primary color */
-  color: white;
-  /* Text color */
-  border-radius: 8px;
-  /* Rounded corners */
-}
-
-.file-list {
+  gap: 8px;
   margin-top: 8px;
-  /* Margin above file list */
 }
 
-.file-item {
+.likes,
+.reply {
   display: flex;
-  /* Flexbox for file items */
-  justify-content: space-between;
-  /* Space between file name and remove button */
   align-items: center;
-  /* Center items vertically */
-  background: #e9ecef;
-  /* Background for file item */
-  padding: 8px;
-  /* Padding for file item */
-  border-radius: 4px;
-  /* Rounded corners */
-  margin-top: 4px;
-  /* Margin above file item */
+  gap: 6px;
+  background: #F9FAFB;
+  border-radius: 6.4px;
+  padding: 4px 8px;
+  cursor: pointer;
 }
 
-.remove-file {
-  background: none;
-  /* No background for remove button */
-  border: none;
-  /* No border for remove button */
-  color: #dc3545;
-  /* Danger color for remove button */
-  cursor: pointer;
-  /* Pointer cursor for remove button */
+.like-icon {
+  width: 16px;
+  height: 15px;
+  border: 1.7px solid #B39898;
+  border-radius: 2px;
+}
+
+.like-count {
+  font-weight: 700;
+  font-size: 12px;
+  color: #B39898;
+}
+
+.reply-icon {
+  width: 14px;
+  height: 14px;
+  border: 1.7px solid #B39898;
+  border-radius: 2px;
+}
+
+.reply-text {
+  font-weight: 700;
+  font-size: 12px;
+  color: #B39898;
 }

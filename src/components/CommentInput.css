@@ -1,105 +1,52 @@
+/* CommentInput.css */
 .comment-input-container {
-  position: absolute;
-  /* Positioning as specified */
-  width: 874px;
-  /* Width of the input box */
-  height: 52px;
-  /* Height of the input box */
-  left: 79px;
-  /* Left position */
-  top: 412px;
-  /* Top position */
-  background: #FBF9F9;
-  /* Light background color */
-  box-shadow: 0px 0px 4px rgba(84, 52, 52, 0.25);
-  /* Shadow effect */
-  border-radius: 8px;
-  /* Rounded corners */
   display: flex;
-  /* Flexbox for layout */
-  align-items: center;
-  /* Center items vertically */
-  padding: 0 12px;
-  /* Padding for the input area */
+  flex-direction: column;
+  width: 100%;
+  max-width: 874px;
+  background: #FBF9F9;
+  border: 1px solid #00214E;
+  box-shadow: 0px 0px 4px rgba(84, 52, 52, 0.25);
+  border-radius: 8px;
+  padding: 12px;
+  box-sizing: border-box;
+  margin-bottom: 16px;
 }
 
 .comment-textarea {
-  flex: 1;
-  /* Take up remaining space */
+  width: 100%;
   border: none;
-  /* Remove default border */
   background: transparent;
-  /* Transparent background */
   font-family: 'Lexend Deca';
-  /* Font family */
   font-style: normal;
-  /* Normal font style */
   font-weight: 400;
-  /* Font weight */
   font-size: 16px;
-  /* Font size */
   line-height: 20px;
-  /* Line height */
   color: #B39898;
-  /* Text color */
   resize: none;
-  /* Prevent resizing */
   padding: 10px;
-  /* Padding inside the textarea */
 }
 
 .comment-textarea::placeholder {
   color: #B39898;
-  /* Placeholder color */
   text-align: center;
-  /* Center the placeholder text */
 }
 
-.comment-actions {
+.input-actions {
   display: flex;
-  /* Flexbox for action buttons */
   justify-content: space-between;
-  /* Space between elements */
+  align-items: center;
   margin-top: 8px;
-  /* Margin above actions */
 }
 
 .file-input-button {
   cursor: pointer;
-  /* Pointer cursor for file input */
   display: flex;
-  /* Flexbox for layout */
   align-items: center;
-  /* Center items vertically */
 }
 
 .send-button {
   background-color: #007bff;
-  /* Primary color */
   color: white;
-  /* Text color */
   border-radius: 8px;
-  /* Rounded corners */
-}
-
-.file-list {
-  margin-top: 8px;
-}
-
-.file-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #e9ecef;
-  padding: 8px;
-  border-radius: 4px;
-  margin-top: 4px;
-}
-
-.remove-file {
-  background: none;
-  border: none;
-  color: #dc3545;
-  /* Danger color for remove button */
-  cursor: pointer;
 }

@@ -25,8 +25,15 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
       open={isOpen}
       onCancel={onClose}
       footer={null}
-      width={800}
+      maskClosable={false}
+      width={window.innerWidth - 50}
       className="post-popup"
+      style={{
+        top: '72px',
+        bottom: '64px',
+        height: 'auto',
+        minHeight: '600px'
+      }}
     >
       <div className="post-popup-container">
         <div className="post-content-section">

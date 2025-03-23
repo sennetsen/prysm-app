@@ -1,9 +1,12 @@
+// CommentInput.tsx
 import React, { useState } from 'react';
-import { Button, Input, message } from 'antd';
+import { Input, Button, Upload, message } from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
 import { supabase } from '../supabaseClient';
 import { storage } from '../lib/storage';
-import { PaperClipOutlined, SendOutlined } from '@ant-design/icons';
 import './CommentInput.css';
+
+const { TextArea } = Input;
 
 interface CommentInputProps {
   postId: string;
@@ -11,30 +14,28 @@ interface CommentInputProps {
   onSubmit: () => void;
   currentUser: {
     id: string;
-    email?: string;
-    user_metadata?: {
-      full_name?: string;
-      avatar_url?: string;
-    };
   };
 }
 
-export function CommentInput({ postId, parentCommentId, onSubmit, currentUser }: CommentInputProps) {
+export function CommentInput({
+  postId,
+  parentCommentId,
+  onSubmit,
+  currentUser,
+}: CommentInputProps) {
   const [content, setContent] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
+  const [fileList, setFileList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(event.target.files || []);
-    setFiles(prev => [...prev, ...selectedFiles]);
+  const handleUploadChange = ({ fileList: newFileList }: any) => {
+    setFileList(newFileList);
   };
 
   const handleSubmit = async () => {
-    if (!content.trim() && files.length === 0) return;
+    if (!content.trim() && fileList.length === 0) return;
     setLoading(true);
 
     try {
-      // Create comment
       const { data: comment, error: commentError } = await supabase
         .from('comments')
         .insert({
@@ -43,41 +44,42 @@ export function CommentInput({ postId, parentCommentId, onSubmit, currentUser }:
           content: content.trim(),
           author_id: currentUser.id,
           is_anonymous: false,
-          reaction_counts: {}
+          reaction_counts: {},
         })
         .select()
         .single();
 
       if (commentError) throw commentError;
 
-      // Handle attachments
-      if (files.length > 0) {
-        const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+      if (fileList.length > 0) {
+        const totalSize = fileList.reduce(
+          (sum, file) => sum + file.originFileObj.size,
+          0
+        );
         if (totalSize > 25 * 1024 * 1024) {
           throw new Error('Total attachments size exceeds 25MB');
         }
-
-        for (const file of files) {
-          const filePath = `comments/${postId}/${comment.id}/${file.name}`;
-          await storage.upload(file, filePath);
-
+        for (const file of fileList) {
+          const fileObj = file.originFileObj;
+          const filePath = `comments/${postId}/${comment.id}/${fileObj.name}`;
+          await storage.upload(fileObj, filePath);
           await supabase.from('attachments').insert({
             post_id: postId,
             comment_id: comment.id,
             storage_path: filePath,
-            file_name: file.name,
-            file_type: file.type,
-            file_size: file.size
+            file_name: fileObj.name,
+            file_type: fileObj.type,
+            file_size: fileObj.size,
           });
         }
       }
 
       setContent('');
-      setFiles([]);
+      setFileList([]);
       onSubmit();
     } catch (error) {
       console.error('Error posting comment:', error);
-      message.error('Failed to post comment');
+      message.error('Error posting comment');
     } finally {
       setLoading(false);
     }
@@ -85,43 +87,44 @@ export function CommentInput({ postId, parentCommentId, onSubmit, currentUser }:
 
   return (
     <div className="comment-input-container">
-      <Input.TextArea
-        value={content}
-        onChange={e => setContent(e.target.value)}
-        placeholder="Leave a comment..."
+      <TextArea
         rows={3}
+        placeholder="Leave a comment..."
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
         className="comment-textarea"
       />
-      <div className="comment-actions">
-        <label className="file-input-button">
-          <PaperClipOutlined />
-          <input
-            type="file"
-            multiple
-            onChange={handleFileChange}
-            style={{ display: 'none' }}
-          />
-        </label>
+      <div className="input-actions">
+        <Upload
+          fileList={fileList}
+          onChange={handleUploadChange}
+          multiple
+          beforeUpload={() => false}
+        >
+          <Button icon={<UploadOutlined />}>Attach</Button>
+        </Upload>
         <Button
           type="primary"
-          icon={<SendOutlined />}
           onClick={handleSubmit}
           loading={loading}
-          disabled={!content.trim() && files.length === 0}
           className="send-button"
-        />
+        >
+          {loading ? 'Sending...' : 'Send'}
+        </Button>
       </div>
-      {files.length > 0 && (
-        <div className="file-list">
-          {files.map((file, index) => (
-            <div key={index} className="file-item">
-              <span>{file.name}</span>
-              <button
-                onClick={() => setFiles(files.filter((_, i) => i !== index))}
-                className="remove-file"
-              >
-                ×
-              </button>
+      {fileList.length > 0 && (
+        <div style={{ marginTop: '8px' }}>
+          {fileList.map((file, index) => (
+            <div
+              key={index}
+              style={{
+                background: '#f0f0f0',
+                padding: '4px',
+                borderRadius: '4px',
+                marginBottom: '4px',
+              }}
+            >
+              {file.name}
             </div>
           ))}
         </div>

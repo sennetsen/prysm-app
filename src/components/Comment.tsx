@@ -1,19 +1,15 @@
+// Comment.tsx
 import React from 'react';
-import { Button, Avatar } from 'antd';
-import { CommentInput } from './CommentInput';
-import { storage } from '../lib/storage';
-import { supabase } from '../supabaseClient';
-import './Comment.css'; // Import the new CSS file
+import './Comment.css';
+import { Avatar, Typography } from 'antd';
+const { Text } = Typography;
 
 interface CommentProps {
   comment: {
     id: number;
-    post_id: string;
     content: string;
-    author_id: string;
-    is_anonymous: boolean;
-    reaction_counts: Record<string, number>;
     created_at: string;
+    is_anonymous: boolean;
     author?: {
       full_name: string;
       avatar_url: string;
@@ -29,34 +25,60 @@ interface CommentProps {
 }
 
 export function Comment({ comment, currentUser, onReply }: CommentProps) {
+  const authorName = comment.is_anonymous
+    ? 'Anonymous'
+    : comment.author?.full_name || 'User';
+  const timestamp = new Date(comment.created_at).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
   return (
-    <div className="comment">
-      <Avatar src={comment.author?.avatar_url} />
-      <div className="comment-content">
-        <div className="comment-header">
-          <span className="author-name">
-            {comment.is_anonymous ? 'Anonymous' : comment.author?.full_name}
-          </span>
-          <span className="timestamp">
-            {new Date(comment.created_at).toLocaleString()}
-          </span>
+    <div className="comment-container">
+      <div className="profile">
+        {comment.author?.avatar_url ? (
+          <Avatar
+            src={comment.author.avatar_url}
+            alt={authorName}
+            size={33}
+            style={{ backgroundColor: 'transparent' }}
+          />
+        ) : (
+          <Avatar size={33} style={{ backgroundColor: 'transparent' }}>
+            {authorName.charAt(0)}
+          </Avatar>
+        )}
+      </div>
+      <div className="comment-body">
+        <div className="header-row">
+          <span className="username">{authorName}</span>
+          <span className="timestamp">{timestamp}</span>
         </div>
-        <p>{comment.content}</p>
-        {comment.attachments?.map(attachment => (
-          <a
-            key={attachment.id}
-            href={storage.getPublicUrl(attachment.storage_path)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="attachment-link"
-          >
-            {attachment.file_name}
-          </a>
-        ))}
-        <div className="comment-actions">
-          <Button size="small" onClick={() => onReply()}>
-            Reply
-          </Button>
+        <div className="comment-text">{comment.content}</div>
+        {comment.attachments && comment.attachments.length > 0 && (
+          <div style={{ marginTop: '8px' }}>
+            {comment.attachments.map((att) => (
+              <a
+                key={att.id}
+                href={att.storage_path}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ marginRight: '8px', color: '#1890ff' }}
+              >
+                {att.file_name}
+              </a>
+            ))}
+          </div>
+        )}
+        <div className="actions-row">
+          <div className="likes" onClick={() => { /* handle like action */ }}>
+            <div className="like-icon" />
+            <span className="like-count">35</span>
+          </div>
+          <div className="reply" onClick={onReply}>
+            <div className="reply-icon" />
+            <span className="reply-text">Reply</span>
+          </div>
         </div>
       </div>
     </div>
