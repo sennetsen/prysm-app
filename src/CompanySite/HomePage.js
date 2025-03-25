@@ -10,9 +10,13 @@ import frame1 from "./img/Frame 1 (1).svg";
 import frame2 from "./img/Frame 2.svg";
 import { supabase } from '../supabaseClient';
 import { handleSignOut } from '../components/UserProfile';
+import { loadScreenScript, getCurrentScreenSize, SCREEN_SIZES } from '../utils/screenUtils';
+import { debounce } from '../utils/debounce';
 
 function HomePage() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [currentScreen, setCurrentScreen] = useState(null);
+  const [screenModule, setScreenModule] = useState(null);
   const handleLinkClick = () => {
     window.location.href = '/';
   };
@@ -176,6 +180,40 @@ function HomePage() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Load screen-specific code on component mount
+  useEffect(() => {
+    // Initial load
+    const screenSize = getCurrentScreenSize();
+    setCurrentScreen(screenSize);
+    
+    loadScreenScript().then(module => {
+      setScreenModule(module);
+    });
+    
+    // Handle resize
+    const handleResize = debounce(() => {
+      const newSize = getCurrentScreenSize();
+      if (newSize !== currentScreen) {
+        setCurrentScreen(newSize);
+        loadScreenScript().then(module => {
+          setScreenModule(module);
+        });
+      }
+    }, 250);
+    
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [currentScreen]);
+
+  // You can now use screen-specific functions conditionally
+  const handleSomeAction = () => {
+    if (screenModule && screenModule.someFeature) {
+      screenModule.someFeature();
+    }
+  };
+
   return (
     <>
       <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
@@ -202,7 +240,7 @@ function HomePage() {
           <div class="launchlist-widget" data-key-id="UpeyL8" data-height="180px"></div>
         </div>
         <div className="images">
-          {window.innerWidth > 768 ? (
+          {currentScreen === SCREEN_SIZES.DESKTOP ? (
             <>
               <div className="column left-column">
                 <img src={frame48} alt="Desktop Frame 1" className="frame" />

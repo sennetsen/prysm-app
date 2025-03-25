@@ -1,0 +1,89 @@
+.comment-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.comment {
+  display: flex;
+  gap: 12px;
+}
+
+.comment-content {
+  flex: 1;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.comment-author {
+  font-weight: 600;
+  color: #281010;
+}
+
+.comment-timestamp {
+  color: #999;
+  font-size: 12px;
+}
+
+.comment-text {
+  margin: 0 0 8px;
+  color: #333;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.heart-button, .reply-button, .delete-button {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: #666;
+  padding: 2px 8px;
+  height: auto;
+}
+
+.heart-button.liked {
+  color: #ef5959;
+}
+
+.replies-container {
+  margin-left: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: -16px;
+}
+
+.reply-comment {
+  margin-top: 12px;
+}
+
+.more-replies {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-size: 12px;
+}
+
+.avatars {
+  display: flex;
+}
+
+.mention {
+  color: #1677ff;
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.deleted-comment {
+  opacity: 0.6;
+} 
