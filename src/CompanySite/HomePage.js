@@ -382,7 +382,7 @@ function HomePage() {
         <div className="footer-content">
           <p>Questions? Send us a message at <a href="mailto:getprysm@gmail.com"
             style={{ color: 'white', textDecoration: 'underline' }}>getprysm@gmail.com</a></p>
-          <p>Follow us on Instagram <a href="https://instagram.com/getprysm" target="_blank" rel="noopener noreferrer" style={{ color: 'white', textDecoration: 'underline' }}>@getprysm</a></p>
+          <p>Follow us on Instagram <a href="https://instagram.com/prysm_app" target="_blank" rel="noopener noreferrer" style={{ color: 'white', textDecoration: 'underline' }}>@prysm_app</a></p>
           <p>© {new Date().getFullYear()} Prysm. All rights reserved.</p>
 
         </div>
