@@ -56,54 +56,54 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
             <div className="post-content">
               <p>{post.content}</p>
             </div>
-            
+
             <div className="post-actions">
-              <Button 
+              <Button
                 className={`custom-like-button ${liked ? 'liked' : ''}`}
                 icon={liked ? <HeartFilled /> : <HeartOutlined />}
                 onClick={handleLike}
               >
                 <span className="like-count">{likeCount}</span>
               </Button>
-              
+
               <Button className="custom-comment-button" icon={<MessageOutlined />}>
                 <span className="comment-count">{commentCount}</span>
               </Button>
             </div>
-            
+
             <div className="comments-section">
               <div className="comment-input-container">
-                <input 
-                  type="text" 
-                  placeholder="Leave a comment..." 
-                  className="comment-input" 
+                <input
+                  type="text"
+                  placeholder="Leave a comment..."
+                  className="comment-input"
                 />
               </div>
               <CommentThread postId={post.id} currentUser={currentUser} />
             </div>
           </div>
         </div>
-        
+
         <div className="post-activity-section">
           <div className="about-section">
             <h3>About</h3>
             <div className="author-info">
-              <Avatar 
-                src={post.author.avatar_url} 
+              <Avatar
+                src={post.author.avatar_url}
                 size={32}
                 className="author-avatar"
               />
               <span className="author-name">{post.author.full_name}</span>
             </div>
             <div className="post-date">
-              <span>{new Date(post.created_at).toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+              <span>{new Date(post.created_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
               })}</span>
             </div>
           </div>
-          
+
           <div className="subscribers-section">
             <h3>Subscribers</h3>
             <div className="avatar-group">
@@ -118,7 +118,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
               <Button className="unsubscribe-button">Unsubscribe</Button>
             </div>
           </div>
-          
+
           <div className="activity-section">
             <h3>Activity</h3>
             <ActivityBar postId={post.id} />
