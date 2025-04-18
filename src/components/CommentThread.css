@@ -318,31 +318,14 @@
     font-size: 11px !important;
   }
   
-  /* Adjust the mobile join conversation button */
+  /* Remove the mobile join conversation button entirely */
   .mobile-join-conversation {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 12px 16px;
-    background-color: #fff;
-    border-top: 1px solid #eee;
-    box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.05);
-    z-index: 100;
-    width: 100%;
+    display: none !important;
   }
   
-  .mobile-join-button {
-    width: 100%;
-    padding: 12px;
-    border-radius: 20px;
-    border: 1px solid #eee;
-    background-color: #f9f9f9;
-    color: #999;
-    font-size: 14px;
-    text-align: center;
-    cursor: pointer;
+  /* Remove the extra padding at the bottom since we don't need space for the button anymore */
+  .post-popup-container {
+    padding-bottom: 16px !important;
   }
   
   .more-replies {

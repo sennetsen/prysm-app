@@ -490,22 +490,40 @@
   .post-popup-container {
     flex-direction: column;
     gap: 0;
-    padding-bottom: 60px; /* Make room for the mobile join conversation button */
+    padding-bottom: 16px; /* Changed from 60px since we removed the join conversation button */
   }
   
   .post-content-section {
     border-right: none;
     padding: 16px;
     padding-right: 16px;
-    padding-bottom: 0;
+    width: 100%;
+    box-sizing: border-box;
   }
   
-  /* Add color strip between post and comments */
+  .comments-wrapper {
+    margin-top: 0;
+    padding-top: 0;
+  }
+  
+  /* Make the color strip stretch to the edges */
+  .post-comment-divider-wrapper {
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+  
   .post-comment-divider {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .comments-section-container {
     width: 100%;
-    height: 8px;
-    background-color: #F8E3E9;
-    margin-top: 16px;
+    padding: 16px;
+    box-sizing: border-box;
   }
   
   .comments-section {
@@ -631,4 +649,59 @@
   }
   
   /* Rest of mobile styles remain unchanged */
+}
+
+/* Color strip wrapper and container */
+.post-comment-divider-wrapper {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.post-comment-divider {
+  width: 100%;
+  height: 8px;
+  background-color: #F8E3E9;
+  margin: 0;
+}
+
+.comments-section-container {
+  width: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+@media screen and (max-width: 768px) {
+  /* ... existing styles ... */
+  
+  /* Make the color strip stretch to the edges */
+  .post-comment-divider-wrapper {
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+  
+  .post-comment-divider {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  /* Styles for comments section on mobile */
+  .post-content-section {
+    border-right: none;
+    padding: 16px;
+    padding-right: 16px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .comments-section-container {
+    width: 100%;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+  
+  /* ... other existing styles ... */
 }

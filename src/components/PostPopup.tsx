@@ -254,10 +254,14 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
               </Button>
             </div>
           </div>
-          
-          {/* Add color divider for mobile */}
+        </div>
+        
+        {/* Color divider as a full-width element */}
+        <div className="post-comment-divider-wrapper">
           <div className="post-comment-divider"></div>
+        </div>
           
+        <div className="comments-section-container">
           <div className="comments-section">
             <div className="comment-input-container">
               <div className="comment-input-wrapper">
