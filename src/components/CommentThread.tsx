@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { Comment } from './Comment';
 import { CommentInput } from './CommentInput';
-import { Avatar, Button, Popconfirm } from 'antd';
-import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Avatar, Button, Popconfirm, Tooltip } from 'antd';
+import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined, EllipsisOutlined } from '@ant-design/icons';
 import './CommentThread.css';
 
 interface CommentThreadProps {
@@ -41,6 +41,10 @@ export function CommentThread({
   const [replyText, setReplyText] = useState('');
   const [localComments, setLocalComments] = useState<Comment[]>(comments);
   const [minimizedComments, setMinimizedComments] = useState<number[]>([]);
+  const [expandedReplies, setExpandedReplies] = useState<number[]>([]);
+  const [showReplyInput, setShowReplyInput] = useState(false);
+  const [commentLiked, setCommentLiked] = useState(false);
+  const [commentLikes, setCommentLikes] = useState(0);
   
   // Update local comments when props change
   useEffect(() => {
@@ -143,6 +147,89 @@ export function CommentThread({
     });
   };
 
+  const handleJoinConversation = () => {
+    // Focus on the first comment input or open a new comment form
+    if (localComments.length > 0) {
+      setReplyingToId(localComments[0].id);
+    } else {
+      // Maybe trigger the main comment input if available
+      const mainCommentInput = document.querySelector('.comment-input') as HTMLInputElement;
+      if (mainCommentInput) {
+        mainCommentInput.focus();
+      }
+    }
+  };
+
+  // Find the most recent reply timestamp for a specific comment
+  const getMostRecentReplyTimestamp = (replies: Comment[]): string => {
+    if (!replies || replies.length <= 1) return '';
+    
+    return replies
+      .slice(1) // Skip the first reply as it's already shown
+      .reduce((latest, reply) => {
+        const latestDate = new Date(latest);
+        const replyDate = new Date(reply.timestamp);
+        return replyDate > latestDate ? reply.timestamp : latest;
+      }, replies[1].timestamp); // Start with the second reply
+  };
+
+  // Helper function to format the time difference
+  const formatTimeDifference = (timestamp: string) => {
+    const now = new Date();
+    const commentDate = new Date(timestamp);
+    
+    // Calculate the time difference in milliseconds
+    const diffMs = now.getTime() - commentDate.getTime();
+    
+    // Convert to minutes
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    
+    if (diffMinutes < 1) {
+      return 'just now';
+    } else if (diffMinutes === 1) {
+      return '1 minute ago';
+    } else if (diffMinutes < 60) {
+      return `${diffMinutes} minutes ago`;
+    } else {
+      // Convert to hours
+      const diffHours = Math.floor(diffMinutes / 60);
+      
+      if (diffHours === 1) {
+        return '1 hour ago';
+      } else if (diffHours < 24) {
+        return `${diffHours} hours ago`;
+      } else {
+        // Convert to days
+        const diffDays = Math.floor(diffHours / 24);
+        return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
+      }
+    }
+  };
+
+  const toggleLike = () => {
+    setCommentLiked(!commentLiked);
+    setCommentLikes(commentLiked ? commentLikes - 1 : commentLikes + 1);
+  };
+
+  const toggleReplies = (commentId: number) => {
+    setExpandedReplies(prev => 
+      prev.includes(commentId) 
+        ? prev.filter(id => id !== commentId) 
+        : [...prev, commentId]
+    );
+  };
+
+  // Get avatars for additional replies (beyond the first one) for a specific comment
+  const getAdditionalReplyAvatars = (replies: Comment[]) => {
+    if (!replies || replies.length <= 1) return [];
+    
+    // Return avatars for users from the 2nd reply onwards (max 3)
+    return replies
+      .slice(1)
+      .map(reply => reply.author)
+      .slice(0, 3); // Limit to 3 avatars
+  };
+  
   const renderComment = (comment: Comment, isReply = false) => {
     if (comment.author.name === 'Comment Deleted') {
       return (
@@ -254,41 +341,99 @@ export function CommentThread({
   };
 
   return (
-    <div className="comment-thread">
-      {localComments.length === 0 ? (
-        <div className="no-comments-placeholder">
-          <MessageOutlined style={{ fontSize: '24px', color: '#b39898', marginBottom: '12px' }} />
-          <p>No comments yet. Be the first to share your thoughts!</p>
-        </div>
-      ) : (
-        localComments.map(comment => {
-          // Log comment and its replies for debugging
-          console.log(`Rendering comment ${comment.id} with ${comment.replies?.length || 0} replies`);
-          if (comment.replies && comment.replies.length > 0) {
-            console.log('Reply IDs:', comment.replies.map(r => r.id));
-          }
-          
-          return (
-            <React.Fragment key={comment.id}>
-              <div className="comment-with-replies">
-                {renderComment(comment)}
-                
-                {!minimizedComments.includes(comment.id) && comment.replies && comment.replies.length > 0 && (
-                  <div className="replies-container">
-                    <div className="reply-connector"></div>
-                    {/* Force map to render each reply separately */}
-                    {comment.replies.map(reply => (
-                      <React.Fragment key={reply.id}>
-                        {renderComment(reply, true)}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </React.Fragment>
-          );
-        })
-      )}
-    </div>
+    <>
+      <div className="comment-thread">
+        {localComments.length === 0 ? (
+          <div className="no-comments-placeholder">
+            <MessageOutlined style={{ fontSize: '24px', color: '#b39898', marginBottom: '12px' }} />
+            <p>No comments yet. Be the first to share your thoughts!</p>
+          </div>
+        ) : (
+          localComments.map(comment => {
+            // Log comment and its replies for debugging
+            console.log(`Rendering comment ${comment.id} with ${comment.replies?.length || 0} replies`);
+            if (comment.replies && comment.replies.length > 0) {
+              console.log('Reply IDs:', comment.replies.map(r => r.id));
+            }
+            
+            const hasAdditionalReplies = comment.replies && comment.replies.length > 1;
+            const additionalRepliesCount = hasAdditionalReplies ? comment.replies!.length - 1 : 0;
+            const isExpanded = expandedReplies.includes(comment.id);
+            const mostRecentTimestamp = hasAdditionalReplies ? getMostRecentReplyTimestamp(comment.replies!) : '';
+            const additionalUserAvatars = hasAdditionalReplies ? getAdditionalReplyAvatars(comment.replies!) : [];
+            
+            return (
+              <React.Fragment key={comment.id}>
+                <div className="comment-with-replies">
+                  {renderComment(comment)}
+                  
+                  {!minimizedComments.includes(comment.id) && comment.replies && comment.replies.length > 0 && (
+                    <div className="replies-container">
+                      <div className="reply-connector"></div>
+                      
+                      {/* Always show the first reply */}
+                      {renderComment(comment.replies[0], true)}
+                      
+                      {/* Show "X more replies" summary if there are additional replies */}
+                      {hasAdditionalReplies && !isExpanded && (
+                        <div className="more-replies" onClick={() => toggleReplies(comment.id)}>
+                          <Avatar.Group className="avatars" maxCount={3}>
+                            {additionalUserAvatars.map((user, index) => (
+                              <Tooltip key={index} title={user.name} placement="top">
+                                <Avatar src={user.avatar} size={24} />
+                              </Tooltip>
+                            ))}
+                          </Avatar.Group>
+                          <span className="more-replies-text">
+                            {additionalRepliesCount} more {additionalRepliesCount === 1 ? 'reply' : 'replies'} • {formatTimeDifference(mostRecentTimestamp)}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Show all replies when expanded */}
+                      {isExpanded && (
+                        <>
+                          {comment.replies.slice(1).map(reply => (
+                            <div key={reply.id} className="reply">
+                              <Avatar src={reply.author.avatar} size={28} />
+                              <div className="reply-content">
+                                <div className="reply-header">
+                                  <span className="user-name">{reply.author.name}</span>
+                                  <span className="timestamp">{formatTimeDifference(reply.timestamp)}</span>
+                                </div>
+                                <p className="text">{reply.content}</p>
+                              </div>
+                            </div>
+                          ))}
+                          {additionalRepliesCount > 0 && (
+                            <Button 
+                              type="text" 
+                              className="show-less-button" 
+                              onClick={() => toggleReplies(comment.id)}
+                            >
+                              Show less
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </React.Fragment>
+            );
+          })
+        )}
+      </div>
+      
+      {/* Mobile "Join the conversation" fixed bottom input */}
+      <div className="mobile-join-conversation">
+        <button 
+          className="mobile-join-button"
+          onClick={handleJoinConversation}
+        >
+          Join the conversation
+        </button>
+      </div>
+    </>
   );
 }

@@ -2,7 +2,15 @@ import React, { useState } from 'react';
 import { Modal, Button, Avatar, Tooltip, message } from 'antd';
 import { CommentThread } from './CommentThread';
 import { ActivityBar } from './ActivityBar';
-import { HeartOutlined, HeartFilled, MessageOutlined, SendOutlined, PaperClipOutlined } from '@ant-design/icons';
+import { 
+  HeartOutlined, 
+  HeartFilled, 
+  MessageOutlined, 
+  SendOutlined, 
+  PaperClipOutlined,
+  LeftOutlined,
+  InfoCircleOutlined 
+} from '@ant-design/icons';
 import '../styles/PostPopup.css';
 
 interface PostPopupProps {
@@ -213,6 +221,17 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
       }}
       closeIcon={<span style={{ fontSize: '24px' }}>×</span>}
     >
+      {/* Mobile Navbar */}
+      <div className="mobile-navbar">
+        <div className="mobile-navbar-back" onClick={onClose}>
+          <LeftOutlined />
+        </div>
+        <div className="mobile-navbar-title">Board Name</div>
+        <div className="mobile-navbar-info">
+          <InfoCircleOutlined />
+        </div>
+      </div>
+      
       <div className="post-popup-container">
         <div className="post-content-section">
           <div className="post-header">
@@ -234,54 +253,57 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                 <span className="comment-count">{commentCount}</span>
               </Button>
             </div>
-            
-            <div className="comments-section">
-              <div className="comment-input-container">
-                <div className="comment-input-wrapper">
-                  <input 
-                    type="text" 
-                    placeholder="Leave a comment..." 
-                    className="comment-input"
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleCommentSubmit()}
-                  />
-                  <Button 
-                    className="comment-attach-button"
-                    icon={<PaperClipOutlined />}
-                    onClick={handleFileAttachment}
-                    title="Attach files"
-                  />
-                  <Button 
-                    className="comment-submit-button"
-                    icon={<SendOutlined />}
-                    onClick={handleCommentSubmit}
-                    title="Send comment"
-                  />
-                </div>
-                {fileList.length > 0 && (
-                  <div className="attached-files">
-                    <div className="file-count">{fileList.length} file(s) attached</div>
-                    <Button 
-                      className="clear-files-button" 
-                      onClick={() => setFileList([])}
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                )}
+          </div>
+          
+          {/* Add color divider for mobile */}
+          <div className="post-comment-divider"></div>
+          
+          <div className="comments-section">
+            <div className="comment-input-container">
+              <div className="comment-input-wrapper">
+                <input 
+                  type="text" 
+                  placeholder="Leave a comment..." 
+                  className="comment-input"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleCommentSubmit()}
+                />
+                <Button 
+                  className="comment-attach-button"
+                  icon={<PaperClipOutlined />}
+                  onClick={handleFileAttachment}
+                  title="Attach files"
+                />
+                <Button 
+                  className="comment-submit-button"
+                  icon={<SendOutlined />}
+                  onClick={handleCommentSubmit}
+                  title="Send comment"
+                />
               </div>
-              
-              {/* Pass comments and handlers to the CommentThread component */}
-              <CommentThread 
-                postId={post.id} 
-                currentUser={currentUser} 
-                comments={comments}
-                onLike={handleCommentLike}
-                onAddReply={handleAddReply}
-                onDelete={handleDeleteComment}
-              />
+              {fileList.length > 0 && (
+                <div className="attached-files">
+                  <div className="file-count">{fileList.length} file(s) attached</div>
+                  <Button 
+                    className="clear-files-button" 
+                    onClick={() => setFileList([])}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              )}
             </div>
+            
+            {/* Pass comments and handlers to the CommentThread component */}
+            <CommentThread 
+              postId={post.id} 
+              currentUser={currentUser} 
+              comments={comments}
+              onLike={handleCommentLike}
+              onAddReply={handleAddReply}
+              onDelete={handleDeleteComment}
+            />
           </div>
         </div>
         

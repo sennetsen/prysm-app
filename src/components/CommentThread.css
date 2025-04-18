@@ -121,12 +121,11 @@
 
 .reply-connector {
   position: absolute;
-  left: 0;
+  left: 16px;
   top: 0;
   bottom: 0;
   width: 2px;
-  background-color: #eaeaea;
-  z-index: 1;
+  background-color: #f0f0f0;
   height: 100%;
 }
 
@@ -142,15 +141,22 @@
 .more-replies {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #666;
-  font-size: 12px;
-  margin-top: 8px;
-  margin-left: 36px;
+  gap: 12px;
+  margin-top: 12px;
+  margin-left: 24px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.more-replies:hover {
+  background-color: rgba(239, 89, 89, 0.05);
 }
 
 .more-replies-text {
   color: #666;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .avatars {
@@ -214,4 +220,148 @@
   font-family: 'Poppins', sans-serif;
   font-size: 14px;
   margin: 0;
+}
+
+/* Mobile responsive styles */
+@media screen and (max-width: 768px) {
+  .comment-thread {
+    padding: 16px;
+    gap: 12px;
+    box-shadow: none;
+    border-radius: 0;
+    width: 100%;
+  }
+  
+  .comment {
+    gap: 8px;
+    width: 100%;
+  }
+  
+  .comment-content {
+    padding: 0;
+    background-color: transparent;
+    box-shadow: none;
+    width: 100%;
+  }
+  
+  .comment-avatar {
+    margin-top: 4px;
+  }
+  
+  .comment-header {
+    margin-bottom: 4px;
+  }
+  
+  .comment-author {
+    font-size: 13px;
+  }
+  
+  .comment-timestamp {
+    font-size: 11px;
+  }
+  
+  .comment-text {
+    font-size: 13px;
+    line-height: 1.4;
+    margin: 0 0 8px;
+  }
+  
+  .actions-wrapper {
+    margin-left: -8px;
+    width: calc(100% + 16px);
+  }
+  
+  .comment-actions {
+    gap: 12px;
+  }
+  
+  .heart-button, .reply-button, .delete-button {
+    font-size: 11px !important;
+  }
+  
+  .heart-button .anticon,
+  .reply-button .anticon,
+  .delete-button .anticon {
+    font-size: 12px !important;
+  }
+  
+  .replies-container {
+    margin-left: 12px;
+    padding-left: 18px;
+    width: calc(100% - 12px);
+  }
+  
+  .reply-connector {
+    left: 0;
+    width: 1px;
+  }
+  
+  .reply-comment {
+    margin-bottom: 4px;
+    width: 100%;
+  }
+  
+  .reply-input-container {
+    margin-top: 8px;
+    gap: 4px;
+    width: 100%;
+  }
+  
+  .reply-input {
+    padding: 6px 10px;
+    font-size: 13px;
+    width: 100%;
+  }
+  
+  .reply-submit-button {
+    padding: 0 8px !important;
+    font-size: 11px !important;
+  }
+  
+  /* Adjust the mobile join conversation button */
+  .mobile-join-conversation {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    background-color: #fff;
+    border-top: 1px solid #eee;
+    box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.05);
+    z-index: 100;
+    width: 100%;
+  }
+  
+  .mobile-join-button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 20px;
+    border: 1px solid #eee;
+    background-color: #f9f9f9;
+    color: #999;
+    font-size: 14px;
+    text-align: center;
+    cursor: pointer;
+  }
+  
+  .more-replies {
+    margin-left: 16px;
+    padding: 6px;
+  }
+  
+  .more-replies-text {
+    font-size: 12px;
+  }
+}
+
+/* Ensure desktop never shows the mobile elements */
+@media screen and (min-width: 769px) {
+  .mobile-join-conversation {
+    display: none;
+  }
+  
+  .post-comment-divider {
+    display: none;
+  }
 }
