@@ -2,6 +2,19 @@
   border-radius: 12px;
   overflow: hidden;
   padding: 24px;
+  position: relative;
+}
+
+.post-popup .ant-modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background-color: #ffe6f0;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
 
 .post-popup .ant-modal-close {
@@ -104,15 +117,86 @@
   margin-bottom: 24px;
 }
 
+.comment-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
 .comment-input {
   width: 100%;
   padding: 12px 16px;
+  padding-right: 90px; /* Make room for both buttons */
   border: none;
-  background-color: #f5f5f5;
+  background-color: #ffe6f0;
   border-radius: 8px;
   font-size: 14px;
   color: #281010;
   font-family: 'Poppins', sans-serif;
+}
+
+.comment-attach-button {
+  position: absolute;
+  right: 52px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border: none;
+  background-color: transparent;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.comment-attach-button:hover {
+  background-color: rgba(40, 16, 16, 0.05);
+}
+
+.comment-attach-button:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.comment-attach-button .anticon {
+  color: #281010;
+  font-size: 16px;
+}
+
+.comment-submit-button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border: none;
+  background-color: #281010;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0px 2px 4px rgba(84, 52, 52, 0.15);
+}
+
+.comment-submit-button:hover {
+  background-color: #3c2020;
+  transform: translateY(-50%) scale(1.05);
+}
+
+.comment-submit-button:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.comment-submit-button .anticon {
+  color: white;
+  font-size: 14px;
 }
 
 .comment-input::placeholder {
@@ -346,4 +430,34 @@
   /* Adjust the blur amount as needed */
   transition: filter 0.3s ease;
   /* Smooth transition for the blur effect */
+}
+
+.attached-files {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  background-color: rgba(40, 16, 16, 0.05);
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+
+.file-count {
+  font-size: 12px;
+  color: #281010;
+}
+
+.clear-files-button {
+  border: none;
+  background: transparent;
+  color: #281010;
+  font-size: 12px;
+  padding: 0 5px;
+  cursor: pointer;
+  height: auto;
+  line-height: 1;
+}
+
+.clear-files-button:hover {
+  color: #EF5959;
 }

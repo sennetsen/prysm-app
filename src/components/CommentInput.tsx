@@ -87,13 +87,28 @@ export function CommentInput({
 
   return (
     <div className="comment-input-container">
-      <TextArea
-        rows={3}
-        placeholder="Leave a comment..."
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        className="comment-textarea"
-      />
+      <div style={{ position: 'relative' }}>
+        <TextArea
+          rows={3}
+          placeholder="Leave a comment..."
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="comment-textarea"
+        />
+        <Button
+          style={{
+            position: 'absolute',
+            right: '10px',
+            top: '10px',
+            zIndex: 10,
+            background: '#ffffff',
+            border: '1px solid #d9d9d9'
+          }}
+          onClick={() => console.log('Button clicked')}
+        >
+          New Button
+        </Button>
+      </div>
       <div className="input-actions">
         <Upload
           fileList={fileList}
