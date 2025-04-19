@@ -28,7 +28,7 @@ img {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 30px;
+  padding: 10px;
   height: calc(100vh - 64px);
   margin-top: 64px;
   overflow-y: auto;
@@ -859,4 +859,8 @@ p {
 
 .ant-tooltip {
   z-index: 1000 !important;
+}
+
+body.comment-scroll .navbar {
+  box-shadow: 0 4px 20px #b43144;
 }

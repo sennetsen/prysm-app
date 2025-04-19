@@ -25,6 +25,11 @@ interface CommentProps {
 }
 
 export function Comment({ comment, currentUser, onReply }: CommentProps) {
+  const [isFixed, setIsFixed] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  console.log('Comment component rendered');
+
   const authorName = comment.is_anonymous
     ? 'Anonymous'
     : comment.author?.full_name || 'User';
@@ -34,7 +39,11 @@ export function Comment({ comment, currentUser, onReply }: CommentProps) {
   });
 
   return (
-    <div className="comment-container">
+    <div
+      ref={containerRef}
+      className={`comment-container ${isFixed ? 'fixed' : ''}`}
+      style={{ zIndex: isFixed ? 1000 : 'auto' }}
+    >
       <div className="profile">
         {comment.author?.avatar_url ? (
           <Avatar

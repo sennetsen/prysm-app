@@ -1,77 +1,162 @@
 .comment-thread {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  background-color: #fff;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.comment-with-replies {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .comment {
   display: flex;
   gap: 12px;
+  align-items: flex-start;
+  position: relative;
+  cursor: pointer;
+}
+
+.comment:hover {
+  opacity: 0.95;
+}
+
+.comment-avatar {
+  position: relative;
+  z-index: 2;
+  margin-right: 4px;
 }
 
 .comment-content {
   flex: 1;
+  background: #FBF9F9;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0px 0px 4px rgba(84, 52, 52, 0.15);
 }
 
 .comment-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .comment-author {
   font-weight: 600;
   color: #281010;
+  font-size: 14px;
 }
 
 .comment-timestamp {
-  color: #999;
+  color: #B39898;
   font-size: 12px;
 }
 
 .comment-text {
-  margin: 0 0 8px;
-  color: #333;
+  margin: 0 0 12px;
+  color: #281010;
   font-size: 14px;
   line-height: 1.5;
+  padding-left: 0;
+}
+
+.actions-wrapper {
+  margin-left: -16px;
+  width: calc(100% + 32px);
 }
 
 .comment-actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
+  margin-top: 8px;
+  margin-left: 0;
+  padding-left: 0;
 }
 
 .heart-button, .reply-button, .delete-button {
-  background: none;
-  border: none;
-  font-size: 12px;
-  color: #666;
-  padding: 2px 8px;
-  height: auto;
+  background: none !important;
+  border: none !important;
+  font-size: 12px !important;
+  color: #B39898 !important;
+  padding: 0 !important;
+  height: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  box-shadow: none !important;
+  line-height: 1 !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
 }
 
 .heart-button.liked {
-  color: #ef5959;
+  color: #EF5959 !important;
+}
+
+.heart-button.liked .anticon {
+  color: #EF5959 !important;
+}
+
+.heart-button .anticon,
+.reply-button .anticon,
+.delete-button .anticon {
+  font-size: 14px !important;
 }
 
 .replies-container {
-  margin-left: 48px;
+  position: relative;
+  margin-left: 20px;
+  padding-left: 28px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-top: -16px;
+  margin-top: 8px;
+  overflow: visible;
+}
+
+.reply-connector {
+  position: absolute;
+  left: 16px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #f0f0f0;
+  height: 100%;
 }
 
 .reply-comment {
-  margin-top: 12px;
+  margin-top: 0;
+  cursor: default;
+  width: 100%;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
 }
 
 .more-replies {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  margin-top: 12px;
+  margin-left: 24px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.more-replies:hover {
+  background-color: rgba(239, 89, 89, 0.05);
+}
+
+.more-replies-text {
   color: #666;
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .avatars {
@@ -86,4 +171,180 @@
 
 .deleted-comment {
   opacity: 0.6;
-} 
+}
+
+.reply-input-container {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.reply-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+}
+
+.reply-submit-button {
+  background-color: #281010 !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+  height: auto !important;
+}
+
+.reply-submit-button:disabled {
+  background-color: #e0e0e0 !important;
+  color: #a0a0a0 !important;
+}
+
+.no-comments-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  text-align: center;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.no-comments-placeholder p {
+  color: #b39898;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Mobile responsive styles */
+@media screen and (max-width: 768px) {
+  .comment-thread {
+    padding: 16px;
+    gap: 12px;
+    box-shadow: none;
+    border-radius: 0;
+    width: 100%;
+  }
+  
+  .comment {
+    gap: 8px;
+    width: 100%;
+  }
+  
+  .comment-content {
+    padding: 0;
+    background-color: transparent;
+    box-shadow: none;
+    width: 100%;
+  }
+  
+  .comment-avatar {
+    margin-top: 4px;
+  }
+  
+  .comment-header {
+    margin-bottom: 4px;
+  }
+  
+  .comment-author {
+    font-size: 13px;
+  }
+  
+  .comment-timestamp {
+    font-size: 11px;
+  }
+  
+  .comment-text {
+    font-size: 13px;
+    line-height: 1.4;
+    margin: 0 0 8px;
+  }
+  
+  .actions-wrapper {
+    margin-left: -8px;
+    width: calc(100% + 16px);
+  }
+  
+  .comment-actions {
+    gap: 12px;
+  }
+  
+  .heart-button, .reply-button, .delete-button {
+    font-size: 11px !important;
+  }
+  
+  .heart-button .anticon,
+  .reply-button .anticon,
+  .delete-button .anticon {
+    font-size: 12px !important;
+  }
+  
+  .replies-container {
+    margin-left: 12px;
+    padding-left: 18px;
+    width: calc(100% - 12px);
+  }
+  
+  .reply-connector {
+    left: 0;
+    width: 1px;
+  }
+  
+  .reply-comment {
+    margin-bottom: 4px;
+    width: 100%;
+  }
+  
+  .reply-input-container {
+    margin-top: 8px;
+    gap: 4px;
+    width: 100%;
+  }
+  
+  .reply-input {
+    padding: 6px 10px;
+    font-size: 13px;
+    width: 100%;
+  }
+  
+  .reply-submit-button {
+    padding: 0 8px !important;
+    font-size: 11px !important;
+  }
+  
+  /* Remove the mobile join conversation button entirely */
+  .mobile-join-conversation {
+    display: none !important;
+  }
+  
+  /* Remove the extra padding at the bottom since we don't need space for the button anymore */
+  .post-popup-container {
+    padding-bottom: 16px !important;
+  }
+  
+  .more-replies {
+    margin-left: 16px;
+    padding: 6px;
+  }
+  
+  .more-replies-text {
+    font-size: 12px;
+  }
+}
+
+/* Ensure desktop never shows the mobile elements */
+@media screen and (min-width: 769px) {
+  .mobile-join-conversation {
+    display: none;
+  }
+  
+  .post-comment-divider {
+    display: none;
+  }
+}
