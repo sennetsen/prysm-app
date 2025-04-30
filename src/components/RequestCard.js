@@ -108,7 +108,10 @@ export default React.memo(
           <Tooltip title="Delete Post" placement="top">
             <button
               className="thin-x-button"
-              onClick={handleDelete}
+              onClick={(e) => {
+                e.stopPropagation(); // Stop event propagation
+                handleDelete();
+              }}
               aria-label="Delete post"
             >
               ×
@@ -133,7 +136,10 @@ export default React.memo(
             title={<span>Posted {formatDate(created_at)}<br />Click for Contact</span>}
             placement="bottom"
           >
-            <div className="user-info" onClick={onContactCardToggle}>
+            <div className="user-info" onClick={(e) => {
+              e.stopPropagation(); // Stop event propagation
+              onContactCardToggle();
+            }}>
               <img
                 src={fallbackImg}
                 alt="Anonymous"
@@ -147,7 +153,10 @@ export default React.memo(
               title={<span>Posted {formatDate(created_at)}<br />Click for Contact</span>}
               placement="bottom"
             >
-              <div className="user-info" onClick={onContactCardToggle}>
+              <div className="user-info" onClick={(e) => {
+                e.stopPropagation(); // Stop event propagation
+                onContactCardToggle();
+              }}>
                 {author.avatar_url ? (
                   <img
                     src={author.avatar_url}
@@ -177,7 +186,10 @@ export default React.memo(
                 <Button
                   type="text"
                   icon={hasLiked ? <HeartFilled /> : <HeartOutlined />}
-                  onClick={() => onLike(id, hasLiked)}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Stop event propagation
+                    onLike(id, hasLiked);
+                  }}
                   className={`custom-like-button ${hasLiked ? 'liked' : ''}`}
                 >
                   <span className="like-count">{bigNumberFormatter(likesCount)}</span>
@@ -187,7 +199,10 @@ export default React.memo(
               <Button
                 type="text"
                 icon={hasLiked ? <HeartFilled /> : <HeartOutlined />}
-                onClick={() => onLike(id, hasLiked)}
+                onClick={(e) => {
+                  e.stopPropagation(); // Stop event propagation
+                  onLike(id, hasLiked);
+                }}
                 className={`custom-like-button ${hasLiked ? 'liked' : ''}`}
               >
                 <span className="like-count">{bigNumberFormatter(likesCount)}</span>

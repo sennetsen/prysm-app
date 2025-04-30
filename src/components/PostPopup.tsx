@@ -9,10 +9,13 @@ import {
   SendOutlined,
   PaperClipOutlined,
   LeftOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  MailOutlined,
+  ExportOutlined
 } from '@ant-design/icons';
 import { ReactComponent as CalendarIcon } from '../img/calendar.svg';
 import '../styles/PostPopup.css';
+import { supabase } from '../supabaseClient';
 
 interface PostPopupProps {
   post: {
@@ -24,10 +27,13 @@ interface PostPopupProps {
       avatar_url: string;
     };
     created_at: string;
+    likesCount?: number;
+    reactions?: Array<{ reaction_type: string; user_id: string }>;
   };
   isOpen: boolean;
   onClose: () => void;
   currentUser: any;
+  onLikeUpdate?: (postId: string, newLikeCount: number, isLiked: boolean) => void;
 }
 
 interface Comment {
@@ -43,14 +49,145 @@ interface Comment {
   replies?: Comment[];
 }
 
-export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps) {
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(35);
+export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: PostPopupProps) {
+  const [liked, setLiked] = useState<boolean>(false);
+  const [likeCount, setLikeCount] = useState<number>(post.likesCount || 0);
   const [commentCount, setCommentCount] = useState(0);
   const [commentText, setCommentText] = useState('');
   const [fileList, setFileList] = useState<File[]>([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  // Update liked state and like count when post changes
+  useEffect(() => {
+    if (post && currentUser) {
+      // Check if the current user has liked this post
+      const hasLiked = post.reactions?.some((r: { user_id: string; reaction_type: string }) => 
+        r.user_id === currentUser.id && 
+        r.reaction_type === 'like'
+      ) || false;
+      
+      setLiked(hasLiked);
+      setLikeCount(post.likesCount || 0);
+    }
+  }, [post, currentUser]);
+
+  // Fetch latest post data and comments when component mounts
+  useEffect(() => {
+    const fetchPostData = async () => {
+      if (!post.id) return;
+      
+      try {
+        // Fetch post data
+        const { data, error } = await supabase
+          .from('posts')
+          .select(`
+            *,
+            reactions(reaction_type, user_id)
+          `)
+          .eq('id', post.id)
+          .single();
+          
+        if (error) throw error;
+        
+        if (data) {
+          const hasLiked = currentUser && data.reactions?.some((r: { user_id: string; reaction_type: string }) => 
+            r.user_id === currentUser.id && 
+            r.reaction_type === 'like'
+          ) || false;
+          
+          setLiked(hasLiked);
+          setLikeCount(data.reaction_counts?.like || 0);
+        }
+
+        // Fetch comments for this post
+        fetchComments();
+      } catch (error) {
+        console.error('Error fetching post data:', error);
+      }
+    };
+    
+    const fetchComments = async () => {
+      try {
+        // Fetch comments for this post
+        const { data: commentsData, error: commentsError } = await supabase
+          .from('comments')
+          .select(`
+            id,
+            content,
+            created_at,
+            reaction_counts,
+            author_id,
+            author:users!author_id(id, full_name, avatar_url),
+            reactions(user_id, reaction_type)
+          `)
+          .eq('post_id', post.id)
+          .order('created_at', { ascending: true });
+        
+        if (commentsError) throw commentsError;
+
+        if (commentsData && commentsData.length > 0) {
+          // Transform the comment data to match the Comment interface
+          const formattedComments = commentsData.map(comment => {
+            const likesCount = comment.reaction_counts?.like || 0;
+            const userLiked = currentUser && comment.reactions?.some(
+              (r: any) => r.user_id === currentUser.id && r.reaction_type === 'like'
+            ) || false;
+            
+            // Extract author data safely
+            // Access the first element if author is an array, otherwise treat as object
+            const authorData = Array.isArray(comment.author) ? comment.author[0] : comment.author;
+            const authorName = authorData?.full_name || 'Anonymous';
+            const authorAvatar = authorData?.avatar_url || 'https://i.pravatar.cc/150?img=1';
+
+            return {
+              id: comment.id,
+              author: {
+                name: authorName,
+                avatar: authorAvatar,
+              },
+              content: comment.content,
+              timestamp: new Date(comment.created_at).toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              }),
+              likes: likesCount,
+              liked: userLiked,
+              // Eventually load replies here
+              replies: []
+            };
+          });
+
+          setComments(formattedComments);
+          setCommentCount(formattedComments.length);
+        }
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+      }
+    };
+    
+    fetchPostData();
+
+    // Subscribe to realtime comment updates
+    const channel = supabase
+      .channel(`comments-${post.id}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'comments',
+        filter: `post_id=eq.${post.id}`
+      }, () => {
+        // Refresh comments when there's any change
+        fetchComments();
+      })
+      .subscribe();
+
+    return () => {
+      // Clean up subscription
+      supabase.removeChannel(channel);
+    };
+  }, [post.id, currentUser?.id]);
 
   // Add resize listener to detect mobile/desktop
   useEffect(() => {
@@ -62,10 +199,104 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleLike = (e: React.MouseEvent) => {
+  const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setLiked(!liked);
-    setLikeCount(liked ? likeCount - 1 : likeCount + 1);
+    
+    if (!currentUser) {
+      message.info('Please sign in to like posts');
+      return;
+    }
+
+    try {
+      const isCurrentlyLiked = liked;
+      
+      // Optimistically update UI
+      setLiked(!isCurrentlyLiked);
+      const newLikeCount = isCurrentlyLiked ? likeCount - 1 : likeCount + 1;
+      setLikeCount(newLikeCount);
+      
+      // Update in the backend
+      const { data: currentReactions, error: fetchError } = await supabase
+        .from('reactions')
+        .select()
+        .eq('post_id', post.id)
+        .eq('user_id', currentUser.id)
+        .eq('reaction_type', 'like');
+
+      if (fetchError) throw fetchError;
+
+      if (currentReactions && currentReactions.length > 0) {
+        // If like exists, delete it
+        const { error: deleteError } = await supabase
+          .from('reactions')
+          .delete()
+          .eq('id', currentReactions[0].id);
+
+        if (deleteError) throw deleteError;
+
+        // Decrement like count in reaction_counts
+        const { data: postData, error: postError } = await supabase
+          .from('posts')
+          .select('reaction_counts')
+          .eq('id', post.id)
+          .single();
+
+        if (postError) throw postError;
+        if (postData) {
+          const currentCount = postData.reaction_counts?.like || 0;
+          const newCount = Math.max(0, currentCount - 1);
+
+          await supabase
+            .from('posts')
+            .update({
+              reaction_counts: { ...postData.reaction_counts, like: newCount }
+            })
+            .eq('id', post.id);
+        }
+      } else {
+        // If no like exists, create it
+        const { error: insertError } = await supabase
+          .from('reactions')
+          .insert([{
+            post_id: post.id,
+            user_id: currentUser.id,
+            reaction_type: 'like'
+          }]);
+
+        if (insertError) throw insertError;
+
+        // Increment like count in reaction_counts
+        const { data: postData, error: postError } = await supabase
+          .from('posts')
+          .select('reaction_counts')
+          .eq('id', post.id)
+          .single();
+
+        if (postError) throw postError;
+        if (postData) {
+          const currentCount = postData.reaction_counts?.like || 0;
+          const newCount = currentCount + 1;
+
+          await supabase
+            .from('posts')
+            .update({
+              reaction_counts: { ...postData.reaction_counts, like: newCount }
+            })
+            .eq('id', post.id);
+        }
+      }
+
+      // Notify parent component if callback exists
+      if (onLikeUpdate) {
+        onLikeUpdate(post.id, newLikeCount, !isCurrentlyLiked);
+      }
+    } catch (error) {
+      console.error('Error handling reaction:', error);
+      // Revert optimistic UI update on error
+      setLiked(liked);
+      setLikeCount(likeCount);
+      message.error('Failed to update like status');
+    }
   };
 
   const handleCommentLike = (commentId: number) => {
@@ -181,37 +412,48 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
     fileInput.click();
   };
 
-  const handleCommentSubmit = () => {
+  const handleCommentSubmit = async () => {
     if (commentText.trim() || fileList.length > 0) {
-      // Generate a new, unique ID
-      const newId = Math.max(...comments.map(c => c.id), 0) + 1;
+      if (!currentUser) {
+        message.info('Please sign in to comment');
+        return;
+      }
 
-      // Create a new comment object
-      const newComment: Comment = {
-        id: newId,
-        author: {
-          // Use the currentUser data or fallback to a placeholder
-          name: currentUser?.user_metadata?.full_name || 'Current User',
-          avatar: currentUser?.user_metadata?.avatar_url || 'https://i.pravatar.cc/150?img=1',
-        },
-        content: commentText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        likes: 0,
-        liked: false,
-        // You could add file attachments here if needed
-        // files: fileList.map(file => ({ name: file.name, url: URL.createObjectURL(file) }))
-      };
+      try {
+        // Save the comment to the database
+        const { error } = await supabase
+          .from('comments')
+          .insert({
+            post_id: post.id,
+            content: commentText.trim(),
+            author_id: currentUser.id,
+            reaction_counts: {},
+          });
 
-      // Add the new comment to the top of the comments array
-      setComments([newComment, ...comments]);
+        if (error) throw error;
 
-      // Clear the input field and file list
-      setCommentText('');
-      setFileList([]);
+        // Clear the input field and file list
+        setCommentText('');
+        setFileList([]);
 
-      // Update the comment count
-      setCommentCount(commentCount + 1);
+        // Comments will be updated via the subscription
+      } catch (error) {
+        console.error('Error submitting comment:', error);
+        message.error('Failed to submit comment');
+      }
     }
+  };
+
+  const handleSubscribe = () => {
+    setIsSubscribed(true);
+    message.success('You have subscribed to this post!');
+    // In a real app, you would send a request to your backend here
+  };
+
+  const handleUnsubscribe = () => {
+    setIsSubscribed(false);
+    message.info('You have unsubscribed from this post');
+    // In a real app, you would send a request to your backend here
   };
 
   return (
@@ -293,6 +535,16 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                         />
                         <div className="input-buttons">
                           <Button
+                            className="comment-view-email-button"
+                            icon={<MailOutlined />}
+                            title="View email"
+                          />
+                          <Button
+                            className="comment-export-emails-button"
+                            icon={<ExportOutlined />}
+                            title="Export emails"
+                          />
+                          <Button
                             className="comment-attach-button"
                             icon={<PaperClipOutlined />}
                             onClick={handleFileAttachment}
@@ -346,7 +598,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                   </div>
                   <div className="post-date">
                     <CalendarIcon style={{ width: '18px', height: '18px', marginRight: '18px' }} />
-                    {new Date(post.created_at).toLocaleDateString()}
+                    <div className="date-time">
+                      <div>{new Date(post.created_at).toLocaleDateString()}</div>
+                      <div className="post-time">{new Date(post.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                    </div>
                   </div>
                 </div>
 
@@ -363,7 +618,21 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                       <Avatar src="https://i.pravatar.cc/150?img=4" />
                       <Avatar src="https://i.pravatar.cc/150?img=5" />
                     </Avatar.Group>
-                    <Button className="unsubscribe-button">Unsubscribe</Button>
+                    {isSubscribed ? (
+                      <Button 
+                        className="unsubscribe-button" 
+                        onClick={handleUnsubscribe}
+                      >
+                        Unsubscribe
+                      </Button>
+                    ) : (
+                      <Button 
+                        className="subscribe-button" 
+                        onClick={handleSubscribe}
+                      >
+                        Subscribe
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -419,6 +688,16 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                       />
                       <div className="input-buttons">
                         <Button
+                          className="comment-view-email-button"
+                          icon={<MailOutlined />}
+                          title="View email"
+                        />
+                        <Button
+                          className="comment-export-emails-button"
+                          icon={<ExportOutlined />}
+                          title="Export emails"
+                        />
+                        <Button
                           className="comment-attach-button"
                           icon={<PaperClipOutlined />}
                           onClick={handleFileAttachment}
@@ -470,7 +749,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                 </div>
                 <div className="post-date">
                   <CalendarIcon style={{ width: '18px', height: '18px', marginRight: '18px' }} />
-                  {new Date(post.created_at).toLocaleDateString()}
+                  <div className="date-time">
+                    <div>{new Date(post.created_at).toLocaleDateString()}</div>
+                    <div className="post-time">{new Date(post.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                  </div>
                 </div>
               </div>
 
@@ -487,7 +769,21 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                     <Avatar src="https://i.pravatar.cc/150?img=4" />
                     <Avatar src="https://i.pravatar.cc/150?img=5" />
                   </Avatar.Group>
-                  <Button className="unsubscribe-button">Unsubscribe</Button>
+                  {isSubscribed ? (
+                    <Button 
+                      className="unsubscribe-button" 
+                      onClick={handleUnsubscribe}
+                    >
+                      Unsubscribe
+                    </Button>
+                  ) : (
+                    <Button 
+                      className="subscribe-button" 
+                      onClick={handleSubscribe}
+                    >
+                      Subscribe
+                    </Button>
+                  )}
                 </div>
               </div>
 

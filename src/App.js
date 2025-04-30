@@ -505,6 +505,38 @@ function BoardView() {
     setSelectedPost(post);
   };
 
+  // Added function to update likes in the board view from a post popup
+  const handlePostLikeUpdate = (postId, newLikeCount, isLiked) => {
+    setCards(prevCards => 
+      prevCards.map(card => {
+        if (card.id === postId) {
+          // Update the card with new like count and reactions
+          const updatedReactions = isLiked
+            ? [...(card.reactions || []), { user_id: user?.id, reaction_type: 'like' }]
+            : (card.reactions || []).filter(r => !(r.user_id === user?.id && r.reaction_type === 'like'));
+          
+          return {
+            ...card,
+            likesCount: newLikeCount,
+            reactions: updatedReactions
+          };
+        }
+        return card;
+      })
+    );
+    
+    // Also update the selected post so it stays in sync
+    if (selectedPost && selectedPost.id === postId) {
+      setSelectedPost({
+        ...selectedPost,
+        likesCount: newLikeCount,
+        reactions: isLiked
+          ? [...(selectedPost.reactions || []), { user_id: user?.id, reaction_type: 'like' }]
+          : (selectedPost.reactions || []).filter(r => !(r.user_id === user?.id && r.reaction_type === 'like'))
+      });
+    }
+  };
+
   if (boardNotFound) {
     return <Navigate to="/" />; // Redirect if board not found
   }
@@ -548,7 +580,7 @@ function BoardView() {
               author={card.author}
               currentUserId={user?.id}
               isBoardOwner={isBoardOwner}
-              onLike={() => handleLike(card.id, true)}
+              onLike={() => handleLike(card.id, card.reactions?.some(r => r.user_id === user?.id && r.reaction_type === 'like'))}
               likesCount={card.likesCount}
               reactions={card.reactions || []}
               index={index}
@@ -723,6 +755,7 @@ function BoardView() {
           isOpen={!!selectedPost}
           onClose={() => setSelectedPost(null)}
           currentUser={user}
+          onLikeUpdate={handlePostLikeUpdate}
         />
       )}
 
