@@ -63,11 +63,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: 
   useEffect(() => {
     if (post && currentUser) {
       // Check if the current user has liked this post
-      const hasLiked = post.reactions?.some((r: { user_id: string; reaction_type: string }) => 
-        r.user_id === currentUser.id && 
+      const hasLiked = post.reactions?.some((r: { user_id: string; reaction_type: string }) =>
+        r.user_id === currentUser.id &&
         r.reaction_type === 'like'
       ) || false;
-      
+
       setLiked(hasLiked);
       setLikeCount(post.likesCount || 0);
     }
@@ -77,7 +77,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: 
   useEffect(() => {
     const fetchPostData = async () => {
       if (!post.id) return;
-      
+
       try {
         // Fetch post data
         const { data, error } = await supabase
@@ -88,15 +88,15 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: 
           `)
           .eq('id', post.id)
           .single();
-          
+
         if (error) throw error;
-        
+
         if (data) {
-          const hasLiked = currentUser && data.reactions?.some((r: { user_id: string; reaction_type: string }) => 
-            r.user_id === currentUser.id && 
+          const hasLiked = currentUser && data.reactions?.some((r: { user_id: string; reaction_type: string }) =>
+            r.user_id === currentUser.id &&
             r.reaction_type === 'like'
           ) || false;
-          
+
           setLiked(hasLiked);
           setLikeCount(data.reaction_counts?.like || 0);
         }
@@ -107,7 +107,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: 
         console.error('Error fetching post data:', error);
       }
     };
-    
+
     const fetchComments = async () => {
       try {
         // Fetch comments for this post
@@ -124,7 +124,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: 
           `)
           .eq('post_id', post.id)
           .order('created_at', { ascending: true });
-        
+
         if (commentsError) throw commentsError;
 
         if (commentsData && commentsData.length > 0) {
@@ -134,7 +134,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: 
             const userLiked = currentUser && comment.reactions?.some(
               (r: any) => r.user_id === currentUser.id && r.reaction_type === 'like'
             ) || false;
-            
+
             // Extract author data safely
             // Access the first element if author is an array, otherwise treat as object
             const authorData = Array.isArray(comment.author) ? comment.author[0] : comment.author;
@@ -148,9 +148,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: 
                 avatar: authorAvatar,
               },
               content: comment.content,
-              timestamp: new Date(comment.created_at).toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit' 
+              timestamp: new Date(comment.created_at).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
               }),
               likes: likesCount,
               liked: userLiked,
@@ -166,15 +166,15 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: 
         console.error('Error fetching comments:', error);
       }
     };
-    
+
     fetchPostData();
 
     // Subscribe to realtime comment updates
     const channel = supabase
       .channel(`comments-${post.id}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
         table: 'comments',
         filter: `post_id=eq.${post.id}`
       }, () => {
@@ -201,7 +201,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: 
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     if (!currentUser) {
       message.info('Please sign in to like posts');
       return;
@@ -209,12 +209,12 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: 
 
     try {
       const isCurrentlyLiked = liked;
-      
+
       // Optimistically update UI
       setLiked(!isCurrentlyLiked);
       const newLikeCount = isCurrentlyLiked ? likeCount - 1 : likeCount + 1;
       setLikeCount(newLikeCount);
-      
+
       // Update in the backend
       const { data: currentReactions, error: fetchError } = await supabase
         .from('reactions')
@@ -599,8 +599,16 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: 
                   <div className="post-date">
                     <CalendarIcon style={{ width: '18px', height: '18px', marginRight: '18px' }} />
                     <div className="date-time">
-                      <div>{new Date(post.created_at).toLocaleDateString()}</div>
-                      <div className="post-time">{new Date(post.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                      <div>{new Date(post.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      }).replace(/(\d+)(?=(,))/, (match) => {
+                        const num = parseInt(match);
+                        const suffix = ['th', 'st', 'nd', 'rd'][num % 10 > 3 ? 0 : num % 10];
+                        return num + suffix;
+                      })}</div>
+                      <div className="post-time">{new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                     </div>
                   </div>
                 </div>
@@ -619,15 +627,15 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: 
                       <Avatar src="https://i.pravatar.cc/150?img=5" />
                     </Avatar.Group>
                     {isSubscribed ? (
-                      <Button 
-                        className="unsubscribe-button" 
+                      <Button
+                        className="unsubscribe-button"
                         onClick={handleUnsubscribe}
                       >
                         Unsubscribe
                       </Button>
                     ) : (
-                      <Button 
-                        className="subscribe-button" 
+                      <Button
+                        className="subscribe-button"
                         onClick={handleSubscribe}
                       >
                         Subscribe
@@ -750,8 +758,16 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: 
                 <div className="post-date">
                   <CalendarIcon style={{ width: '18px', height: '18px', marginRight: '18px' }} />
                   <div className="date-time">
-                    <div>{new Date(post.created_at).toLocaleDateString()}</div>
-                    <div className="post-time">{new Date(post.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                    <div>{new Date(post.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }).replace(/(\d+)(?=(,))/, (match) => {
+                      const num = parseInt(match);
+                      const suffix = ['th', 'st', 'nd', 'rd'][num % 10 > 3 ? 0 : num % 10];
+                      return num + suffix;
+                    })}</div>
+                    <div className="post-time">{new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                   </div>
                 </div>
               </div>
@@ -770,15 +786,15 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onLikeUpdate }: 
                     <Avatar src="https://i.pravatar.cc/150?img=5" />
                   </Avatar.Group>
                   {isSubscribed ? (
-                    <Button 
-                      className="unsubscribe-button" 
+                    <Button
+                      className="unsubscribe-button"
                       onClick={handleUnsubscribe}
                     >
                       Unsubscribe
                     </Button>
                   ) : (
-                    <Button 
-                      className="subscribe-button" 
+                    <Button
+                      className="subscribe-button"
                       onClick={handleSubscribe}
                     >
                       Subscribe
