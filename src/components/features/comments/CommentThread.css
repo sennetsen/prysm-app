@@ -2,9 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  background-color: #fff;
-  padding: 16px;
-  border-radius: 8px;
+  padding: 10px;
 }
 
 .comment-with-replies {
@@ -78,7 +76,9 @@
   padding-left: 0;
 }
 
-.heart-button, .reply-button, .delete-button {
+.heart-button,
+.reply-button,
+.delete-button {
   background: none !important;
   border: none !important;
   font-size: 12px !important;
@@ -231,108 +231,110 @@
     border-radius: 0;
     width: 100%;
   }
-  
+
   .comment {
     gap: 8px;
     width: 100%;
   }
-  
+
   .comment-content {
     padding: 0;
     background-color: transparent;
     box-shadow: none;
     width: 100%;
   }
-  
+
   .comment-avatar {
     margin-top: 4px;
   }
-  
+
   .comment-header {
     margin-bottom: 4px;
   }
-  
+
   .comment-author {
     font-size: 13px;
   }
-  
+
   .comment-timestamp {
     font-size: 11px;
   }
-  
+
   .comment-text {
     font-size: 13px;
     line-height: 1.4;
     margin: 0 0 8px;
   }
-  
+
   .actions-wrapper {
     margin-left: -8px;
     width: calc(100% + 16px);
   }
-  
+
   .comment-actions {
     gap: 12px;
   }
-  
-  .heart-button, .reply-button, .delete-button {
+
+  .heart-button,
+  .reply-button,
+  .delete-button {
     font-size: 11px !important;
   }
-  
+
   .heart-button .anticon,
   .reply-button .anticon,
   .delete-button .anticon {
     font-size: 12px !important;
   }
-  
+
   .replies-container {
     margin-left: 12px;
     padding-left: 18px;
     width: calc(100% - 12px);
   }
-  
+
   .reply-connector {
     left: 0;
     width: 1px;
   }
-  
+
   .reply-comment {
     margin-bottom: 4px;
     width: 100%;
   }
-  
+
   .reply-input-container {
     margin-top: 8px;
     gap: 4px;
     width: 100%;
   }
-  
+
   .reply-input {
     padding: 6px 10px;
     font-size: 13px;
     width: 100%;
   }
-  
+
   .reply-submit-button {
     padding: 0 8px !important;
     font-size: 11px !important;
   }
-  
+
   /* Remove the mobile join conversation button entirely */
   .mobile-join-conversation {
     display: none !important;
   }
-  
+
   /* Remove the extra padding at the bottom since we don't need space for the button anymore */
   .post-popup-container {
     padding-bottom: 16px !important;
   }
-  
+
   .more-replies {
     margin-left: 16px;
     padding: 6px;
   }
-  
+
   .more-replies-text {
     font-size: 12px;
   }
@@ -343,7 +345,7 @@
   .mobile-join-conversation {
     display: none;
   }
-  
+
   .post-comment-divider {
     display: none;
   }

@@ -1,8 +1,6 @@
 // CommentThread.tsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
-import { Comment } from './Comment';
-import { CommentInput } from './CommentInput';
 import { Avatar, Button, Popconfirm, Tooltip } from 'antd';
 import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined, EllipsisOutlined } from '@ant-design/icons';
 import './CommentThread.css';
