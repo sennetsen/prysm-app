@@ -24,6 +24,7 @@ interface PostPopupProps {
       avatar_url: string;
     };
     created_at: string;
+    color: string;
   };
   isOpen: boolean;
   onClose: () => void;

@@ -210,15 +210,23 @@ export function CommentThread({
     );
   };
 
-  // Get avatars for additional replies (beyond the first one) for a specific comment
+  // Get avatars for additional replies (hidden replies, unique users only)
   const getAdditionalReplyAvatars = (replies: Comment[]) => {
-    if (!replies || replies.length <= 1) return [];
+    if (!replies || replies.length <= 2) return [];
 
-    // Return avatars for users from the 2nd reply onwards (max 3)
-    return replies
-      .slice(1)
-      .map(reply => reply.author)
-      .slice(0, 3); // Limit to 3 avatars
+    // Only consider hidden replies (from index 2 onward)
+    const hiddenReplies = replies.slice(2);
+
+    // Use a Map to ensure uniqueness by user name (or avatar URL)
+    const uniqueAuthorsMap = new Map();
+    hiddenReplies.forEach(reply => {
+      if (!uniqueAuthorsMap.has(reply.author.name)) {
+        uniqueAuthorsMap.set(reply.author.name, reply.author);
+      }
+    });
+
+    // Return the unique authors as an array
+    return Array.from(uniqueAuthorsMap.values());
   };
 
   const renderComment = (comment: Comment, isReply = false) => {
@@ -242,7 +250,7 @@ export function CommentThread({
     const isMinimized = minimizedComments.includes(comment.id);
 
     return (
-      <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''}`} onClick={() => !isReply && toggleMinimize(comment.id)}>
+      <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''}`}>
         <div className="comment-avatar">
           <Avatar src={comment.author.avatar} size={36} />
         </div>
@@ -273,15 +281,17 @@ export function CommentThread({
                   >
                     {comment.likes}
                   </Button>
-                  <Button
-                    className="reply-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleReplyClick(comment.id);
-                    }}
-                  >
-                    Reply
-                  </Button>
+                  {!isReply && (
+                    <Button
+                      className="reply-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReplyClick(comment.id);
+                      }}
+                    >
+                      <MessageOutlined /> Reply
+                    </Button>
+                  )}
                   {isCurrentUserAuthor && (
                     <Popconfirm
                       title="Delete this comment?"
@@ -304,7 +314,7 @@ export function CommentThread({
                 </div>
               </div>
 
-              {replyingToId === comment.id && (
+              {!isReply && replyingToId === comment.id && (
                 <div className="reply-input-container" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="text"
@@ -359,14 +369,24 @@ export function CommentThread({
                   {renderComment(comment)}
 
                   {!minimizedComments.includes(comment.id) && comment.replies && comment.replies.length > 0 && (
-                    <div className="replies-container">
-                      <div className="reply-connector"></div>
-
-                      {/* Always show the first reply */}
-                      {renderComment(comment.replies[0], true)}
-
-                      {/* Show "X more replies" summary if there are additional replies */}
-                      {hasAdditionalReplies && !isExpanded && (
+                    <div className="replies-container" style={{ position: 'relative' }}>
+                      <div className="all-replies-wrapper">
+                        {/* Show only the first 2 replies by default, show all if expanded */}
+                        {(isExpanded ? comment.replies : comment.replies.slice(0, 2)).map((reply, idx) => renderComment(reply, true))}
+                      </div>
+                      <div className="reply-connector">
+                        {isExpanded && comment.replies.length > 2 && (
+                          <button
+                            className="collapse-replies-btn"
+                            onClick={() => toggleReplies(comment.id)}
+                            aria-label="Collapse replies"
+                          >
+                            <span>–</span>
+                          </button>
+                        )}
+                      </div>
+                      {/* Show "X more replies" summary if there are more than 2 replies and not expanded */}
+                      {comment.replies.length > 2 && !isExpanded && (
                         <div className="more-replies" onClick={() => toggleReplies(comment.id)}>
                           <Avatar.Group className="avatars" maxCount={3}>
                             {additionalUserAvatars.map((user, index) => (
@@ -376,36 +396,14 @@ export function CommentThread({
                             ))}
                           </Avatar.Group>
                           <span className="more-replies-text">
-                            {additionalRepliesCount} more {additionalRepliesCount === 1 ? 'reply' : 'replies'} • {formatTimeDifference(mostRecentTimestamp)}
+                            <span style={{ fontWeight: 600 }}>
+                              {comment.replies.length - 2} more {comment.replies.length - 2 === 1 ? 'reply' : 'replies'}
+                            </span>
+                            <span style={{ fontWeight: 400 }}>
+                              {' • '}{formatTimeDifference(mostRecentTimestamp)}
+                            </span>
                           </span>
                         </div>
-                      )}
-
-                      {/* Show all replies when expanded */}
-                      {isExpanded && (
-                        <>
-                          {comment.replies.slice(1).map(reply => (
-                            <div key={reply.id} className="reply">
-                              <Avatar src={reply.author.avatar} size={28} />
-                              <div className="reply-content">
-                                <div className="reply-header">
-                                  <span className="user-name">{reply.author.name}</span>
-                                  <span className="timestamp">{formatTimeDifference(reply.timestamp)}</span>
-                                </div>
-                                <p className="text">{reply.content}</p>
-                              </div>
-                            </div>
-                          ))}
-                          {additionalRepliesCount > 0 && (
-                            <Button
-                              type="text"
-                              className="show-less-button"
-                              onClick={() => toggleReplies(comment.id)}
-                            >
-                              Show less
-                            </Button>
-                          )}
-                        </>
                       )}
                     </div>
                   )}
