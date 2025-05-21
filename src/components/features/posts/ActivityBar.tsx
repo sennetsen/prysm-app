@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../../../supabaseClient';
 import { Avatar } from 'antd';
 
 interface ActivityBarProps {
@@ -9,12 +9,7 @@ interface ActivityBarProps {
 export function ActivityBar({ postId }: ActivityBarProps) {
   const [topComments, setTopComments] = useState<any[]>([]);
 
-  useEffect(() => {
-    fetchTopComments();
-    subscribeToComments();
-  }, [postId]);
-
-  const fetchTopComments = async () => {
+  const fetchTopComments = useCallback(async () => {
     const { data, error } = await supabase
       .from('comments')
       .select(`
@@ -29,9 +24,9 @@ export function ActivityBar({ postId }: ActivityBarProps) {
     if (!error && data) {
       setTopComments(data);
     }
-  };
+  }, [postId]);
 
-  const subscribeToComments = () => {
+  const subscribeToComments = useCallback(() => {
     const channel = supabase
       .channel(`top-comments:${postId}`)
       .on('postgres_changes', {
@@ -47,7 +42,13 @@ export function ActivityBar({ postId }: ActivityBarProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  };
+  }, [postId, fetchTopComments]);
+
+  useEffect(() => {
+    fetchTopComments();
+    const unsubscribe = subscribeToComments();
+    return () => unsubscribe();
+  }, [fetchTopComments, subscribeToComments]);
 
   return (
     <div className="activity-bar">

@@ -5,11 +5,10 @@ import frame48 from "./img/Frame 48.svg";
 import frame49 from "./img/Frame 49.svg";
 import boardImage from "./img/Board.svg";
 import { GoogleSignInButton } from '../supabaseClient';
-import joinmascot from '../img/join-mascot.jpg';
 import frame1 from "./img/Frame 1 (1).svg";
 import frame2 from "./img/Frame 2.svg";
 import { supabase } from '../supabaseClient';
-import { handleSignOut } from '../components/UserProfile';
+import { handleSignOut } from '../components/shared/UserProfile';
 import { loadScreenScript, getCurrentScreenSize, SCREEN_SIZES } from '../utils/screenUtils';
 import { debounce } from '../utils/debounce';
 
@@ -207,11 +206,8 @@ function HomePage() {
     };
   }, [currentScreen]);
 
-  // You can now use screen-specific functions conditionally
-  const handleSomeAction = () => {
-    if (screenModule && screenModule.someFeature) {
-      screenModule.someFeature();
-    }
+  const handleSegmentClick = (segment) => {
+    const segmentStart = segment.start;
   };
 
   return (
@@ -242,24 +238,24 @@ function HomePage() {
         <div className="images">
           {currentScreen === SCREEN_SIZES.DESKTOP ? (
             <>
-              <div className="column left-column">
+              <div className="column ani-left-column">
                 <img src={frame48} alt="Desktop Frame 1" className="frame" />
                 <img src={frame48} alt="Desktop Frame 2" className="frame" />
               </div>
-              <div className="column right-column">
+              <div className="column ani-right-column">
                 <img src={frame49} alt="Desktop Frame 3" className="frame" />
                 <img src={frame49} alt="Desktop Frame 4" className="frame" />
               </div>
             </>
           ) : (
             <>
-              <div className="column left-column">
+              <div className="column ani-left-column">
                 <img src={frame1} alt="Mobile Frame 1" className="frame" />
                 <img src={frame2} alt="Mobile Frame 2" className="frame" />
                 <img src={frame1} alt="Mobile Frame 1" className="frame" />
                 <img src={frame2} alt="Mobile Frame 2" className="frame" />
               </div>
-              <div className="column right-column">
+              <div className="column ani-right-column">
                 {/* <img src={frame2} alt="Mobile Frame 3" className="frame" /> */}
                 {/* <img src={frame2} alt="Mobile Frame 4" className="frame" /> */}
               </div>

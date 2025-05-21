@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import RequestCard from "./RequestCard";
+import RequestCard from "../posts/RequestCard";
 import "./Board.css";
-import { supabase } from "../supabaseClient";
+import { supabase } from "../../../supabaseClient";
 import Sidebar from "./Sidebar";
 
 function Board({ boardId }) {
@@ -14,7 +14,7 @@ function Board({ boardId }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setCurrentUser(session.user);
-    
+
         const [boardResponse, postsResponse] = await Promise.all([
           supabase
             .from("boards")
@@ -36,11 +36,11 @@ function Board({ boardId }) {
             `)
             .eq("board_id", boardId)
         ]);
-    
+
         if (!boardResponse.error) {
           setBoardData(boardResponse.data);
         }
-    
+
         if (!postsResponse.error) {
           setPosts(postsResponse.data);
         }
@@ -59,7 +59,7 @@ function Board({ boardId }) {
       </div>
     );
   }
-  
+
   return (
     <div className="board">
       <Sidebar

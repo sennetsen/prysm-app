@@ -1,0 +1,142 @@
+.mention-dropdown {
+  position: absolute;
+  background-color: white;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  width: 200px;
+  max-height: 250px;
+  overflow-y: auto;
+  z-index: 1000;
+  border: 1px solid #e0e0e0;
+}
+
+.mention-dropdown-container {
+  z-index: 1050;
+  position: absolute;
+  width: auto;
+}
+
+.mention-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.mention-item:last-child {
+  border-bottom: none;
+}
+
+.mention-item:hover {
+  background-color: #f5f5f5;
+}
+
+/* Selected item style */
+.selected-item {
+  background-color: #f0f7ff;
+}
+
+/* Everyone item styles */
+.everyone-item {
+  background-color: #ff617c;
+  color: white;
+  padding: 8px 12px;
+}
+
+.everyone-item:hover {
+  background-color: #e05370;
+}
+
+.everyone-item.selected-item {
+  background-color: #d84562;
+}
+
+.everyone-item .mention-username,
+.everyone-item .user-count {
+  color: white;
+}
+
+.mention-avatar {
+  margin-right: 8px;
+  border: 1px solid #eeeeee;
+}
+
+.mention-username {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.mention-fullname {
+  font-size: 12px;
+  color: #888;
+  margin-left: 8px;
+}
+
+.everyone-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.user-count {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  margin-left: 4px;
+  font-weight: normal;
+}
+
+/* Mention tag styles for posted comments */
+.mention-tag {
+  display: inline-block;
+  background-color: #e8f0fe;
+  border-radius: 3px;
+  color: #4285f4;
+  padding: 1px 4px;
+  font-weight: 500;
+  margin: 0 1px;
+  font-size: 15px;
+}
+
+.mention-tag.mention-everyone {
+  background-color: #ffe6e8;
+  color: #ff617c;
+}
+
+/* Style for mentions in the comment input */
+.highlighted-mention {
+  color: #4285f4;
+  font-weight: 600;
+}
+
+/* Style for @everyone mentions in the comment input */
+.highlighted-everyone {
+  color: #ff617c;
+  font-weight: 600;
+}
+
+/* Additional styles for mention input highlighting */
+.highlighted-mention-input {
+  display: inline-block;
+  background-color: #e8f0fe;
+  color: #4285f4;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.highlighted-everyone-input {
+  display: inline-block;
+  background-color: #ffe6e8;
+  color: #ff617c;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+}

@@ -105,3 +105,20 @@
   font-size: 12px;
   color: #B39898;
 }
+
+/* Mention tag styling */
+.comment-text .mention-tag {
+  display: inline-block;
+  padding: 0 6px;
+  margin: 0 2px;
+  background-color: #ffebf2;
+  color: #ff5e95;
+  border-radius: 4px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.comment-text .mention-tag.mention-everyone {
+  background-color: #ff5e95;
+  color: white;
+}

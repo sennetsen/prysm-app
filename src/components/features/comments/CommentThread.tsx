@@ -1,6 +1,6 @@
 // CommentThread.tsx
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../../supabaseClient';
 import { Comment } from './Comment';
 import { CommentInput } from './CommentInput';
 import { Avatar, Button, Popconfirm, Tooltip } from 'antd';
@@ -29,36 +29,34 @@ interface Comment {
   replies?: Comment[];
 }
 
-export function CommentThread({ 
-  postId, 
-  currentUser, 
-  comments, 
-  onLike, 
+export function CommentThread({
+  postId,
+  currentUser,
+  comments,
+  onLike,
   onAddReply,
-  onDelete 
+  onDelete
 }: CommentThreadProps) {
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState('');
   const [localComments, setLocalComments] = useState<Comment[]>(comments);
   const [minimizedComments, setMinimizedComments] = useState<number[]>([]);
   const [expandedReplies, setExpandedReplies] = useState<number[]>([]);
-  const [showReplyInput, setShowReplyInput] = useState(false);
-  const [commentLiked, setCommentLiked] = useState(false);
   const [commentLikes, setCommentLikes] = useState(0);
-  
+
   // Update local comments when props change
   useEffect(() => {
     setLocalComments(comments);
   }, [comments]);
-  
+
   const handleReplyClick = (commentId: number) => {
     setReplyingToId(commentId);
     setReplyText('');
   };
-  
+
   const handleSubmitReply = (parentId: number) => {
     if (!replyText.trim()) return;
-    
+
     // Generate a unique ID for the new reply
     const maxId = Math.max(
       ...localComments.map(c => c.id),
@@ -66,7 +64,7 @@ export function CommentThread({
       0
     );
     const newReplyId = maxId + 1;
-    
+
     // Create the new reply
     const newReply: Comment = {
       id: newReplyId,
@@ -79,7 +77,7 @@ export function CommentThread({
       likes: 0,
       liked: false
     };
-    
+
     // Add the reply to the parent comment
     const updatedComments = localComments.map(comment => {
       if (comment.id === parentId) {
@@ -90,29 +88,29 @@ export function CommentThread({
       }
       return comment;
     });
-    
-    console.log('Adding reply to comment', parentId, 'New replies length:', 
+
+    console.log('Adding reply to comment', parentId, 'New replies length:',
       updatedComments.find(c => c.id === parentId)?.replies?.length);
-    
+
     // Update the local state
     setLocalComments(updatedComments);
-    
+
     // If parent component provided onAddReply callback, call it
     if (onAddReply) {
       onAddReply(parentId, newReply);
     }
-    
+
     // Clear the reply input and close it
     setReplyText('');
     setReplyingToId(null);
   };
-  
+
   const handleDeleteComment = (commentId: number) => {
     // Update local state immediately for better UX
     const isTopLevelComment = localComments.some(c => c.id === commentId);
-    
+
     if (isTopLevelComment) {
-      setLocalComments(prevComments => 
+      setLocalComments(prevComments =>
         prevComments.filter(comment => comment.id !== commentId)
       );
     } else {
@@ -128,7 +126,7 @@ export function CommentThread({
         })
       );
     }
-    
+
     // Also call the parent component's delete handler if provided
     if (onDelete) {
       onDelete(commentId);
@@ -163,7 +161,7 @@ export function CommentThread({
   // Find the most recent reply timestamp for a specific comment
   const getMostRecentReplyTimestamp = (replies: Comment[]): string => {
     if (!replies || replies.length <= 1) return '';
-    
+
     return replies
       .slice(1) // Skip the first reply as it's already shown
       .reduce((latest, reply) => {
@@ -177,13 +175,13 @@ export function CommentThread({
   const formatTimeDifference = (timestamp: string) => {
     const now = new Date();
     const commentDate = new Date(timestamp);
-    
+
     // Calculate the time difference in milliseconds
     const diffMs = now.getTime() - commentDate.getTime();
-    
+
     // Convert to minutes
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    
+
     if (diffMinutes < 1) {
       return 'just now';
     } else if (diffMinutes === 1) {
@@ -193,7 +191,7 @@ export function CommentThread({
     } else {
       // Convert to hours
       const diffHours = Math.floor(diffMinutes / 60);
-      
+
       if (diffHours === 1) {
         return '1 hour ago';
       } else if (diffHours < 24) {
@@ -206,15 +204,10 @@ export function CommentThread({
     }
   };
 
-  const toggleLike = () => {
-    setCommentLiked(!commentLiked);
-    setCommentLikes(commentLiked ? commentLikes - 1 : commentLikes + 1);
-  };
-
   const toggleReplies = (commentId: number) => {
-    setExpandedReplies(prev => 
-      prev.includes(commentId) 
-        ? prev.filter(id => id !== commentId) 
+    setExpandedReplies(prev =>
+      prev.includes(commentId)
+        ? prev.filter(id => id !== commentId)
         : [...prev, commentId]
     );
   };
@@ -222,14 +215,14 @@ export function CommentThread({
   // Get avatars for additional replies (beyond the first one) for a specific comment
   const getAdditionalReplyAvatars = (replies: Comment[]) => {
     if (!replies || replies.length <= 1) return [];
-    
+
     // Return avatars for users from the 2nd reply onwards (max 3)
     return replies
       .slice(1)
       .map(reply => reply.author)
       .slice(0, 3); // Limit to 3 avatars
   };
-  
+
   const renderComment = (comment: Comment, isReply = false) => {
     if (comment.author.name === 'Comment Deleted') {
       return (
@@ -245,9 +238,9 @@ export function CommentThread({
       );
     }
 
-    const isCurrentUserAuthor = 
+    const isCurrentUserAuthor =
       currentUser?.user_metadata?.full_name === comment.author.name;
-    
+
     const isMinimized = minimizedComments.includes(comment.id);
 
     return (
@@ -272,7 +265,7 @@ export function CommentThread({
               </p>
               <div className="actions-wrapper">
                 <div className="comment-actions">
-                  <Button 
+                  <Button
                     className={`heart-button ${comment.liked ? 'liked' : ''}`}
                     icon={comment.liked ? <HeartFilled /> : <HeartOutlined />}
                     onClick={(e) => {
@@ -282,8 +275,8 @@ export function CommentThread({
                   >
                     {comment.likes}
                   </Button>
-                  <Button 
-                    className="reply-button" 
+                  <Button
+                    className="reply-button"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleReplyClick(comment.id);
@@ -301,7 +294,7 @@ export function CommentThread({
                       onConfirm={() => handleDeleteComment(comment.id)}
                       onCancel={(e) => e?.stopPropagation()}
                     >
-                      <Button 
+                      <Button
                         className="delete-button"
                         icon={<DeleteOutlined />}
                         onClick={(e) => e.stopPropagation()}
@@ -312,7 +305,7 @@ export function CommentThread({
                   )}
                 </div>
               </div>
-              
+
               {replyingToId === comment.id && (
                 <div className="reply-input-container" onClick={(e) => e.stopPropagation()}>
                   <input
@@ -324,7 +317,7 @@ export function CommentThread({
                     className="reply-input"
                     autoFocus
                   />
-                  <Button 
+                  <Button
                     className="reply-submit-button"
                     onClick={() => handleSubmitReply(comment.id)}
                     disabled={!replyText.trim()}
@@ -355,25 +348,25 @@ export function CommentThread({
             if (comment.replies && comment.replies.length > 0) {
               console.log('Reply IDs:', comment.replies.map(r => r.id));
             }
-            
+
             const hasAdditionalReplies = comment.replies && comment.replies.length > 1;
             const additionalRepliesCount = hasAdditionalReplies ? comment.replies!.length - 1 : 0;
             const isExpanded = expandedReplies.includes(comment.id);
             const mostRecentTimestamp = hasAdditionalReplies ? getMostRecentReplyTimestamp(comment.replies!) : '';
             const additionalUserAvatars = hasAdditionalReplies ? getAdditionalReplyAvatars(comment.replies!) : [];
-            
+
             return (
               <React.Fragment key={comment.id}>
                 <div className="comment-with-replies">
                   {renderComment(comment)}
-                  
+
                   {!minimizedComments.includes(comment.id) && comment.replies && comment.replies.length > 0 && (
                     <div className="replies-container">
                       <div className="reply-connector"></div>
-                      
+
                       {/* Always show the first reply */}
                       {renderComment(comment.replies[0], true)}
-                      
+
                       {/* Show "X more replies" summary if there are additional replies */}
                       {hasAdditionalReplies && !isExpanded && (
                         <div className="more-replies" onClick={() => toggleReplies(comment.id)}>
@@ -406,9 +399,9 @@ export function CommentThread({
                             </div>
                           ))}
                           {additionalRepliesCount > 0 && (
-                            <Button 
-                              type="text" 
-                              className="show-less-button" 
+                            <Button
+                              type="text"
+                              className="show-less-button"
                               onClick={() => toggleReplies(comment.id)}
                             >
                               Show less
@@ -424,10 +417,10 @@ export function CommentThread({
           })
         )}
       </div>
-      
+
       {/* Mobile "Join the conversation" fixed bottom input */}
       <div className="mobile-join-conversation">
-        <button 
+        <button
           className="mobile-join-button"
           onClick={handleJoinConversation}
         >

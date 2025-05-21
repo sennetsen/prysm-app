@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "./RequestCard.css";
-import { bigNumberFormatter, formatNumberWithCommas } from '../utils/bigNumberFormatter';
+import { bigNumberFormatter, formatNumberWithCommas } from '../../../utils/bigNumberFormatter';
 import { HeartFilled, HeartOutlined } from "@ant-design/icons";
 import { Button, Tooltip } from "antd";
-import fallbackImg from '../img/fallback.png';
+import fallbackImg from '../../../img/fallback.png';
 
 export default React.memo(
   function RequestCard({

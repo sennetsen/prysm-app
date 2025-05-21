@@ -4,20 +4,21 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import HomePage from './CompanySite/HomePage';
 import { supabase } from "./supabaseClient";
-import Navbar from "./components/Navbar";
-import Sidebar from "./components/Sidebar";
-import RequestCard from "./components/RequestCard";
+import Navbar from "./components/features/board/Navbar";
+import Sidebar from "./components/features/board/Sidebar";
+import RequestCard from "./components/features/posts/RequestCard";
+import { MentionTest } from "./components/features/comments/MentionTest";
 import "./App.css";
 import { Button, Checkbox, Form, Tooltip } from 'antd';
 import { lightenColor } from './utils/colorUtils'; // Import the lightenColor function
 import { GoogleSignInButton } from './supabaseClient';
 import postbutton from './img/postbutton.svg';
 import helpmascot from './img/helpmascot.jpg';
-import { handleSignOut } from './components/UserProfile';
+import { handleSignOut } from './components/shared/UserProfile';
 import fallbackImg from './img/fallback.png';
 import mailicon from './img/mail.svg';
-import { PostPopup } from './components/PostPopup';
-import './styles/PostPopup.css';
+import { PostPopup } from './components/features/posts/PostPopup';
+import './components/features/posts/PostPopup.css';
 
 function BoardView() {
   const { boardPath } = useParams();
@@ -64,7 +65,6 @@ function BoardView() {
         return;
       }
 
-
       setBoardData(data);
       setNavbarColor(data.color);
       setIsBoardOwner(user?.email === data.email);
@@ -75,7 +75,7 @@ function BoardView() {
     if (boardPath) {
       fetchBoardData();
     }
-  }, [boardPath, user?.id, defaultColors]);
+  }, [boardPath, user?.id, user?.email, defaultColors]);
 
   useEffect(() => {
     if (boardData?.creator_name && boardData?.title) {
@@ -83,7 +83,7 @@ function BoardView() {
     } else {
       document.title = "Prysm";
     }
-  }, [boardData?.creator_name]);
+  }, [boardData?.creator_name, boardData?.title]);
 
   useEffect(() => {
     // Update the meta theme color
@@ -772,6 +772,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/:boardPath" element={<BoardView />} />
+          <Route path="/mention-test" element={<MentionTest />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
         <Analytics />

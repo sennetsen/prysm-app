@@ -422,11 +422,11 @@ nav li {
   position: relative;
 }
 
-.left-column {
+.ani-left-column {
   animation: scrollDown 20s linear infinite;
 }
 
-.right-column {
+.ani-right-column {
   animation: scrollUp 20s linear infinite;
 }
 

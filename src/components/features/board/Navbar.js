@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import "./Navbar.css";
-import logo from "../img/Vector (1).svg";
-import helpIcon from "../img/Vector.svg";
-import shareIcon from "../img/Icon.svg";
-import fallbackImg from '../img/fallback.png';
-import { supabase } from "../supabaseClient";
-import { Link } from "react-router-dom";
+import vector1 from '../../../img/Vector (1).svg';
+import vector from '../../../img/Vector.svg';
+import icon from '../../../img/Icon.svg';
+import fallbackImg from '../../../img/fallback.png';
+import { supabase } from "../../../supabaseClient";
 
 function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, onShare, profileRef }) {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -49,14 +48,14 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
   return (
     <nav style={navbarStyle} className={`navbar ${isScrolled ? "scrolled" : ""}`}>
       <a href="/" onClick={handleLinkClick}>
-        <img src={logo} alt="Logo" className="logo" />
+        <img src={vector1} alt="Logo" className="logo" />
       </a>
       <div className="navbar-title-container">
         <div className="navbar-title">{title || "Request Board"}</div>
       </div>
       <div className="navbar-icons">
         <button className="question-icon" onClick={onQuestionClick}>
-          <img src={helpIcon} alt="Help Icon" />
+          <img src={vector} alt="Help Icon" />
         </button>
         {!user && (
           <button className="join-button" onClick={onJoinClick}>
@@ -111,7 +110,7 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
 
         <div className="divider"></div>
         <button className="share-button" onClick={onShare}>
-          <img src={shareIcon} alt="Share" />
+          <img src={icon} alt="Share" />
           Share
         </button>
       </div>

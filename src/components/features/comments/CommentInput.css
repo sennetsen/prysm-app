@@ -1,0 +1,314 @@
+/* CommentInput.css */
+
+/* Main container styles */
+.comment-input-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  padding: 12px;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+  position: relative;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* User and input container */
+.input-with-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.user-avatar {
+  flex-shrink: 0;
+}
+
+/* Input field styles */
+.comment-textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: 'Lexend Deca';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  color: #333;
+  padding: 8px 12px;
+  border-radius: 16px;
+  resize: none;
+  position: relative;
+  z-index: 2;
+}
+
+.comment-textarea::placeholder {
+  color: #B39898;
+  text-align: center;
+}
+
+.comment-textarea:focus {
+  outline: none;
+  background: #f5f5f5;
+}
+
+/* Styled input container for overlay */
+.styled-input-container {
+  position: relative;
+  width: 100%;
+  overflow: visible;
+}
+
+/* Overlay for mentions styling */
+.input-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  white-space: pre-wrap;
+  overflow: hidden;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: inherit;
+  box-sizing: border-box;
+  z-index: 3;
+  border-radius: 16px;
+}
+
+/* Action buttons container */
+.input-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.input-action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* Attach button */
+.attach-button {
+  background-color: #f5f5f5 !important;
+  border: none !important;
+  color: #555 !important;
+  border-radius: 16px !important;
+  padding: 4px 12px !important;
+  height: 32px !important;
+}
+
+.attach-button:hover {
+  background-color: #e8e8e8 !important;
+}
+
+/* Send button */
+.send-button {
+  background-color: #4285f4 !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 16px !important;
+  padding: 4px 16px !important;
+  height: 32px !important;
+}
+
+.send-button:hover {
+  background-color: #3367d6 !important;
+}
+
+.send-button:disabled {
+  background-color: #c0c0c0 !important;
+  color: #e0e0e0 !important;
+}
+
+/* File attachments */
+.attachment-list {
+  margin: 8px 0;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.attachment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: #555;
+}
+
+.attachment-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+/* Reply input styles */
+.reply-input-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.reply-input {
+  flex: 1;
+  border: none;
+  background: #f8f8f8;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 16px;
+  color: #333;
+}
+
+.reply-input:focus {
+  outline: none;
+  background: #f5f5f5;
+}
+
+.reply-submit-button {
+  background-color: #4285f4 !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 16px !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+  height: 28px !important;
+}
+
+.reply-submit-button:hover {
+  background-color: #3367d6 !important;
+}
+
+.reply-submit-button:disabled {
+  background-color: #c0c0c0 !important;
+  color: #e0e0e0 !important;
+}
+
+/* Styling for mentions in input field */
+.highlighted-mention-input {
+  display: inline-block;
+  background-color: #e8f0fe;
+  color: #4285f4;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.highlighted-everyone-input {
+  display: inline-block;
+  background-color: #ffe6e8;
+  color: #ff617c;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+/* Hide overlay when input is empty */
+.styled-input-container input:placeholder-shown+.input-overlay,
+.styled-input-container textarea:placeholder-shown+.input-overlay {
+  display: none;
+}
+
+/* Mention dropdown styling */
+.mention-dropdown {
+  position: absolute;
+  width: 220px;
+  max-height: 200px;
+  overflow-y: auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  padding: 4px 0;
+  border: 1px solid #eaeaea;
+  left: 10px;
+  top: 40px;
+}
+
+.mention-dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.mention-dropdown-item:hover,
+.mention-dropdown-item.selected {
+  background-color: #f5f5f5;
+}
+
+.mention-dropdown-item.everyone-item {
+  background-color: #ffebf2;
+}
+
+.mention-dropdown-item.everyone-item:hover,
+.mention-dropdown-item.everyone-item.selected {
+  background-color: #ffe0eb;
+}
+
+.mention-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 10px;
+  overflow: hidden;
+  background-color: #e1e1e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mention-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mention-avatar.everyone-avatar {
+  background-color: #ff5e95;
+  color: white;
+  font-weight: bold;
+}
+
+.mention-username {
+  font-size: 14px;
+  color: #333;
+  flex-grow: 1;
+}
+
+.mention-count {
+  font-size: 12px;
+  color: #888;
+  margin-left: 4px;
+}
+
+/* Mention tag styling */
+.mention-tag {
+  display: inline-block;
+  padding: 0 6px;
+  margin: 0 2px;
+  background-color: #ffebf2;
+  color: #ff5e95;
+  border-radius: 4px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.mention-tag.mention-everyone {
+  background-color: #ff5e95;
+  color: white;
+}

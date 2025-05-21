@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import React, { useEffect, useState, useRef } from 'react';
-import UserProfile from './components/UserProfile';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import UserProfile from './components/shared/UserProfile';
 
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
@@ -14,6 +14,61 @@ export { GoogleSignInButton };
 function GoogleSignInButton({ onClick, onSuccess }) {
   const [user, setUser] = useState(null);
   const buttonRef = useRef(null);
+
+  const handleSignInWithGoogle = useCallback(async (response) => {
+    try {
+      const { credential } = response;
+
+      const { data: { user }, error: authError } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: credential,
+      });
+
+      if (authError) throw authError;
+
+      const currentTime = new Date().toISOString();
+
+      // Check if user exists in your users table
+      const { data: userData } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (!userData) {
+        // For new users
+        const userData = {
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata.full_name || user.user_metadata.name,
+          avatar_url: user.user_metadata.avatar_url || user.user_metadata.picture,
+          created_at: currentTime,
+          last_sign_in: currentTime
+        };
+
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert([userData]);
+
+        if (insertError) throw insertError;
+      } else {
+        // For existing users
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ last_sign_in: currentTime })
+          .eq('id', user.id);
+
+        if (updateError) throw updateError;
+      }
+
+      setUser(user);
+      if (onSuccess) {
+        onSuccess({ user });
+      }
+    } catch (error) {
+      console.error('Error in handleSignInWithGoogle:', error);
+    }
+  }, [onSuccess]);
 
   useEffect(() => {
     // Check for existing session
@@ -60,62 +115,17 @@ function GoogleSignInButton({ onClick, onSuccess }) {
         buttonRef.current?.childNodes.forEach(child => child.remove());
       }
     };
-  }, [user]);
+  }, [user, handleSignInWithGoogle]);
 
-  const handleSignInWithGoogle = async (response) => {
-    try {
-      const { credential } = response;
-
-      const { data: { user }, error: authError } = await supabase.auth.signInWithIdToken({
-        provider: 'google',
-        token: credential,
-      });
-
-      if (authError) throw authError;
-
-      const currentTime = new Date().toISOString();
-
-      // Check if user exists in your users table
-      const { data: existingUser, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (!existingUser) {
-        // For new users
-        const userData = {
-          id: user.id,
-          email: user.email,
-          full_name: user.user_metadata.full_name || user.user_metadata.name,
-          avatar_url: user.user_metadata.avatar_url || user.user_metadata.picture,
-          created_at: currentTime,
-          last_sign_in: currentTime
-        };
-
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert([userData]);
-
-        if (insertError) throw insertError;
-      } else {
-        // For existing users
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ last_sign_in: currentTime })
-          .eq('id', user.id);
-
-        if (updateError) throw updateError;
-      }
-
-      setUser(user);
-      if (onSuccess) {
-        onSuccess({ user });
-      }
-    } catch (error) {
-      console.error('Error in handleSignInWithGoogle:', error);
+  useEffect(() => {
+    const button = buttonRef.current;
+    if (button) {
+      button.addEventListener('click', handleSignInWithGoogle);
+      return () => {
+        button.removeEventListener('click', handleSignInWithGoogle);
+      };
     }
-  };
+  }, [handleSignInWithGoogle]);
 
   if (user) {
     return null;

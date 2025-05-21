@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./Sidebar.css";
-import fallbackImg from '../img/fallback.png';
-import verifiedIcon from '../img/verified.svg';
+import fallbackImg from '../../../img/fallback.png';
+import verifiedIcon from '../../../img/verified.svg';
 
 function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, posts, color }) {
   const [isHidden, setIsHidden] = useState(false);
