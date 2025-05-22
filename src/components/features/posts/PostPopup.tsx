@@ -52,6 +52,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
   const [fileList, setFileList] = useState<File[]>([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
 
   // Add resize listener to detect mobile/desktop
   useEffect(() => {
@@ -215,6 +217,99 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
     }
   };
 
+  const getOrdinalSuffix = (day: number): string => {
+    if (day > 3 && day < 21) return 'th';
+    switch (day % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  };
+
+  const handleSubscribe = async () => {
+    if (!currentUser) {
+      message.info('Please sign in to subscribe to this post');
+      return;
+    }
+
+    setIsSubscribeLoading(true);
+    try {
+      // Simulate API call with timeout
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setIsSubscribed(true);
+      message.success({
+        content: 'Successfully subscribed to this post',
+        style: {
+          marginTop: '20vh',
+        },
+      });
+    } catch (error) {
+      message.error({
+        content: 'Failed to subscribe to the post. Please try again.',
+        style: {
+          marginTop: '20vh',
+        },
+      });
+    } finally {
+      setIsSubscribeLoading(false);
+    }
+  };
+
+  const handleUnsubscribe = async () => {
+    if (!currentUser) {
+      message.info('Please sign in to manage your subscriptions');
+      return;
+    }
+
+    Modal.confirm({
+      title: 'Unsubscribe from this post?',
+      content: 'You will no longer receive notifications for this post.',
+      okText: 'Unsubscribe',
+      cancelText: 'Cancel',
+      okButtonProps: {
+        danger: true,
+        style: { backgroundColor: '#EF5959', borderColor: '#EF5959' }
+      },
+      onOk: async () => {
+        setIsSubscribeLoading(true);
+        try {
+          // Simulate API call with timeout
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          setIsSubscribed(false);
+          message.success({
+            content: 'Successfully unsubscribed from this post',
+            style: {
+              marginTop: '20vh',
+            },
+          });
+        } catch (error) {
+          message.error({
+            content: 'Failed to unsubscribe from the post. Please try again.',
+            style: {
+              marginTop: '20vh',
+            },
+          });
+        } finally {
+          setIsSubscribeLoading(false);
+        }
+      },
+    });
+  };
+
+  // Update the subscribers section in both desktop and mobile layouts
+  const SubscribeButton = () => (
+    <Button
+      className={isSubscribed ? "unsubscribe-button" : "subscribe-button"}
+      onClick={isSubscribed ? handleUnsubscribe : handleSubscribe}
+      loading={isSubscribeLoading}
+    >
+      {isSubscribed ? "Unsubscribe" : "Subscribe"}
+    </Button>
+  );
+
   return (
     <Modal
       open={isOpen}
@@ -281,29 +376,29 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                 <div className="comments-section">
                   <div className="comment-input-container">
                     <div className="comment-input-wrapper">
-                      <div className="input-with-buttons">
-                        <input
-                          type="text"
-                          placeholder="Leave a comment..."
-                          className="comment-input"
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && handleCommentSubmit()}
-                        />
-                        <div className="input-buttons">
-                          <Button
-                            className="comment-attach-button"
-                            icon={<PaperClipOutlined />}
-                            onClick={handleFileAttachment}
-                            title="Attach files"
-                          />
-                          <Button
-                            className="comment-submit-button"
-                            icon={<SendOutlined />}
-                            onClick={handleCommentSubmit}
-                            title="Send comment"
-                          />
-                        </div>
+                      <input
+                        type="text"
+                        placeholder="Leave a comment..."
+                        className="comment-input"
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleCommentSubmit()}
+                      />
+                      <div className="comment-actions">
+                        <button
+                          className="comment-action-button"
+                          onClick={handleFileAttachment}
+                          title="Attach files"
+                        >
+                          <PaperClipOutlined />
+                        </button>
+                        <button
+                          className="comment-action-button send"
+                          onClick={handleCommentSubmit}
+                          title="Send comment"
+                        >
+                          <SendOutlined />
+                        </button>
                       </div>
                     </div>
                     {fileList.length > 0 && (
@@ -344,8 +439,25 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                     <span className="author-name">{post.author.full_name}</span>
                   </div>
                   <div className="post-date">
-                    <CalendarIcon style={{ width: '18px', height: '18px', marginRight: '18px' }} />
-                    {new Date(post.created_at).toLocaleDateString()}
+                    <CalendarIcon />
+                    <div className="date-time">
+                      <span>
+                        {(() => {
+                          const date = new Date(post.created_at);
+                          const day = date.getDate();
+                          const month = date.toLocaleDateString('en-US', { month: 'long' });
+                          const year = date.getFullYear();
+                          return `${month} ${day}${getOrdinalSuffix(day)}, ${year}`;
+                        })()}
+                      </span>
+                      <span className="post-time">
+                        {new Date(post.created_at).toLocaleTimeString('en-US', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        })}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -354,7 +466,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                   <div className="avatar-group">
                     <Avatar.Group
                       maxCount={4}
-                      maxStyle={{ color: '#281010', backgroundColor: '#f5f5f5' }}
+                      maxStyle={{ 
+                        color: '#281010', 
+                        backgroundColor: '#f5f5f5',
+                        border: '2px solid #fff'
+                      }}
                     >
                       <Avatar src="https://i.pravatar.cc/150?img=1" />
                       <Avatar src="https://i.pravatar.cc/150?img=2" />
@@ -362,7 +478,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                       <Avatar src="https://i.pravatar.cc/150?img=4" />
                       <Avatar src="https://i.pravatar.cc/150?img=5" />
                     </Avatar.Group>
-                    <Button className="unsubscribe-button">Unsubscribe</Button>
+                    <SubscribeButton />
                   </div>
                 </div>
 
@@ -407,29 +523,29 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
               <div className="comments-section">
                 <div className="comment-input-container">
                   <div className="comment-input-wrapper">
-                    <div className="input-with-buttons">
-                      <input
-                        type="text"
-                        placeholder="Leave a comment..."
-                        className="comment-input"
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleCommentSubmit()}
-                      />
-                      <div className="input-buttons">
-                        <Button
-                          className="comment-attach-button"
-                          icon={<PaperClipOutlined />}
-                          onClick={handleFileAttachment}
-                          title="Attach files"
-                        />
-                        <Button
-                          className="comment-submit-button"
-                          icon={<SendOutlined />}
-                          onClick={handleCommentSubmit}
-                          title="Send comment"
-                        />
-                      </div>
+                    <input
+                      type="text"
+                      placeholder="Leave a comment..."
+                      className="comment-input"
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleCommentSubmit()}
+                    />
+                    <div className="comment-actions">
+                      <button
+                        className="comment-action-button"
+                        onClick={handleFileAttachment}
+                        title="Attach files"
+                      >
+                        <PaperClipOutlined />
+                      </button>
+                      <button
+                        className="comment-action-button send"
+                        onClick={handleCommentSubmit}
+                        title="Send comment"
+                      >
+                        <SendOutlined />
+                      </button>
                     </div>
                   </div>
                   {fileList.length > 0 && (
@@ -468,8 +584,25 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                   <span className="author-name">{post.author.full_name}</span>
                 </div>
                 <div className="post-date">
-                  <CalendarIcon style={{ width: '18px', height: '18px', marginRight: '18px' }} />
-                  {new Date(post.created_at).toLocaleDateString()}
+                  <CalendarIcon />
+                  <div className="date-time">
+                    <span>
+                      {(() => {
+                        const date = new Date(post.created_at);
+                        const day = date.getDate();
+                        const month = date.toLocaleDateString('en-US', { month: 'long' });
+                        const year = date.getFullYear();
+                        return `${month} ${day}${getOrdinalSuffix(day)}, ${year}`;
+                      })()}
+                    </span>
+                    <span className="post-time">
+                      {new Date(post.created_at).toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                      })}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -478,7 +611,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                 <div className="avatar-group">
                   <Avatar.Group
                     maxCount={4}
-                    maxStyle={{ color: '#281010', backgroundColor: '#f5f5f5' }}
+                    maxStyle={{ 
+                      color: '#281010', 
+                      backgroundColor: '#f5f5f5',
+                      border: '2px solid #fff'
+                    }}
                   >
                     <Avatar src="https://i.pravatar.cc/150?img=1" />
                     <Avatar src="https://i.pravatar.cc/150?img=2" />
@@ -486,7 +623,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                     <Avatar src="https://i.pravatar.cc/150?img=4" />
                     <Avatar src="https://i.pravatar.cc/150?img=5" />
                   </Avatar.Group>
-                  <Button className="unsubscribe-button">Unsubscribe</Button>
+                  <SubscribeButton />
                 </div>
               </div>
 
