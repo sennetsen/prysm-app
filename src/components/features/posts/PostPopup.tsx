@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal, Button, Avatar, message } from 'antd';
 import { CommentThread } from '../comments/CommentThread';
 import { ActivityBar } from './ActivityBar';
@@ -9,7 +9,9 @@ import {
   SendOutlined,
   PaperClipOutlined,
   LeftOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  CloseOutlined,
+  FileOutlined
 } from '@ant-design/icons';
 import { ReactComponent as CalendarIcon } from '../../../img/calendar.svg';
 import './PostPopup.css';
@@ -44,16 +46,21 @@ interface Comment {
   replies?: Comment[];
 }
 
+interface FilePreview extends File {
+  preview?: string;
+}
+
 export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(35);
   const [commentCount, setCommentCount] = useState(0);
   const [commentText, setCommentText] = useState('');
-  const [fileList, setFileList] = useState<File[]>([]);
+  const [fileList, setFileList] = useState<FilePreview[]>([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [comments, setComments] = useState<Comment[]>([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
+  const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Add resize listener to detect mobile/desktop
   useEffect(() => {
@@ -64,6 +71,17 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Add auto-growing functionality
+  const adjustTextareaHeight = (element: HTMLTextAreaElement) => {
+    element.style.height = 'auto';
+    element.style.height = `${element.scrollHeight}px`;
+  };
+
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setCommentText(e.target.value);
+    adjustTextareaHeight(e.target);
+  };
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -155,34 +173,55 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
   };
 
   const handleFileAttachment = () => {
-    // Create an input element
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.multiple = true;
+    fileInput.accept = 'image/*,.pdf,.doc,.docx,.txt'; // Add accepted file types
 
-    // When files are selected
     fileInput.onchange = (e) => {
       const target = e.target as HTMLInputElement;
       if (target.files && target.files.length > 0) {
-        // Get the selected files
-        const files = Array.from(target.files);
-
-        // Check file size (example: limit to 5MB total)
+        const files = Array.from(target.files) as FilePreview[];
+        
+        // Check file size
         const totalSize = files.reduce((acc, file) => acc + file.size, 0);
         if (totalSize > 5 * 1024 * 1024) {
           message.error('Total file size should not exceed 5MB');
           return;
         }
 
-        // Add files to state
+        // Create previews for images
+        files.forEach(file => {
+          if (file.type.startsWith('image/')) {
+            file.preview = URL.createObjectURL(file);
+          }
+        });
+
         setFileList([...fileList, ...files]);
         message.success(`${files.length} file(s) attached`);
       }
     };
 
-    // Trigger the file input click
     fileInput.click();
   };
+
+  const removeFile = (fileToRemove: FilePreview) => {
+    setFileList(fileList.filter(file => file !== fileToRemove));
+    if (fileToRemove.preview) {
+      URL.revokeObjectURL(fileToRemove.preview);
+    }
+  };
+
+  // Clean up object URLs on unmount
+  useEffect(() => {
+    return () => {
+      fileList.forEach(file => {
+        if (file.preview) {
+          URL.revokeObjectURL(file.preview);
+        }
+      });
+    };
+  }, []);
 
   const handleCommentSubmit = () => {
     if (commentText.trim() || fileList.length > 0) {
@@ -242,14 +281,14 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
       message.success({
         content: 'Successfully subscribed to this post',
         style: {
-          marginTop: '20vh',
+          marginTop: '80px',
         },
       });
     } catch (error) {
       message.error({
         content: 'Failed to subscribe to the post. Please try again.',
         style: {
-          marginTop: '20vh',
+          marginTop: '80px',
         },
       });
     } finally {
@@ -282,14 +321,14 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
           message.success({
             content: 'Successfully unsubscribed from this post',
             style: {
-              marginTop: '20vh',
+              marginTop: '80px',
             },
           });
         } catch (error) {
           message.error({
             content: 'Failed to unsubscribe from the post. Please try again.',
             style: {
-              marginTop: '20vh',
+              marginTop: '80px',
             },
           });
         } finally {
@@ -375,16 +414,39 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
               <div className="comments-section-container">
                 <div className="comments-section">
                   <div className="comment-input-container">
-                    <div className="comment-input-wrapper">
-                      <input
-                        type="text"
+                    <div className="input-with-buttons">
+                      <textarea
+                        ref={commentInputRef}
                         placeholder="Leave a comment..."
                         className="comment-input"
                         value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleCommentSubmit()}
+                        onChange={handleCommentChange}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleCommentSubmit();
+                          }
+                        }}
+                        rows={1}
                       />
-                      <div className="comment-actions">
+                      {fileList.length > 0 && (
+                        <div className="file-preview-list">
+                          {fileList.map((file, index) => (
+                            <div key={index} className="file-preview-item">
+                              <FileOutlined />
+                              <span className="file-name">{file.name}</span>
+                              <button
+                                className="remove-file"
+                                onClick={() => removeFile(file)}
+                                title="Remove file"
+                              >
+                                <CloseOutlined />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="input-buttons">
                         <button
                           className="comment-action-button"
                           onClick={handleFileAttachment}
@@ -401,17 +463,6 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                         </button>
                       </div>
                     </div>
-                    {fileList.length > 0 && (
-                      <div className="attached-files">
-                        <div className="file-count">{fileList.length} file(s) attached</div>
-                        <Button
-                          className="clear-files-button"
-                          onClick={() => setFileList([])}
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                    )}
                   </div>
 
                   <CommentThread
@@ -522,16 +573,39 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
             <div className="comments-section-container">
               <div className="comments-section">
                 <div className="comment-input-container">
-                  <div className="comment-input-wrapper">
-                    <input
-                      type="text"
+                  <div className="input-with-buttons">
+                    <textarea
+                      ref={commentInputRef}
                       placeholder="Leave a comment..."
                       className="comment-input"
                       value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleCommentSubmit()}
+                      onChange={handleCommentChange}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleCommentSubmit();
+                        }
+                      }}
+                      rows={1}
                     />
-                    <div className="comment-actions">
+                    {fileList.length > 0 && (
+                      <div className="file-preview-list">
+                        {fileList.map((file, index) => (
+                          <div key={index} className="file-preview-item">
+                            <FileOutlined />
+                            <span className="file-name">{file.name}</span>
+                            <button
+                              className="remove-file"
+                              onClick={() => removeFile(file)}
+                              title="Remove file"
+                            >
+                              <CloseOutlined />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="input-buttons">
                       <button
                         className="comment-action-button"
                         onClick={handleFileAttachment}
@@ -548,17 +622,6 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                       </button>
                     </div>
                   </div>
-                  {fileList.length > 0 && (
-                    <div className="attached-files">
-                      <div className="file-count">{fileList.length} file(s) attached</div>
-                      <Button
-                        className="clear-files-button"
-                        onClick={() => setFileList([])}
-                      >
-                        Clear
-                      </Button>
-                    </div>
-                  )}
                 </div>
 
                 <CommentThread

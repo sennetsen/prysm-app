@@ -117,10 +117,11 @@
   padding: 12px 16px;
 }
 
-.comment-input-wrapper {
+.input-with-buttons {
+  position: relative;
   display: flex;
-  align-items: center;
   width: 100%;
+  flex-direction: column;
 }
 
 .comment-input {
@@ -128,9 +129,73 @@
   border: none;
   background: transparent;
   padding: 8px 0;
+  padding-right: 90px; /* Make space for buttons */
   font-size: 14px;
   color: #281010;
   width: 100%;
+  resize: none;
+  min-height: 20px;
+  height: fit-content;
+  max-height: 150px;
+  overflow-y: auto;
+  line-height: 1.5;
+  min-height: calc(1.5em * 3); /* Show 3 lines minimum */
+}
+
+.file-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding-right: 90px; /* Align with input text */
+  margin-bottom: 4px; /* Add some space after the file previews */
+}
+
+.file-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(40, 16, 16, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  max-width: 200px;
+}
+
+.file-preview-item .file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #281010;
+}
+
+.file-preview-item .remove-file {
+  cursor: pointer;
+  color: #666;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.file-preview-item .remove-file:hover {
+  background: rgba(40, 16, 16, 0.1);
+  color: #281010;
+}
+
+/* Update the input buttons positioning to work with the new layout */
+.input-buttons {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: fit-content;
 }
 
 .comment-input::placeholder {
@@ -139,6 +204,17 @@
 
 .comment-input:focus {
   outline: none;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.comment-input::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.comment-input {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
 .comment-actions {
