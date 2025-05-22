@@ -28,10 +28,14 @@ interface PostPopupProps {
     };
     created_at: string;
     color: string;
+    reaction_counts?: {
+      like: number;
+    };
   };
   isOpen: boolean;
   onClose: () => void;
   currentUser: any;
+  onPostLikeChange: (postId: string) => void;
 }
 
 interface Comment {
@@ -51,9 +55,8 @@ interface FilePreview extends File {
   preview?: string;
 }
 
-export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps) {
+export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange }: PostPopupProps) {
   const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(35);
   const [commentCount, setCommentCount] = useState(0);
   const [commentText, setCommentText] = useState('');
   const [fileList, setFileList] = useState<FilePreview[]>([]);
@@ -84,10 +87,133 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
     adjustTextareaHeight(e.target);
   };
 
-  const handleLike = (e: React.MouseEvent) => {
+  // Keep likeCount and liked in sync with post prop and backend
+  useEffect(() => {
+    // Fetch whether the current user has liked this post
+    const fetchLiked = async () => {
+      if (!currentUser) {
+        setLiked(false);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('reactions')
+        .select('id')
+        .eq('post_id', post.id)
+        .eq('user_id', currentUser.id)
+        .eq('reaction_type', 'like');
+      setLiked(!error && data && data.length > 0);
+    };
+    fetchLiked();
+  }, [post.id, currentUser]);
+
+  const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setLiked(!liked);
-    setLikeCount(liked ? likeCount - 1 : likeCount + 1);
+
+    if (!currentUser) {
+      message.info('Please sign in to like posts');
+      return;
+    }
+
+    try {
+      const isCurrentlyLiked = liked;
+
+      // Optimistically update UI
+      setLiked(!isCurrentlyLiked);
+
+      // Update in the backend
+      const { data: currentReactions, error: fetchError } = await supabase
+        .from('reactions')
+        .select()
+        .eq('post_id', post.id)
+        .eq('user_id', currentUser.id)
+        .eq('reaction_type', 'like');
+
+      if (fetchError) throw fetchError;
+
+      if (currentReactions && currentReactions.length > 0) {
+        // If like exists, delete it
+        const { error: deleteError } = await supabase
+          .from('reactions')
+          .delete()
+          .eq('id', currentReactions[0].id);
+
+        if (deleteError) throw deleteError;
+
+        // Decrement like count in reaction_counts
+        const { data: postData, error: postError } = await supabase
+          .from('posts')
+          .select('reaction_counts')
+          .eq('id', post.id)
+          .single();
+
+        if (postError) throw postError;
+        if (postData) {
+          const currentCount = postData.reaction_counts?.like || 0;
+          const newCount = Math.max(0, currentCount - 1);
+
+          await supabase
+            .from('posts')
+            .update({
+              reaction_counts: { ...postData.reaction_counts, like: newCount }
+            })
+            .eq('id', post.id);
+        }
+      } else {
+        // If no like exists, create it
+        const { error: insertError } = await supabase
+          .from('reactions')
+          .insert([{
+            post_id: post.id,
+            user_id: currentUser.id,
+            reaction_type: 'like'
+          }]);
+        if (insertError) throw insertError;
+
+        // Increment like count in reaction_counts
+        const { data: postData, error: postError } = await supabase
+          .from('posts')
+          .select('reaction_counts')
+          .eq('id', post.id)
+          .single();
+
+        if (postError) throw postError;
+        if (postData) {
+          const currentCount = postData.reaction_counts?.like || 0;
+          const newCount = currentCount + 1;
+
+          await supabase
+            .from('posts')
+            .update({
+              reaction_counts: { ...postData.reaction_counts, like: newCount }
+            })
+            .eq('id', post.id);
+        }
+      }
+
+      // Refetch the latest like count and liked state from backend to stay in sync
+      const [{ data: postData, error: postError }, { data: likedData, error: likedError }] = await Promise.all([
+        supabase
+          .from('posts')
+          .select('reaction_counts')
+          .eq('id', post.id)
+          .single(),
+        supabase
+          .from('reactions')
+          .select('id')
+          .eq('post_id', post.id)
+          .eq('user_id', currentUser.id)
+          .eq('reaction_type', 'like')
+      ]);
+      if (!postError && postData) {
+        onPostLikeChange(post.id);
+      }
+      setLiked(!likedError && Array.isArray(likedData) && likedData.length > 0);
+    } catch (error) {
+      console.error('Error handling reaction:', error);
+      // Revert optimistic UI update on error
+      setLiked(liked);
+      message.error('Failed to update like status');
+    }
   };
 
   const handleCommentLike = (commentId: number) => {
@@ -155,21 +281,27 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
     setCommentCount(prev => prev - 1);
   };
 
-  const handleAddReply = (parentId: number, reply: Comment) => {
-    // Update the comments state to include the new reply
-    setComments(currentComments =>
-      currentComments.map(comment => {
-        if (comment.id === parentId) {
-          return {
-            ...comment,
-            replies: [...(comment.replies || []), reply]
-          };
-        }
-        return comment;
-      })
-    );
+  const handleAddReply = async (parentId: number, reply: Comment) => {
+    // Insert reply into Supabase with parent_comment_id
+    const { data, error } = await supabase
+      .from('comments')
+      .insert([{
+        post_id: post.id,
+        author_id: currentUser.id,
+        content: reply.content,
+        is_anonymous: false, // or true if you support anonymous
+        created_at: new Date().toISOString(),
+        parent_comment_id: parentId,
+      }])
+      .select();
 
-    // Update the comment count since we added a reply
+    if (error) {
+      message.error('Failed to post reply');
+      return;
+    }
+
+    // Optionally, fetch comments again to refresh the thread
+    fetchComments();
     setCommentCount(prev => prev + 1);
   };
 
@@ -356,47 +488,74 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
     </Button>
   );
 
-  useEffect(() => {
-    if (isOpen) {
-      const fetchComments = async () => {
-        const { data, error } = await supabase
-          .from('comments')
-          .select(`
-            *,
-            author:users (
-              full_name,
-              avatar_url
-            )
-          `)
-          .eq('post_id', post.id)
-          .order('created_at', { ascending: false });
+  // Refactor fetchComments to nest replies
+  const fetchComments = async () => {
+    const { data, error } = await supabase
+      .from('comments')
+      .select(`*, author:users(full_name, avatar_url)`)
+      .eq('post_id', post.id)
+      .order('created_at', { ascending: false });
 
-        if (!error && data) {
-          setComments(data.map(c => ({
+    if (!error && data) {
+      // Separate top-level comments and replies
+      const topLevel = data.filter((c: any) => !c.parent_comment_id);
+      const replies = data.filter((c: any) => c.parent_comment_id);
+
+      // Helper to format timestamp
+      const formatTimestamp = (created_at: string) => {
+        const date = new Date(created_at);
+        const day = date.getDate();
+        const month = date.toLocaleDateString('en-US', { month: 'long' });
+        const year = date.getFullYear();
+        const time = date.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+        return `${month} ${day}${getOrdinalSuffix(day)}, ${year} at ${time}`;
+      };
+
+      // Build a map for quick lookup
+      const commentMap: { [key: number]: any } = {};
+      topLevel.forEach((c: any) => {
+        commentMap[c.id] = {
+          id: c.id,
+          author: {
+            name: c.author.full_name,
+            avatar: c.author.avatar_url,
+          },
+          content: c.content,
+          timestamp: formatTimestamp(c.created_at),
+          likes: 0,
+          liked: false,
+          replies: [],
+        };
+      });
+      // Attach replies to their parent
+      replies.forEach((c: any) => {
+        const parent = commentMap[c.parent_comment_id];
+        if (parent) {
+          parent.replies.push({
             id: c.id,
             author: {
               name: c.author.full_name,
               avatar: c.author.avatar_url,
             },
             content: c.content,
-            timestamp: (() => {
-              const date = new Date(c.created_at);
-              const month = date.toLocaleDateString('en-US', { month: 'long' });
-              const day = date.getDate();
-              const year = date.getFullYear();
-              const time = date.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-              });
-              return `${month} ${day}${getOrdinalSuffix(day)}, ${year} at ${time}`;
-            })(),
-            likes: 0, // You can fetch likes if you have a reactions table
+            timestamp: formatTimestamp(c.created_at),
+            likes: 0,
             liked: false,
-          })));
-          setCommentCount(data.length);
+          });
         }
-      };
+      });
+      // Set state with nested comments
+      setComments(Object.values(commentMap));
+      setCommentCount(data.length);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
       fetchComments();
     }
   }, [isOpen, post.id]);
@@ -449,7 +608,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                       icon={liked ? <HeartFilled /> : <HeartOutlined />}
                       onClick={handleLike}
                     >
-                      <span className="like-count">{likeCount}</span>
+                      <span className="like-count">{post.reaction_counts?.like || 0}</span>
                     </Button>
 
                     <Button className="custom-comment-button" icon={<MessageOutlined />}>
@@ -608,7 +767,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                     icon={liked ? <HeartFilled /> : <HeartOutlined />}
                     onClick={handleLike}
                   >
-                    <span className="like-count">{likeCount}</span>
+                    <span className="like-count">{post.reaction_counts?.like || 0}</span>
                   </Button>
 
                   <Button className="custom-comment-button" icon={<MessageOutlined />}>
