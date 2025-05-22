@@ -15,6 +15,7 @@ import {
 } from '@ant-design/icons';
 import { ReactComponent as CalendarIcon } from '../../../img/calendar.svg';
 import './PostPopup.css';
+import { supabase } from '../../../supabaseClient';
 
 interface PostPopupProps {
   post: {
@@ -182,7 +183,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
       const target = e.target as HTMLInputElement;
       if (target.files && target.files.length > 0) {
         const files = Array.from(target.files) as FilePreview[];
-        
+
         // Check file size
         const totalSize = files.reduce((acc, file) => acc + file.size, 0);
         if (totalSize > 5 * 1024 * 1024) {
@@ -223,16 +224,30 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
     };
   }, []);
 
-  const handleCommentSubmit = () => {
+  const handleCommentSubmit = async () => {
     if (commentText.trim() || fileList.length > 0) {
-      // Generate a new, unique ID
-      const newId = Math.max(...comments.map(c => c.id), 0) + 1;
+      // Insert comment into Supabase
+      const { data, error } = await supabase
+        .from('comments')
+        .insert([{
+          post_id: post.id,
+          author_id: currentUser.id,
+          content: commentText,
+          is_anonymous: false, // or true if you support anonymous
+          created_at: new Date().toISOString(),
+          // Add other fields as needed
+        }])
+        .select();
 
-      // Create a new comment object
-      const newComment: Comment = {
-        id: newId,
+      if (error) {
+        message.error('Failed to post comment');
+        return;
+      }
+
+      // Optionally, fetch the new comment from data[0] and add to state
+      setComments([{
+        id: data[0].id,
         author: {
-          // Use the currentUser data or fallback to a placeholder
           name: currentUser?.user_metadata?.full_name || 'Current User',
           avatar: currentUser?.user_metadata?.avatar_url || 'https://i.pravatar.cc/150?img=1',
         },
@@ -240,24 +255,16 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         likes: 0,
         liked: false,
-        // You could add file attachments here if needed
-        // files: fileList.map(file => ({ name: file.name, url: URL.createObjectURL(file) }))
-      };
+      }, ...comments]);
 
-      // Add the new comment to the top of the comments array
-      setComments([newComment, ...comments]);
-
-      // Clear the input field and file list
       setCommentText('');
       setFileList([]);
-
-      // Update the comment count
       setCommentCount(commentCount + 1);
     }
   };
 
   const getOrdinalSuffix = (day: number): string => {
-    if (day > 3 && day < 21) return 'th';
+    if (day >= 11 && day <= 13) return 'th';
     switch (day % 10) {
       case 1: return 'st';
       case 2: return 'nd';
@@ -276,7 +283,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
     try {
       // Simulate API call with timeout
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       setIsSubscribed(true);
       message.success({
         content: 'Successfully subscribed to this post',
@@ -316,7 +323,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
         try {
           // Simulate API call with timeout
           await new Promise(resolve => setTimeout(resolve, 500));
-          
+
           setIsSubscribed(false);
           message.success({
             content: 'Successfully unsubscribed from this post',
@@ -348,6 +355,51 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
       {isSubscribed ? "Unsubscribe" : "Subscribe"}
     </Button>
   );
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchComments = async () => {
+        const { data, error } = await supabase
+          .from('comments')
+          .select(`
+            *,
+            author:users (
+              full_name,
+              avatar_url
+            )
+          `)
+          .eq('post_id', post.id)
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          setComments(data.map(c => ({
+            id: c.id,
+            author: {
+              name: c.author.full_name,
+              avatar: c.author.avatar_url,
+            },
+            content: c.content,
+            timestamp: (() => {
+              const date = new Date(c.created_at);
+              const month = date.toLocaleDateString('en-US', { month: 'long' });
+              const day = date.getDate();
+              const year = date.getFullYear();
+              const time = date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              });
+              return `${month} ${day}${getOrdinalSuffix(day)}, ${year} at ${time}`;
+            })(),
+            likes: 0, // You can fetch likes if you have a reactions table
+            liked: false,
+          })));
+          setCommentCount(data.length);
+        }
+      };
+      fetchComments();
+    }
+  }, [isOpen, post.id]);
 
   return (
     <Modal
@@ -517,8 +569,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                   <div className="avatar-group">
                     <Avatar.Group
                       maxCount={4}
-                      maxStyle={{ 
-                        color: '#281010', 
+                      maxStyle={{
+                        color: '#281010',
                         backgroundColor: '#f5f5f5',
                         border: '2px solid #fff'
                       }}
@@ -674,8 +726,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser }: PostPopupProps
                 <div className="avatar-group">
                   <Avatar.Group
                     maxCount={4}
-                    maxStyle={{ 
-                      color: '#281010', 
+                    maxStyle={{
+                      color: '#281010',
                       backgroundColor: '#f5f5f5',
                       border: '2px solid #fff'
                     }}
