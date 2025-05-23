@@ -52,7 +52,6 @@ export function ActivityBar({ postId }: ActivityBarProps) {
 
   return (
     <div className="activity-bar">
-      <h3>Top Comments</h3>
       <div className="activity-bubbles">
         {[0, 1, 2].map((index) => (
           <div key={index} className="activity-bubble">

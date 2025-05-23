@@ -16,6 +16,7 @@ import {
 import { ReactComponent as CalendarIcon } from '../../../img/calendar.svg';
 import './PostPopup.css';
 import { supabase } from '../../../supabaseClient';
+import SendArrow from '../../../img/send-arrow.svg';
 
 interface PostPopupProps {
   post: {
@@ -65,6 +66,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
+  const [showMobilePanel, setShowMobilePanel] = useState(false);
 
   // Add resize listener to detect mobile/desktop
   useEffect(() => {
@@ -591,7 +593,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         </div>
       )}
 
-      <div className={`post-popup-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}>
+      <div className={`post-popup-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
+        style={isMobile ? { paddingBottom: 80 } : {}} // add bottom padding for fixed bar
+      >
         {!isMobile ? (
           <>
             <div className="left-column">
@@ -618,9 +622,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                 </div>
               </div>
 
-              <div className="post-comment-divider-wrapper">
-                <div className="post-comment-divider"></div>
-              </div>
+              {/* Divider */}
+              <div className="post-comment-divider"></div>
 
               <div className="comments-section-container">
                 <div className="comments-section">
@@ -670,7 +673,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                           onClick={handleCommentSubmit}
                           title="Send comment"
                         >
-                          <SendOutlined />
+                          <img src={SendArrow} alt="Send" className="send-arrow-icon" />
                         </button>
                       </div>
                     </div>
@@ -688,6 +691,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
               </div>
             </div>
 
+            {/* New vertical divider */}
+            <div className="vertical-divider"></div>
+
             <div className="right-column">
               <div className="post-activity-section">
                 <div className="about-section">
@@ -695,7 +701,6 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                   <div className="author-info">
                     <Avatar
                       src={post.author.avatar_url}
-                      size={32}
                       className="author-avatar"
                     />
                     <span className="author-name">{post.author.full_name}</span>
@@ -752,15 +757,23 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             </div>
           </>
         ) : (
-          // Mobile layout remains unchanged
           <>
+            <div className="mobile-post-header">
+              <Avatar
+                src={post.author.avatar_url}
+                className="author-avatar"
+              />
+              <span className="author-name">{post.author.full_name}</span>
+              <span className="post-time">
+                {new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
             <div className="post-content-section">
               <div className="post-header">
                 <h2 className="post-title">{post.title}</h2>
                 <div className="post-content">
                   <p>{post.content}</p>
                 </div>
-
                 <div className="post-actions">
                   <Button
                     className={`custom-like-button ${liked ? 'liked' : ''}`}
@@ -769,72 +782,17 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                   >
                     <span className="like-count">{post.reaction_counts?.like || 0}</span>
                   </Button>
-
                   <Button className="custom-comment-button" icon={<MessageOutlined />}>
                     <span className="comment-count">{commentCount}</span>
                   </Button>
                 </div>
+                {/* Divider */}
+                <div className="post-comment-divider"></div>
               </div>
             </div>
-
-            <div className="post-comment-divider-wrapper">
-              <div className="post-comment-divider"></div>
-            </div>
-
+            {/* Comments Section */}
             <div className="comments-section-container">
               <div className="comments-section">
-                <div className="comment-input-container">
-                  <div className="input-with-buttons">
-                    <textarea
-                      ref={commentInputRef}
-                      placeholder="Leave a comment..."
-                      className="comment-input"
-                      value={commentText}
-                      onChange={handleCommentChange}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleCommentSubmit();
-                        }
-                      }}
-                      rows={1}
-                    />
-                    {fileList.length > 0 && (
-                      <div className="file-preview-list">
-                        {fileList.map((file, index) => (
-                          <div key={index} className="file-preview-item">
-                            <FileOutlined />
-                            <span className="file-name">{file.name}</span>
-                            <button
-                              className="remove-file"
-                              onClick={() => removeFile(file)}
-                              title="Remove file"
-                            >
-                              <CloseOutlined />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="input-buttons">
-                      <button
-                        className="comment-action-button"
-                        onClick={handleFileAttachment}
-                        title="Attach files"
-                      >
-                        <PaperClipOutlined />
-                      </button>
-                      <button
-                        className="comment-action-button send"
-                        onClick={handleCommentSubmit}
-                        title="Send comment"
-                      >
-                        <SendOutlined />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
                 <CommentThread
                   postId={post.id}
                   currentUser={currentUser}
@@ -845,67 +803,44 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                 />
               </div>
             </div>
-
-            <div className="post-activity-section">
-              <div className="about-section">
-                <h3>About</h3>
-                <div className="author-info">
-                  <Avatar
-                    src={post.author.avatar_url}
-                    size={32}
-                    className="author-avatar"
-                  />
-                  <span className="author-name">{post.author.full_name}</span>
-                </div>
-                <div className="post-date">
-                  <CalendarIcon />
-                  <div className="date-time">
-                    <span>
-                      {(() => {
-                        const date = new Date(post.created_at);
-                        const day = date.getDate();
-                        const month = date.toLocaleDateString('en-US', { month: 'long' });
-                        const year = date.getFullYear();
-                        return `${month} ${day}${getOrdinalSuffix(day)}, ${year}`;
-                      })()}
-                    </span>
-                    <span className="post-time">
-                      {new Date(post.created_at).toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                      })}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="subscribers-section">
-                <h3>Subscribers</h3>
-                <div className="avatar-group">
-                  <Avatar.Group
-                    maxCount={4}
-                    maxStyle={{
-                      color: '#281010',
-                      backgroundColor: '#f5f5f5',
-                      border: '2px solid #fff'
-                    }}
+            {/* Fixed mobile comment bar */}
+            <div className="mobile-comment-bar">
+              <div className="input-with-buttons">
+                <textarea
+                  ref={commentInputRef}
+                  placeholder="Join the conversation"
+                  className="comment-input"
+                  value={commentText}
+                  onChange={handleCommentChange}
+                  onFocus={() => setShowMobilePanel(true)}
+                  onBlur={() => setShowMobilePanel(false)}
+                  rows={1}
+                />
+                <div className="input-buttons">
+                  <button
+                    className="comment-action-button"
+                    onClick={handleFileAttachment}
+                    title="Attach files"
                   >
-                    <Avatar src="https://i.pravatar.cc/150?img=1" />
-                    <Avatar src="https://i.pravatar.cc/150?img=2" />
-                    <Avatar src="https://i.pravatar.cc/150?img=3" />
-                    <Avatar src="https://i.pravatar.cc/150?img=4" />
-                    <Avatar src="https://i.pravatar.cc/150?img=5" />
-                  </Avatar.Group>
-                  <SubscribeButton />
+                    <PaperClipOutlined />
+                  </button>
+                  <button
+                    className="comment-action-button send"
+                    onClick={handleCommentSubmit}
+                    title="Send comment"
+                  >
+                    <img src={SendArrow} alt="Send" className="send-arrow-icon" />
+                  </button>
                 </div>
-              </div>
-
-              <div className="activity-section">
-                <h3>Activity</h3>
-                <ActivityBar postId={post.id} />
               </div>
             </div>
+            {/* Sliding panel above the comment bar */}
+            {showMobilePanel && (
+              <div className="mobile-keyboard-panel">
+                {/* You can put attachment options, emoji picker, or just a placeholder here */}
+                <div style={{ textAlign: 'center', color: '#aaa', paddingTop: 24 }}>Keyboard</div>
+              </div>
+            )}
           </>
         )}
       </div>

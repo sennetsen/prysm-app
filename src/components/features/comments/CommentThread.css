@@ -157,7 +157,7 @@
   top: 34px;
   transform: translate(-50%, -50%);
   background: white;
-  border: 2px solid #ddd;
+  border: 2px solid #D9D9D9;
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -175,7 +175,7 @@
 
 .collapse-replies-btn span {
   font-size: 20px;
-  color: #ddd;
+  color: #D9D9D9;
   font-weight: 500;
   line-height: 1;
   margin-top: 1px;
@@ -223,7 +223,13 @@
 }
 
 .deleted-comment {
-  opacity: 0.6;
+  opacity: 1;
+  font-style: italic;
+}
+
+.deleted-comment .comment-author {
+  color: #667085;
+  font-weight: 400;
 }
 
 .reply-input-container {
@@ -278,11 +284,11 @@
 /* Mobile responsive styles */
 @media screen and (max-width: 768px) {
   .comment-thread {
-    padding: 16px;
     gap: 12px;
     box-shadow: none;
     border-radius: 0;
     width: 100%;
+    padding: 0;
   }
 
   .comment {
@@ -399,7 +405,7 @@
     display: none;
   }
 
-  .post-comment-divider {
+  /* .post-comment-divider {
     display: none;
-  }
+  } */
 }

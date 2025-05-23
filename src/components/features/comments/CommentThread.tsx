@@ -104,26 +104,30 @@ export function CommentThread({
   };
 
   const handleDeleteComment = (commentId: number) => {
-    // Update local state immediately for better UX
-    const isTopLevelComment = localComments.some(c => c.id === commentId);
-
-    if (isTopLevelComment) {
-      setLocalComments(prevComments =>
-        prevComments.filter(comment => comment.id !== commentId)
-      );
-    } else {
-      setLocalComments(prevComments =>
-        prevComments.map(comment => {
-          if (comment.replies && comment.replies.some(reply => reply.id === commentId)) {
-            return {
-              ...comment,
-              replies: comment.replies.filter(reply => reply.id !== commentId)
-            };
-          }
-          return comment;
-        })
-      );
-    }
+    // Update local state to mark as deleted instead of removing
+    setLocalComments(prevComments =>
+      prevComments.map(comment => {
+        if (comment.id === commentId) {
+          // Mark the top-level comment as deleted
+          return {
+            ...comment,
+            author: { name: 'Comment Deleted', avatar: '' }, // Change author
+            content: '', // Clear content
+            likes: 0, // Reset likes
+            liked: false, // Reset liked status
+            // Keep replies intact
+          };
+        }
+        // If it's a reply being deleted, keep the current logic
+        if (comment.replies && comment.replies.some(reply => reply.id === commentId)) {
+          return {
+            ...comment,
+            replies: comment.replies.filter(reply => reply.id !== commentId)
+          };
+        }
+        return comment;
+      })
+    );
 
     // Also call the parent component's delete handler if provided
     if (onDelete) {
@@ -230,19 +234,7 @@ export function CommentThread({
   };
 
   const renderComment = (comment: Comment, isReply = false) => {
-    if (comment.author.name === 'Comment Deleted') {
-      return (
-        <div key={comment.id} className="comment deleted-comment">
-          <Avatar src={comment.author.avatar} size={36} />
-          <div className="comment-content">
-            <div className="comment-header">
-              <span className="comment-author">{comment.author.name}</span>
-              <span className="comment-timestamp">{comment.timestamp}</span>
-            </div>
-          </div>
-        </div>
-      );
-    }
+    const isDeleted = comment.author.name === 'Comment Deleted';
 
     const isCurrentUserAuthor =
       currentUser?.user_metadata?.full_name === comment.author.name;
@@ -250,16 +242,16 @@ export function CommentThread({
     const isMinimized = minimizedComments.includes(comment.id);
 
     return (
-      <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''}`}>
+      <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''} ${isDeleted ? 'deleted-comment' : ''}`}>
         <div className="comment-avatar">
-          <Avatar src={comment.author.avatar} size={36} />
+          <Avatar src={comment.author.avatar} size={isDeleted ? 26 : 36} />
         </div>
         <div className="comment-content">
           <div className="comment-header">
             <span className="comment-author">{comment.author.name}</span>
             <span className="comment-timestamp">{comment.timestamp}</span>
           </div>
-          {!isMinimized && (
+          {!isDeleted && !isMinimized && (
             <>
               <p className="comment-text">
                 {comment.content.startsWith('@') ? (
