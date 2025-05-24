@@ -17,6 +17,7 @@ import { ReactComponent as CalendarIcon } from '../../../img/calendar.svg';
 import './PostPopup.css';
 import { supabase } from '../../../supabaseClient';
 import SendArrow from '../../../img/send-arrow.svg';
+import MailIcon from '../../../img/mail.svg';
 
 interface PostPopupProps {
   post: {
@@ -26,6 +27,7 @@ interface PostPopupProps {
     author: {
       full_name: string;
       avatar_url: string;
+      email: string;
     };
     created_at: string;
     color: string;
@@ -66,7 +68,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
-  const [showMobilePanel, setShowMobilePanel] = useState(false);
+  const [showStickyHeader, setShowStickyHeader] = useState(false);
+  const postContentRef = useRef<HTMLDivElement>(null);
+  const popupContainerRef = useRef<HTMLDivElement>(null);
+  const [showMobileInfo, setShowMobileInfo] = useState(false);
 
   // Add resize listener to detect mobile/desktop
   useEffect(() => {
@@ -562,6 +567,23 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   }, [isOpen, post.id]);
 
+  useEffect(() => {
+    if (!isMobile || !isOpen) return;
+    const modalWrap = document.querySelector('.ant-modal-wrap');
+    if (!modalWrap) return;
+
+    const handleScroll = () => {
+      if (!postContentRef.current) return;
+      const contentBottom = postContentRef.current.getBoundingClientRect().bottom;
+      const navbarHeight = 60; // px
+      setShowStickyHeader(contentBottom < navbarHeight + 8); // 8px buffer
+    };
+
+    modalWrap.addEventListener('scroll', handleScroll);
+    handleScroll();
+    return () => modalWrap.removeEventListener('scroll', handleScroll);
+  }, [isMobile, isOpen]);
+
   return (
     <Modal
       open={isOpen}
@@ -587,13 +609,23 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             <LeftOutlined />
           </div>
           <div className="mobile-navbar-title">Board Name</div>
-          <div className="mobile-navbar-info">
+          <div className="mobile-navbar-info" onClick={() => setShowMobileInfo(true)}>
             <InfoCircleOutlined />
           </div>
         </div>
       )}
 
-      <div className={`post-popup-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
+      <div className={`mobile-sticky-header${showStickyHeader ? ' sticky-visible' : ''}`}>
+        <div className="sticky-title">{post.title}</div>
+        <div className="sticky-meta">
+          <span className="sticky-likes">{post.reaction_counts?.like || 0} likes</span>
+          <span className="sticky-comments">{commentCount} comments</span>
+        </div>
+      </div>
+
+      <div
+        ref={isMobile ? popupContainerRef : undefined}
+        className={`post-popup-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
         style={isMobile ? { paddingBottom: 80 } : {}} // add bottom padding for fixed bar
       >
         {!isMobile ? (
@@ -705,6 +737,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     />
                     <span className="author-name">{post.author.full_name}</span>
                   </div>
+                  <div className="author-email" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <img src={MailIcon} alt="mail" className="mail-icon" />
+                    <span>{post.author.email}</span>
+                  </div>
                   <div className="post-date">
                     <CalendarIcon />
                     <div className="date-time">
@@ -768,7 +804,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                 {new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
-            <div className="post-content-section">
+            <div className="post-content-section" ref={postContentRef}>
               <div className="post-header">
                 <h2 className="post-title">{post.title}</h2>
                 <div className="post-content">
@@ -805,45 +841,99 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             </div>
             {/* Fixed mobile comment bar */}
             <div className="mobile-comment-bar">
-              <div className="input-with-buttons">
+              <div className="input-with-buttons mobile-input-row">
+                <button
+                  className="comment-action-button"
+                  onClick={handleFileAttachment}
+                  title="Attach files"
+                  type="button"
+                >
+                  <PaperClipOutlined />
+                </button>
                 <textarea
                   ref={commentInputRef}
                   placeholder="Join the conversation"
                   className="comment-input"
                   value={commentText}
                   onChange={handleCommentChange}
-                  onFocus={() => setShowMobilePanel(true)}
-                  onBlur={() => setShowMobilePanel(false)}
                   rows={1}
                 />
-                <div className="input-buttons">
-                  <button
-                    className="comment-action-button"
-                    onClick={handleFileAttachment}
-                    title="Attach files"
-                  >
-                    <PaperClipOutlined />
-                  </button>
-                  <button
-                    className="comment-action-button send"
-                    onClick={handleCommentSubmit}
-                    title="Send comment"
-                  >
-                    <img src={SendArrow} alt="Send" className="send-arrow-icon" />
-                  </button>
-                </div>
+                <button
+                  className="comment-action-button send"
+                  onClick={handleCommentSubmit}
+                  title="Send comment"
+                  type="button"
+                >
+                  <img src={SendArrow} alt="Send" className="send-arrow-icon" />
+                </button>
               </div>
             </div>
-            {/* Sliding panel above the comment bar */}
-            {showMobilePanel && (
-              <div className="mobile-keyboard-panel">
-                {/* You can put attachment options, emoji picker, or just a placeholder here */}
-                <div style={{ textAlign: 'center', color: '#aaa', paddingTop: 24 }}>Keyboard</div>
-              </div>
-            )}
           </>
         )}
       </div>
+
+      {isMobile && showMobileInfo && (
+        <div className="mobile-info-panel">
+          <button className="mobile-info-close" onClick={() => setShowMobileInfo(false)}>
+            <CloseOutlined />
+          </button>
+          <div className="about-section">
+            <h3>About</h3>
+            <div className="author-info">
+              <Avatar
+                src={post.author.avatar_url}
+                className="author-avatar"
+              />
+              <span className="author-name">{post.author.full_name}</span>
+            </div>
+            <div className="author-email" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <img src={MailIcon} alt="mail" className="mail-icon" />
+              <span>{post.author.email}</span>
+            </div>
+            <div className="post-date">
+              <CalendarIcon />
+              <div className="date-time">
+                <span>
+                  {(() => {
+                    const date = new Date(post.created_at);
+                    const day = date.getDate();
+                    const month = date.toLocaleDateString('en-US', { month: 'long' });
+                    const year = date.getFullYear();
+                    return `${month} ${day}${getOrdinalSuffix(day)}, ${year}`;
+                  })()}
+                </span>
+                <span className="post-time">
+                  {new Date(post.created_at).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  })}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="subscribers-section">
+            <h3>Subscribers</h3>
+            <div className="avatar-group">
+              <Avatar.Group
+                maxCount={4}
+                maxStyle={{
+                  color: '#281010',
+                  backgroundColor: '#f5f5f5',
+                  border: '2px solid #fff'
+                }}
+              >
+                <Avatar src="https://i.pravatar.cc/150?img=1" />
+                <Avatar src="https://i.pravatar.cc/150?img=2" />
+                <Avatar src="https://i.pravatar.cc/150?img=3" />
+                <Avatar src="https://i.pravatar.cc/150?img=4" />
+                <Avatar src="https://i.pravatar.cc/150?img=5" />
+              </Avatar.Group>
+              <SubscribeButton />
+            </div>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 } 

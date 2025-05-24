@@ -2,6 +2,7 @@
 @media (max-width: 768px) {
     .navbar {
         padding: 0 10px;
+        display: none;
     }
 
     .logo {
