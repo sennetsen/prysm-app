@@ -44,6 +44,7 @@ function BoardView() {
   const [isContactCardOpen, setIsContactCardOpen] = useState(false);
   const [contactCardData, setContactCardData] = useState(null);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [isSidebarHidden, setIsSidebarHidden] = useState(false);
 
   const defaultColors = useMemo(() => [
     "#FEEAA4",
@@ -507,14 +508,14 @@ function BoardView() {
 
   // Added function to update likes in the board view from a post popup
   const handlePostLikeUpdate = (postId, newLikeCount, isLiked) => {
-    setCards(prevCards => 
+    setCards(prevCards =>
       prevCards.map(card => {
         if (card.id === postId) {
           // Update the card with new like count and reactions
           const updatedReactions = isLiked
             ? [...(card.reactions || []), { user_id: user?.id, reaction_type: 'like' }]
             : (card.reactions || []).filter(r => !(r.user_id === user?.id && r.reaction_type === 'like'));
-          
+
           return {
             ...card,
             likesCount: newLikeCount,
@@ -524,7 +525,7 @@ function BoardView() {
         return card;
       })
     );
-    
+
     // Also update the selected post so it stays in sync
     if (selectedPost && selectedPost.id === postId) {
       setSelectedPost({
@@ -536,6 +537,8 @@ function BoardView() {
       });
     }
   };
+
+  const toggleSidebar = () => setIsSidebarHidden((h) => !h);
 
   if (boardNotFound) {
     return <Navigate to="/" />; // Redirect if board not found
@@ -551,7 +554,7 @@ function BoardView() {
         onJoinClick={handleJoinClick}
         onShare={handleShareClick}
       />
-      <div className="main-content">
+      <div className={`main-content${isSidebarHidden ? ' sidebar-hidden' : ' sidebar-open'}`}>
         <Sidebar
           description={boardData?.description}
           bio={boardData?.bio}
@@ -561,8 +564,10 @@ function BoardView() {
           creatorAvatar={boardData?.creator_avatar}
           posts={cards}
           color={boardData?.color}
+          isHidden={isSidebarHidden}
+          toggleSidebar={toggleSidebar}
         />
-        <div className="board">
+        <div className={`board${isSidebarHidden ? ' sidebar-hidden' : ' sidebar-open'}`}>
           {cards.length === 0 && (
             <p className="empty-board-message">No posts yet. Click the button to add one!</p>
           )}

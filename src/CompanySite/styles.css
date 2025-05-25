@@ -811,7 +811,7 @@ nav li {
   .description-text {
     white-space: normal;
     word-wrap: break-word;
-    padding-right: 20px;
+    /* padding-right: 20px; */
   }
 }
 

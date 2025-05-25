@@ -3,12 +3,8 @@ import "./Sidebar.css";
 import fallbackImg from '../../../img/fallback.png';
 import verifiedIcon from '../../../img/verified.svg';
 
-function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, posts, color }) {
-  const [isHidden, setIsHidden] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsHidden(!isHidden);
-  };
+function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, posts, color, isHidden, toggleSidebar }) {
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   const getAvatarUrl = () => {
     if (creatorAvatar) {
@@ -20,7 +16,6 @@ function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, pos
   // Get the first 4 posts' profile pictures
   const getPostAvatars = () => {
     if (!posts || posts.length === 0) return [];
-
     return posts.slice(0, 4).map(post => ({
       avatar: post.author?.avatar_url || fallbackImg,
       isAnonymous: post.is_anonymous
@@ -38,6 +33,7 @@ function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, pos
         }}>
         {!isHidden && (
           <div className="sidebar-content">
+            {/* Profile Picture */}
             <div className="profile-picture">
               <img
                 src={getAvatarUrl()}
@@ -49,6 +45,7 @@ function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, pos
               />
             </div>
 
+            {/* Creator Name and Verified */}
             <h2 className="creator-name">
               {creatorName || ""}
               <img
@@ -58,31 +55,56 @@ function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, pos
               />
             </h2>
 
-            <p className="requests-title">
-              {totalPosts} {totalPosts === 1 ? "Request" : "Requests"}
-            </p>
-            <div className="requests-avatars">
-              {getPostAvatars().map((post, index) => (
-                <img
-                  key={index}
-                  src={post.isAnonymous ? fallbackImg : post.avatar}
-                  alt={`Post ${index + 1}`}
-                  className="avatar"
-                  onError={(e) => {
-                    e.target.src = fallbackImg;
-                  }}
-                />
-              ))}
-              {remainingPosts > 0 && (
-                <span className="more-requests">+{remainingPosts}</span>
-              )}
+            {/* Requests count and avatars in one row */}
+            <div className="requests-row">
+              <span className="requests-title">{totalPosts} {totalPosts === 1 ? "Post" : "Posts"}</span>
+              <div className="requests-avatars">
+                {getPostAvatars().map((post, index) => (
+                  <img
+                    key={index}
+                    src={post.isAnonymous ? fallbackImg : post.avatar}
+                    alt={`Post ${index + 1}`}
+                    className="avatar"
+                    onError={(e) => {
+                      e.target.src = fallbackImg;
+                    }}
+                  />
+                ))}
+                {remainingPosts > 0 && (
+                  <span className="avatar more-requests">+{remainingPosts}</span>
+                )}
+              </div>
             </div>
 
-            <p className="description-text" style={{
-              scrollbarColor: `${color} transparent`, // For Firefox
-            }}>
+            {/* Description and Show more/less */}
+            <p
+              className={`description-text${showFullDescription ? ' expanded' : ''}`}
+              style={{ scrollbarColor: `${color} transparent` }}
+            >
               {description || ""}
             </p>
+            <button
+              className="show-more-link"
+              onClick={() => setShowFullDescription(v => !v)}
+            >
+              {showFullDescription ? 'Show less' : 'Show more'}
+              <span
+                className="show-more-arrow"
+                style={{
+                  display: 'inline-block',
+                  marginLeft: 4,
+                  transform: showFullDescription ? 'rotate(0deg)' : 'rotate(-90deg)'
+                }}
+              >
+                {'>'}
+              </span>
+            </button>
+
+            {/* Activity Section Placeholder */}
+            <div className="sidebar-activity-section">
+              <h3>Activity</h3>
+              {/* Activity content will go here */}
+            </div>
           </div>
         )}
       </div>
