@@ -226,7 +226,8 @@ img {
   border-radius: 10px;
   padding: 20px;
   width: 400px;
-  height: 300px;
+  min-height: 300px;
+  max-height: 80vh;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -235,6 +236,7 @@ img {
   opacity: 0;
   animation: scaleIn 0.2s ease forwards;
   z-index: 1003;
+  overflow-y: auto;
 }
 
 @keyframes scaleIn {
@@ -386,9 +388,11 @@ img {
 
 .content-input {
   resize: none;
-  height: auto;
+  flex: 1;
   margin-top: -5px;
-  height: 200px;
+  min-height: 120px;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .title-input {
@@ -403,19 +407,47 @@ img {
 }
 
 .modal-footer {
-  border-top: 1px solid rgba(40, 16, 16, 0.5);
-  padding-top: 10px;
-  margin: 0 -20px;
-  padding-left: 20px;
-  padding-right: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: auto;
+  border-top: 1px solid rgba(40, 16, 16, 0.5);
+  padding-top: 10px;
+  margin-left: -20px;
+  margin-right: -20px;
+  margin-bottom: -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-bottom: 20px;
+  flex-shrink: 0;
 }
 
-.char-count {
-  font-size: 12px;
-  color: #76746c;
+.modal-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attach-button {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: rgba(40, 16, 16, 0.05);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.attach-button:hover {
+  background: rgba(40, 16, 16, 0.1);
+}
+
+.attach-button .anticon {
+  font-size: 16px;
+  color: #281010;
 }
 
 .post-button {
@@ -888,4 +920,132 @@ p {
 
 body.comment-scroll .navbar {
   box-shadow: 0 4px 20px #b43144;
+}
+
+/* File attachment styles for post creation modal */
+.post-file-preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.post-file-preview-wrapper {
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.post-image-preview-with-name {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  width: 120px;
+}
+
+.post-image-preview {
+  position: relative;
+  width: 120px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  flex-shrink: 0;
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-image-button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.remove-image-button:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.post-image-filename {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #666;
+  width: 100%;
+}
+
+.post-image-filename .anticon {
+  font-size: 10px;
+  color: #EF5959;
+  flex-shrink: 0;
+}
+
+.filename-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100px;
+}
+
+.post-file-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(40, 16, 16, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  max-width: 200px;
+  flex-shrink: 0;
+}
+
+.post-file-preview-item .file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #281010;
+}
+
+.post-file-preview-item .remove-file {
+  cursor: pointer;
+  color: #666;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.post-file-preview-item .remove-file:hover {
+  background: rgba(40, 16, 16, 0.1);
+  color: #281010;
+}
+
+.char-count {
+  font-size: 12px;
+  color: #76746c;
 }

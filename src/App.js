@@ -9,7 +9,7 @@ import Sidebar from "./components/features/board/Sidebar";
 import RequestCard from "./components/features/posts/RequestCard";
 import { MentionTest } from "./components/features/comments/MentionTest";
 import "./App.css";
-import { Button, Checkbox, Form, Tooltip } from 'antd';
+import { Button, Checkbox, Form, Tooltip, Modal, Avatar, message } from 'antd';
 import { lightenColor } from './utils/colorUtils'; // Import the lightenColor function
 import { GoogleSignInButton } from './supabaseClient';
 import postbutton from './img/postbutton.svg';
@@ -19,6 +19,7 @@ import fallbackImg from './img/fallback.png';
 import mailicon from './img/mail.svg';
 import { PostPopup } from './components/features/posts/PostPopup';
 import './components/features/posts/PostPopup.css';
+import { PaperClipOutlined, CloseOutlined, FileOutlined } from '@ant-design/icons';
 
 function BoardView() {
   const { boardPath } = useParams();
@@ -45,6 +46,7 @@ function BoardView() {
   const [contactCardData, setContactCardData] = useState(null);
   const [selectedPost, setSelectedPost] = useState(null);
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
+  const [postFileList, setPostFileList] = useState([]);
 
   const defaultColors = useMemo(() => [
     "#FEEAA4",
@@ -245,17 +247,60 @@ function BoardView() {
     setIsModalOpen(true);
   };
 
-  const handleModalClose = () => {
-    const requestModal = document.querySelector('.post-it-modal');
-    requestModal.classList.add('scale-out');
+  const handleFileAttachment = () => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.multiple = true;
+    fileInput.accept = 'image/*,.pdf,.doc,.docx,.txt';
 
-    setTimeout(() => {
-      setIsModalOpen(false);
-      setNewPostContent("");
-      setNewPostTitle("");
-      setIsAnonymous(false);
-      requestModal.classList.remove('scale-out');
-    }, 200); // Match the animation duration
+    fileInput.onchange = (e) => {
+      const target = e.target;
+      if (target.files && target.files.length > 0) {
+        const files = Array.from(target.files);
+        
+        // Check file size
+        const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+        if (totalSize > 5 * 1024 * 1024) {
+          message.error('Total file size should not exceed 5MB');
+          return;
+        }
+
+        // Create previews for images
+        files.forEach(file => {
+          if (file.type.startsWith('image/')) {
+            file.preview = URL.createObjectURL(file);
+          }
+        });
+
+        setPostFileList([...postFileList, ...files]);
+        message.success(`${files.length} file(s) attached`);
+      }
+    };
+
+    fileInput.click();
+  };
+
+  const removePostFile = (fileToRemove) => {
+    setPostFileList(postFileList.filter(file => file !== fileToRemove));
+    if (fileToRemove.preview) {
+      URL.revokeObjectURL(fileToRemove.preview);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setNewPostContent("");
+    setNewPostTitle("");
+    setIsAnonymous(false);
+    setPostFileList([]);
+    setModalColor(postColors[Math.floor(Math.random() * postColors.length)]);
+    
+    // Clean up file previews
+    postFileList.forEach(file => {
+      if (file.preview) {
+        URL.revokeObjectURL(file.preview);
+      }
+    });
   };
 
   const handlePostSubmit = async () => {
@@ -647,15 +692,70 @@ function BoardView() {
                 <span className="hide-name-text">Hide my name</span>
               </Checkbox>
             </Form.Item>
+            
+            {/* File attachment section */}
+            {postFileList.length > 0 && (
+              <div className="post-file-preview-container">
+                {postFileList.map((file, index) => (
+                  <div key={index} className="post-file-preview-wrapper">
+                    {file.type.startsWith('image/') ? (
+                      <div className="post-image-preview-with-name">
+                        <div className="post-image-preview">
+                          <img 
+                            src={file.preview || URL.createObjectURL(file)} 
+                            alt={file.name}
+                            className="preview-image"
+                          />
+                          <button
+                            className="remove-image-button"
+                            onClick={() => removePostFile(file)}
+                            title="Remove image"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <div className="post-image-filename">
+                          <FileOutlined />
+                          <span className="filename-text">{file.name}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="post-file-preview-item">
+                        <FileOutlined />
+                        <span className="file-name">{file.name}</span>
+                        <button
+                          className="remove-file"
+                          onClick={() => removePostFile(file)}
+                          title="Remove file"
+                        >
+                          <CloseOutlined />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            
             <div className="modal-footer">
-              <span className="char-count">{`${newPostContent.length}/300`}</span>
               <button
-                className="post-button"
-                onClick={handlePostSubmit}
-                disabled={!newPostContent.trim() || !newPostTitle.trim()}
+                className="attach-button"
+                onClick={handleFileAttachment}
+                title="Attach files"
+                type="button"
               >
-                Request
+                <PaperClipOutlined />
               </button>
+              <div className="modal-footer-right">
+                <span className="char-count">{`${newPostContent.length}/300`}</span>
+                <button
+                  className="post-button"
+                  onClick={handlePostSubmit}
+                  disabled={!newPostContent.trim() || !newPostTitle.trim()}
+                >
+                  Request
+                </button>
+              </div>
             </div>
           </div>
         </div>

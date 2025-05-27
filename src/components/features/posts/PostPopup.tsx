@@ -676,18 +676,37 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                         rows={1}
                       />
                       {fileList.length > 0 && (
-                        <div className="file-preview-list">
+                        <div className="comment-file-preview-container">
                           {fileList.map((file, index) => (
-                            <div key={index} className="file-preview-item">
-                              <FileOutlined />
-                              <span className="file-name">{file.name}</span>
-                              <button
-                                className="remove-file"
-                                onClick={() => removeFile(file)}
-                                title="Remove file"
-                              >
-                                <CloseOutlined />
-                              </button>
+                            <div key={index} className="comment-file-preview-wrapper">
+                              {file.type.startsWith('image/') ? (
+                                <div className="comment-image-preview">
+                                  <img 
+                                    src={file.preview || URL.createObjectURL(file)} 
+                                    alt={file.name}
+                                    className="comment-preview-image"
+                                  />
+                                  <button
+                                    className="remove-comment-image-button"
+                                    onClick={() => removeFile(file)}
+                                    title="Remove image"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="file-preview-item">
+                                  <FileOutlined />
+                                  <span className="file-name">{file.name}</span>
+                                  <button
+                                    className="remove-file"
+                                    onClick={() => removeFile(file)}
+                                    title="Remove file"
+                                  >
+                                    <CloseOutlined />
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -841,6 +860,42 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             </div>
             {/* Fixed mobile comment bar */}
             <div className="mobile-comment-bar">
+              {fileList.length > 0 && (
+                <div className="comment-file-preview-container mobile-preview">
+                  {fileList.map((file, index) => (
+                    <div key={index} className="comment-file-preview-wrapper">
+                      {file.type.startsWith('image/') ? (
+                        <div className="comment-image-preview">
+                          <img 
+                            src={file.preview || URL.createObjectURL(file)} 
+                            alt={file.name}
+                            className="comment-preview-image"
+                          />
+                          <button
+                            className="remove-comment-image-button"
+                            onClick={() => removeFile(file)}
+                            title="Remove image"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="file-preview-item">
+                          <FileOutlined />
+                          <span className="file-name">{file.name}</span>
+                          <button
+                            className="remove-file"
+                            onClick={() => removeFile(file)}
+                            title="Remove file"
+                          >
+                            <CloseOutlined />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="input-with-buttons mobile-input-row">
                 <button
                   className="comment-action-button"
