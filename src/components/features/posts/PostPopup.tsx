@@ -223,40 +223,119 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   };
 
-  const handleCommentLike = (commentId: number) => {
-    setComments(comments.map(comment => {
-      if (comment.id === commentId) {
-        return {
-          ...comment,
-          liked: !comment.liked,
-          likes: comment.liked ? comment.likes - 1 : comment.likes + 1
-        };
-      }
+  const handleCommentLike = async (commentId: number) => {
+    if (!currentUser) {
+      message.info('Please sign in to like comments');
+      return;
+    }
 
-      // Check for replies
-      if (comment.replies) {
-        const updatedReplies = comment.replies.map(reply => {
-          if (reply.id === commentId) {
-            return {
-              ...reply,
-              liked: !reply.liked,
-              likes: reply.liked ? reply.likes - 1 : reply.likes + 1
-            };
-          }
-          return reply;
-        });
+    // Find the comment in state
+    const comment = comments.find(c => c.id === commentId) ||
+      comments.flatMap(c => c.replies || []).find(r => r.id === commentId);
 
-        // If any replies were updated, return the updated comment
-        if (updatedReplies.some((reply, idx) => reply !== comment.replies![idx])) {
+    if (!comment) return;
+
+    const isLiked = comment.liked;
+
+    // Optimistically update UI
+    setComments(prevComments =>
+      prevComments.map(c => {
+        if (c.id === commentId) {
+          return { ...c, liked: !isLiked, likes: c.likes + (isLiked ? -1 : 1) };
+        }
+        if (c.replies) {
           return {
-            ...comment,
-            replies: updatedReplies
+            ...c,
+            replies: c.replies.map(r =>
+              r.id === commentId
+                ? { ...r, liked: !isLiked, likes: r.likes + (isLiked ? -1 : 1) }
+                : r
+            ),
           };
         }
-      }
+        return c;
+      })
+    );
 
-      return comment;
-    }));
+    try {
+      if (isLiked) {
+        // Remove like
+        await supabase
+          .from('comment_reactions')
+          .delete()
+          .eq('post_id', post.id)
+          .eq('comment_id', commentId)
+          .eq('user_id', currentUser.id)
+          .eq('reaction_type', 'like');
+
+        // Decrement like count in comments table
+        const { data: commentData, error: commentError } = await supabase
+          .from('comments')
+          .select('reaction_counts')
+          .eq('id', commentId)
+          .single();
+
+        if (commentError) throw commentError;
+        const currentCount = commentData.reaction_counts?.like || 0;
+        const newCount = Math.max(0, currentCount - 1);
+
+        await supabase
+          .from('comments')
+          .update({
+            reaction_counts: { ...commentData.reaction_counts, like: newCount }
+          })
+          .eq('id', commentId);
+      } else {
+        // Add like
+        await supabase
+          .from('comment_reactions')
+          .insert([{
+            post_id: post.id,
+            comment_id: commentId,
+            user_id: currentUser.id,
+            reaction_type: 'like'
+          }]);
+
+        // Increment like count in comments table
+        const { data: commentData, error: commentError } = await supabase
+          .from('comments')
+          .select('reaction_counts')
+          .eq('id', commentId)
+          .single();
+
+        if (commentError) throw commentError;
+        const currentCount = commentData.reaction_counts?.like || 0;
+        const newCount = currentCount + 1;
+
+        await supabase
+          .from('comments')
+          .update({
+            reaction_counts: { ...commentData.reaction_counts, like: newCount }
+          })
+          .eq('id', commentId);
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setComments(prevComments =>
+        prevComments.map(c => {
+          if (c.id === commentId) {
+            return { ...c, liked: isLiked, likes: c.likes + (isLiked ? 1 : -1) };
+          }
+          if (c.replies) {
+            return {
+              ...c,
+              replies: c.replies.map(r =>
+                r.id === commentId
+                  ? { ...r, liked: isLiked, likes: r.likes + (isLiked ? 1 : -1) }
+                  : r
+              ),
+            };
+          }
+          return c;
+        })
+      );
+      message.error('Failed to update like status');
+    }
   };
 
   const handleDeleteComment = (commentId: number) => {
@@ -497,16 +576,28 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
   // Refactor fetchComments to nest replies
   const fetchComments = async () => {
-    const { data, error } = await supabase
+    // Fetch all comments for the post
+    const { data: commentsData, error: commentsError } = await supabase
       .from('comments')
-      .select(`*, author:users(full_name, avatar_url)`)
+      .select(`*, author:users(full_name, avatar_url), reaction_counts`)
       .eq('post_id', post.id)
       .order('created_at', { ascending: false });
 
-    if (!error && data) {
+    // Fetch all comment_reactions for this post by the current user
+    let userReactions: any[] = [];
+    if (currentUser) {
+      const { data: reactionsData } = await supabase
+        .from('comment_reactions')
+        .select('comment_id, reaction_type')
+        .eq('post_id', post.id)
+        .eq('user_id', currentUser.id);
+      userReactions = reactionsData || [];
+    }
+
+    if (!commentsError && commentsData) {
       // Separate top-level comments and replies
-      const topLevel = data.filter((c: any) => !c.parent_comment_id);
-      const replies = data.filter((c: any) => c.parent_comment_id);
+      const topLevel = commentsData.filter((c: any) => !c.parent_comment_id);
+      const replies = commentsData.filter((c: any) => c.parent_comment_id);
 
       // Helper to format timestamp
       const formatTimestamp = (created_at: string) => {
@@ -533,8 +624,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           },
           content: c.content,
           timestamp: formatTimestamp(c.created_at),
-          likes: 0,
-          liked: false,
+          likes: c.reaction_counts?.like || 0,
+          liked: !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like'),
           replies: [],
         };
       });
@@ -550,14 +641,14 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             },
             content: c.content,
             timestamp: formatTimestamp(c.created_at),
-            likes: 0,
-            liked: false,
+            likes: c.reaction_counts?.like || 0,
+            liked: !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like'),
           });
         }
       });
       // Set state with nested comments
       setComments(Object.values(commentMap));
-      setCommentCount(data.length);
+      setCommentCount(commentsData.length);
     }
   };
 
