@@ -41,6 +41,15 @@ interface PostPopupProps {
   onPostLikeChange: (postId: string) => void;
 }
 
+interface Attachment {
+  id: string;
+  storage_path: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  // ...other fields
+}
+
 interface Comment {
   id: number;
   author: {
@@ -52,13 +61,14 @@ interface Comment {
   likes: number;
   liked: boolean;
   replies?: Comment[];
+  attachments?: Attachment[];
 }
 
 interface FilePreview extends File {
   preview?: string;
 }
 
-async function uploadCommentAttachment(file: File, commentId: string) {
+async function uploadCommentAttachment(file: File, commentId: string, authorId: string) {
   // Log commentId value and type
   console.log('Uploading attachment for commentId:', commentId, 'Type:', typeof commentId);
 
@@ -88,6 +98,7 @@ async function uploadCommentAttachment(file: File, commentId: string) {
     file_size: file.size,
     parent_type: 'comment',
     parent_id: commentId,
+    author_id: authorId,
   }]);
 
   if (error) {
@@ -506,7 +517,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       // 2. Upload each attachment with the correct commentId
       try {
         for (const file of fileList) {
-          await uploadCommentAttachment(file, commentId);
+          await uploadCommentAttachment(file, commentId, currentUser.id);
         }
       } catch (err) {
         console.error('Attachment upload error:', err);
