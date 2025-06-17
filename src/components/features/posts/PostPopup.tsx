@@ -65,6 +65,8 @@ async function uploadCommentAttachment(file: File, commentId: string) {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("fileName", file.name);
+  formData.append("parentId", commentId);
+  formData.append("parentType", "comment");
 
   const res = await fetch("https://prysm-r2-worker.prysmapp.workers.dev/upload", {
     method: "POST",
@@ -501,10 +503,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
       const commentId = data[0].id;
 
-      // 2. Upload each attachment and insert into attachments table
+      // 2. Upload each attachment with the correct commentId
       try {
         for (const file of fileList) {
-          await uploadCommentAttachment(file, commentId.toString());
+          await uploadCommentAttachment(file, commentId);
         }
       } catch (err) {
         console.error('Attachment upload error:', err);

@@ -46,7 +46,11 @@ export default {
 		if (request.method === "POST" && url.pathname === "/upload") {
 			const formData = await request.formData();
 			const file = formData.get("file") as File;
-			const fileName = (formData.get("fileName") as string) || crypto.randomUUID();
+			const originalName = (formData.get("fileName") as string) || "file";
+			const parentId = formData.get("parentId") as string;
+			const parentType = formData.get("parentType") as string || "comment";
+			const uniqueId = crypto.randomUUID();
+			const fileName = `${parentType}s/${parentId}/${uniqueId}_${originalName}`;
 
 			if (!file) {
 				return withCorsHeaders(new Response("No file uploaded", { status: 400 }));
