@@ -58,6 +58,44 @@ interface FilePreview extends File {
   preview?: string;
 }
 
+async function uploadCommentAttachment(file: File, commentId: string) {
+  // Log commentId value and type
+  console.log('Uploading attachment for commentId:', commentId, 'Type:', typeof commentId);
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("fileName", file.name);
+
+  const res = await fetch("https://prysm-r2-worker.prysmapp.workers.dev/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error('R2 upload failed:', text);
+    throw new Error("Failed to upload file to R2: " + text);
+  }
+
+  const { storage_path } = await res.json();
+
+  const { error } = await supabase.from('attachments').insert([{
+    storage_path,
+    file_name: file.name,
+    file_type: file.type,
+    file_size: file.size,
+    parent_type: 'comment',
+    parent_id: commentId,
+  }]);
+
+  if (error) {
+    console.error('Supabase insert error:', error);
+    throw new Error("Failed to insert attachment into database: " + error.message);
+  }
+
+  return storage_path;
+}
+
 export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange }: PostPopupProps) {
   const [liked, setLiked] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
@@ -404,8 +442,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
         // Check file size
         const totalSize = files.reduce((acc, file) => acc + file.size, 0);
-        if (totalSize > 5 * 1024 * 1024) {
-          message.error('Total file size should not exceed 5MB');
+        if (totalSize > 25 * 1024 * 1024) {
+          message.error('Total file size should not exceed 25MB');
           return;
         }
 
@@ -444,7 +482,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
   const handleCommentSubmit = async () => {
     if (commentText.trim() || fileList.length > 0) {
-      // Insert comment into Supabase
+      // 1. Insert comment into Supabase
       const { data, error } = await supabase
         .from('comments')
         .insert([{
@@ -453,7 +491,6 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           content: commentText,
           is_anonymous: false, // or true if you support anonymous
           created_at: new Date().toISOString(),
-          // Add other fields as needed
         }])
         .select();
 
@@ -462,9 +499,21 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         return;
       }
 
-      // Optionally, fetch the new comment from data[0] and add to state
+      const commentId = data[0].id;
+
+      // 2. Upload each attachment and insert into attachments table
+      try {
+        for (const file of fileList) {
+          await uploadCommentAttachment(file, commentId.toString());
+        }
+      } catch (err) {
+        console.error('Attachment upload error:', err);
+        message.error('Failed to upload one or more attachments');
+      }
+
+      // 3. Optionally, fetch the new comment from data[0] and add to state
       setComments([{
-        id: data[0].id,
+        id: commentId,
         author: {
           name: currentUser?.user_metadata?.full_name || 'Current User',
           avatar: currentUser?.user_metadata?.avatar_url || 'https://i.pravatar.cc/150?img=1',
@@ -772,8 +821,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                             <div key={index} className="comment-file-preview-wrapper">
                               {file.type.startsWith('image/') ? (
                                 <div className="comment-image-preview">
-                                  <img 
-                                    src={file.preview || URL.createObjectURL(file)} 
+                                  <img
+                                    src={file.preview || URL.createObjectURL(file)}
                                     alt={file.name}
                                     className="comment-preview-image"
                                   />
@@ -957,8 +1006,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     <div key={index} className="comment-file-preview-wrapper">
                       {file.type.startsWith('image/') ? (
                         <div className="comment-image-preview">
-                          <img 
-                            src={file.preview || URL.createObjectURL(file)} 
+                          <img
+                            src={file.preview || URL.createObjectURL(file)}
                             alt={file.name}
                             className="comment-preview-image"
                           />
