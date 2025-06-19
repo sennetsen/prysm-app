@@ -409,3 +409,51 @@
     display: none;
   } */
 }
+
+/* Comment attachment styles */
+.comment-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.comment-attachment-preview {
+  position: relative;
+}
+
+.comment-attachment-image {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.comment-attachment-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.comment-attachment-file {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  word-break: break-word;
+  padding: 8px;
+}
+
+.comment-attachment-file:hover {
+  background-color: #ebebeb !important;
+}
+
+/* Mobile responsive for attachments */
+@media screen and (max-width: 768px) {
+  .comment-attachment-image,
+  .comment-attachment-file {
+    width: 100px !important;
+    height: 100px !important;
+  }
+  
+  .comment-attachment-file {
+    height: 50px !important;
+    font-size: 11px !important;
+  }
+}

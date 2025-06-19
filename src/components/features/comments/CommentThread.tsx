@@ -25,6 +25,13 @@ interface Comment {
   likes: number;
   liked: boolean;
   replies?: Comment[];
+  attachments?: {
+    id: string;
+    storage_path: string;
+    file_name: string;
+    file_type: string;
+    file_size: number;
+  }[];
 }
 
 export function CommentThread({
@@ -261,6 +268,51 @@ export function CommentThread({
                   </>
                 ) : comment.content}
               </p>
+              
+              {/* Display file previews if attachments exist */}
+              {comment.attachments && comment.attachments.length > 0 && (
+                <div className="comment-attachments">
+                  {comment.attachments.map((attachment) => (
+                    <div key={attachment.id} className="comment-attachment-preview">
+                      {attachment.file_type.startsWith('image/') ? (
+                        <img
+                          src={`https://prysm-r2-worker.prysmapp.workers.dev/file/${attachment.storage_path}`}
+                          alt={attachment.file_name}
+                          className="comment-attachment-image"
+                          style={{
+                            width: '120px',
+                            height: '120px',
+                            objectFit: 'cover',
+                            borderRadius: '8px',
+                            border: '1px solid #e0e0e0',
+                            marginTop: '8px'
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className="comment-attachment-file"
+                          style={{
+                            width: '120px',
+                            height: '60px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: '#f5f5f5',
+                            borderRadius: '8px',
+                            border: '1px solid #e0e0e0',
+                            marginTop: '8px',
+                            fontSize: '12px',
+                            textAlign: 'center'
+                          }}
+                        >
+                          📎 {attachment.file_name}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              
               <div className="actions-wrapper">
                 <div className="comment-actions">
                   <Button

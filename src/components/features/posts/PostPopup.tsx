@@ -645,6 +645,21 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       .eq('post_id', post.id)
       .order('created_at', { ascending: false });
 
+    // Fetch attachments for all comments
+    let attachmentsData: any[] = [];
+    if (commentsData && commentsData.length > 0) {
+      const commentIds = commentsData.map((comment: any) => comment.id);
+      const { data: attachments, error: attachmentsError } = await supabase
+        .from('attachments')
+        .select('*')
+        .eq('parent_type', 'comment')
+        .in('parent_id', commentIds);
+      
+      if (!attachmentsError && attachments) {
+        attachmentsData = attachments;
+      }
+    }
+
     // Fetch all comment_reactions for this post by the current user
     let userReactions: any[] = [];
     if (currentUser) {
@@ -678,6 +693,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       // Build a map for quick lookup
       const commentMap: { [key: number]: any } = {};
       topLevel.forEach((c: any) => {
+        // Find attachments for this comment
+        const commentAttachments = attachmentsData.filter(att => att.parent_id === c.id);
+        
         commentMap[c.id] = {
           id: c.id,
           author: {
@@ -689,12 +707,16 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           likes: c.reaction_counts?.like || 0,
           liked: !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like'),
           replies: [],
+          attachments: commentAttachments,
         };
       });
       // Attach replies to their parent
       replies.forEach((c: any) => {
         const parent = commentMap[c.parent_comment_id];
         if (parent) {
+          // Find attachments for this reply
+          const replyAttachments = attachmentsData.filter(att => att.parent_id === c.id);
+          
           parent.replies.push({
             id: c.id,
             author: {
@@ -705,6 +727,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             timestamp: formatTimestamp(c.created_at),
             likes: c.reaction_counts?.like || 0,
             liked: !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like'),
+            attachments: replyAttachments,
           });
         }
       });
