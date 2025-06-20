@@ -187,6 +187,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  position: relative;
 }
 
 .comment-input {
@@ -196,12 +197,13 @@
   font-size: 14px;
   color: #281010;
   resize: none;
-  min-height: 20px;
+  min-height: 60px;
   max-height: 150px;
   overflow-y: auto;
   line-height: 1.5;
   outline: none;
-  margin-bottom: 8px;
+  padding-right: 80px;
+  padding-bottom: 40px;
 }
 
 .file-preview-list {
@@ -223,14 +225,13 @@
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 12px;
-  max-width: 200px;
+  /* Removed max-width to allow flexible sizing */
 }
 
 .file-preview-item .file-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   color: #281010;
+  white-space: nowrap;
+  /* Removed overflow and text-overflow to show full file names */
 }
 
 .file-preview-item .remove-file {
@@ -252,15 +253,21 @@
 
 /* Update the input buttons positioning to work with the new layout */
 .input-buttons {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
   display: flex;
   flex-direction: row;
   justify-content: flex-end;
   gap: 12px;
   align-items: center;
-  margin: 0;
-  position: static;
-  transform: none;
-  height: auto;
+}
+
+/* Create a wrapper for just the attachment and send buttons */
+.action-buttons-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .comment-input::placeholder {
@@ -661,6 +668,10 @@
     border-top: 1px solid #ececec;
   }
 
+  .mobile-comment-bar .mobile-input-row {
+    margin-top: 16px;
+  }
+
 
   .post-popup-container.mobile-layout {
     padding-bottom: 80px !important;
@@ -690,6 +701,7 @@
   flex-direction: row;
   align-items: flex-end;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .mobile-input-row .comment-action-button {
@@ -700,6 +712,13 @@
 .mobile-input-row .comment-input {
   flex: 1;
   margin: 0 8px;
+  min-width: 120px;
+}
+
+.mobile-input-row .comment-file-preview-container {
+  flex: 0 1 auto;
+  max-width: 100%;
+  margin-bottom: 2px;
 }
 
 .mobile-sticky-header {
@@ -790,8 +809,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
+  margin-top: 8px;
   margin-bottom: 8px;
-  padding-right: 90px; /* Align with input text */
+  padding-right: 80px;
 }
 
 .comment-file-preview-wrapper {
@@ -840,7 +861,13 @@
 /* Mobile comment preview styles */
 .comment-file-preview-container.mobile-preview {
   padding-right: 0;
-  margin-bottom: 12px;
+  margin-bottom: 0;
+  align-items: center;
+}
+
+.comment-file-preview-container.mobile-preview .file-preview-item {
+  font-size: 11px;
+  padding: 3px 6px;
 }
 
 .comment-file-preview-container.mobile-preview .comment-image-preview {

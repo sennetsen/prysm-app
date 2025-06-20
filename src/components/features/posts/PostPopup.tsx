@@ -514,10 +514,19 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
       const commentId = data[0].id;
 
-      // 2. Upload each attachment with the correct commentId
+      // 2. Upload each attachment with the correct commentId and collect attachment data
+      const uploadedAttachments: Attachment[] = [];
       try {
         for (const file of fileList) {
-          await uploadCommentAttachment(file, commentId, currentUser.id);
+          const storage_path = await uploadCommentAttachment(file, commentId, currentUser.id);
+          // Create attachment object to include in the local comment
+          uploadedAttachments.push({
+            id: `temp-${Date.now()}-${Math.random()}`, // Temporary ID for display
+            storage_path,
+            file_name: file.name,
+            file_type: file.type,
+            file_size: file.size,
+          });
         }
       } catch (err) {
         console.error('Attachment upload error:', err);
@@ -535,6 +544,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         likes: 0,
         liked: false,
+        attachments: uploadedAttachments, // Include the uploaded attachments
       }, ...comments]);
 
       setCommentText('');
@@ -855,53 +865,38 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                         <div className="comment-file-preview-container">
                           {fileList.map((file, index) => (
                             <div key={index} className="comment-file-preview-wrapper">
-                              {file.type.startsWith('image/') ? (
-                                <div className="comment-image-preview">
-                                  <img
-                                    src={file.preview || URL.createObjectURL(file)}
-                                    alt={file.name}
-                                    className="comment-preview-image"
-                                  />
-                                  <button
-                                    className="remove-comment-image-button"
-                                    onClick={() => removeFile(file)}
-                                    title="Remove image"
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="file-preview-item">
-                                  <FileOutlined />
-                                  <span className="file-name">{file.name}</span>
-                                  <button
-                                    className="remove-file"
-                                    onClick={() => removeFile(file)}
-                                    title="Remove file"
-                                  >
-                                    <CloseOutlined />
-                                  </button>
-                                </div>
-                              )}
+                              <div className="file-preview-item">
+                                <FileOutlined />
+                                <span className="file-name">{file.name}</span>
+                                <button
+                                  className="remove-file"
+                                  onClick={() => removeFile(file)}
+                                  title="Remove file"
+                                >
+                                  <CloseOutlined />
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>
                       )}
                       <div className="input-buttons">
-                        <button
-                          className="comment-action-button"
-                          onClick={handleFileAttachment}
-                          title="Attach files"
-                        >
-                          <PaperClipOutlined />
-                        </button>
-                        <button
-                          className="comment-action-button send"
-                          onClick={handleCommentSubmit}
-                          title="Send comment"
-                        >
-                          <img src={SendArrow} alt="Send" className="send-arrow-icon" />
-                        </button>
+                        <div className="action-buttons-group">
+                          <button
+                            className="comment-action-button"
+                            onClick={handleFileAttachment}
+                            title="Attach files"
+                          >
+                            <PaperClipOutlined />
+                          </button>
+                          <button
+                            className="comment-action-button send"
+                            onClick={handleCommentSubmit}
+                            title="Send comment"
+                          >
+                            <img src={SendArrow} alt="Send" className="send-arrow-icon" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1036,26 +1031,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             </div>
             {/* Fixed mobile comment bar */}
             <div className="mobile-comment-bar">
-              {fileList.length > 0 && (
-                <div className="comment-file-preview-container mobile-preview">
-                  {fileList.map((file, index) => (
-                    <div key={index} className="comment-file-preview-wrapper">
-                      {file.type.startsWith('image/') ? (
-                        <div className="comment-image-preview">
-                          <img
-                            src={file.preview || URL.createObjectURL(file)}
-                            alt={file.name}
-                            className="comment-preview-image"
-                          />
-                          <button
-                            className="remove-comment-image-button"
-                            onClick={() => removeFile(file)}
-                            title="Remove image"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ) : (
+              <div className="input-with-buttons mobile-input-row">
+                {fileList.length > 0 && (
+                  <div className="comment-file-preview-container mobile-preview">
+                    {fileList.map((file, index) => (
+                      <div key={index} className="comment-file-preview-wrapper">
                         <div className="file-preview-item">
                           <FileOutlined />
                           <span className="file-name">{file.name}</span>
@@ -1067,12 +1047,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                             <CloseOutlined />
                           </button>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="input-with-buttons mobile-input-row">
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <button
                   className="comment-action-button"
                   onClick={handleFileAttachment}

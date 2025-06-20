@@ -413,47 +413,118 @@
 /* Comment attachment styles */
 .comment-attachments {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  gap: 12px;
   margin-top: 8px;
   margin-bottom: 4px;
 }
 
-.comment-attachment-preview {
-  position: relative;
+.comment-images-container {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
 }
 
-.comment-attachment-image {
+.comment-files-container {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.comment-attachment-preview {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Image attachment styles */
+.comment-attachment-image-container {
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.comment-attachment-image:hover {
+.comment-attachment-image-container:hover {
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.comment-attachment-file {
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  word-break: break-word;
-  padding: 8px;
+.comment-attachment-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
-.comment-attachment-file:hover {
-  background-color: #ebebeb !important;
+/* File attachment styles - matching comment input styling */
+.comment-attachment-file-preview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(40, 16, 16, 0.05);
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  flex: 1;
+  min-width: 0;
+}
+
+.comment-attachment-file-preview:hover {
+  background: rgba(40, 16, 16, 0.1);
+  border-color: rgba(40, 16, 16, 0.1);
+}
+
+.comment-attachment-file-preview .anticon {
+  color: #281010;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.attachment-file-name {
+  color: #281010;
+  font-weight: 400;
+  word-break: break-word;
+  line-height: 1.3;
 }
 
 /* Mobile responsive for attachments */
 @media screen and (max-width: 768px) {
-  .comment-attachment-image,
-  .comment-attachment-file {
+  .comment-attachments {
+    gap: 8px;
+  }
+  
+  .comment-images-container {
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  
+  .comment-files-container {
+    gap: 6px;
+  }
+  
+  .comment-attachment-image-container {
     width: 100px !important;
     height: 100px !important;
   }
   
-  .comment-attachment-file {
-    height: 50px !important;
+  .comment-attachment-file-preview {
+    padding: 4px 6px !important;
     font-size: 11px !important;
+  }
+  
+  .comment-attachment-file-preview .anticon {
+    font-size: 12px !important;
+  }
+  
+  .attachment-file-name {
+    font-size: 10px !important;
   }
 }

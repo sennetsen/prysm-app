@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
 import { Avatar, Button, Popconfirm, Tooltip } from 'antd';
-import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined, EllipsisOutlined } from '@ant-design/icons';
+import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined, EllipsisOutlined, FileOutlined } from '@ant-design/icons';
 import './CommentThread.css';
 
 interface CommentThreadProps {
@@ -272,44 +272,70 @@ export function CommentThread({
               {/* Display file previews if attachments exist */}
               {comment.attachments && comment.attachments.length > 0 && (
                 <div className="comment-attachments">
-                  {comment.attachments.map((attachment) => (
-                    <div key={attachment.id} className="comment-attachment-preview">
-                      {attachment.file_type.startsWith('image/') ? (
-                        <img
-                          src={`https://prysm-r2-worker.prysmapp.workers.dev/file/${attachment.storage_path}`}
-                          alt={attachment.file_name}
-                          className="comment-attachment-image"
-                          style={{
-                            width: '120px',
-                            height: '120px',
-                            objectFit: 'cover',
-                            borderRadius: '8px',
-                            border: '1px solid #e0e0e0',
-                            marginTop: '8px'
-                          }}
-                        />
-                      ) : (
-                        <div
-                          className="comment-attachment-file"
-                          style={{
-                            width: '120px',
-                            height: '60px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: '#f5f5f5',
-                            borderRadius: '8px',
-                            border: '1px solid #e0e0e0',
-                            marginTop: '8px',
-                            fontSize: '12px',
-                            textAlign: 'center'
-                          }}
-                        >
-                          📎 {attachment.file_name}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  {(() => {
+                    // Separate attachments by type while maintaining original order within each group
+                    type AttachmentWithIndex = {
+                      id: string;
+                      storage_path: string;
+                      file_name: string;
+                      file_type: string;
+                      file_size: number;
+                      originalIndex: number;
+                    };
+                    const images: AttachmentWithIndex[] = [];
+                    const nonImages: AttachmentWithIndex[] = [];
+                    
+                    comment.attachments.forEach((attachment, originalIndex) => {
+                      // Check if it's an image file by extension and MIME type
+                      const isImage = attachment.file_type.startsWith('image/') || 
+                        /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(attachment.file_name);
+                      
+                      const attachmentWithIndex: AttachmentWithIndex = { ...attachment, originalIndex };
+                      
+                      if (isImage) {
+                        images.push(attachmentWithIndex);
+                      } else {
+                        nonImages.push(attachmentWithIndex);
+                      }
+                    });
+                    
+                    return (
+                      <>
+                        {/* Images container */}
+                        {images.length > 0 && (
+                          <div className="comment-images-container">
+                            {images.map((attachment) => (
+                              <div key={attachment.id} className="comment-attachment-preview">
+                                <div className="comment-attachment-image-container">
+                                  <img
+                                    src={`https://prysm-r2-worker.prysmapp.workers.dev/file/${attachment.storage_path}`}
+                                    alt={attachment.file_name}
+                                    className="comment-attachment-image"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Non-image files container */}
+                        {nonImages.length > 0 && (
+                          <div className="comment-files-container">
+                            {nonImages.map((attachment) => (
+                              <div key={attachment.id} className="comment-attachment-preview">
+                                <div className="comment-attachment-file-preview">
+                                  <FileOutlined />
+                                  <span className="attachment-file-name" title={attachment.file_name}>
+                                    {attachment.file_name}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
               
