@@ -235,16 +235,92 @@
 .reply-input-container {
   margin-top: 12px;
   display: flex;
+  flex-direction: column;
   gap: 8px;
+}
+
+.reply-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.reply-input-wrapper {
+  display: flex;
+  align-items: center;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  padding-right: 4px;
+  flex: 1;
 }
 
 .reply-input {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid #eaeaea;
-  border-radius: 8px;
+  border: none;
   outline: none;
   font-size: 14px;
+  background: transparent;
+}
+
+.reply-attachment-button {
+  background: none !important;
+  border: none !important;
+  color: #B39898 !important;
+  padding: 4px 8px !important;
+  height: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 32px !important;
+}
+
+.reply-attachment-button:hover {
+  color: #856666 !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-radius: 4px !important;
+}
+
+.reply-attachments-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  border: 1px solid #eaeaea;
+}
+
+.reply-attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  background: white;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.reply-attachment-name {
+  flex: 1;
+  color: #281010;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reply-attachment-remove {
+  color: #B39898 !important;
+  padding: 0 4px !important;
+  height: 16px !important;
+  line-height: 1 !important;
+  font-size: 14px !important;
+  min-width: auto !important;
+}
+
+.reply-attachment-remove:hover {
+  color: #EF5959 !important;
 }
 
 .reply-submit-button {
@@ -252,9 +328,13 @@
   color: white !important;
   border: none !important;
   border-radius: 8px !important;
-  padding: 0 12px !important;
+  padding: 8px 12px !important;
   font-size: 12px !important;
   height: auto !important;
+  min-height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .reply-submit-button:disabled {
@@ -368,15 +448,42 @@
     width: 100%;
   }
 
+  .reply-input-row {
+    gap: 4px;
+  }
+
+  .reply-input-wrapper {
+    padding-right: 2px;
+  }
+
   .reply-input {
     padding: 6px 10px;
     font-size: 13px;
     width: 100%;
   }
 
+  .reply-attachment-button {
+    padding: 2px 6px !important;
+    min-width: 28px !important;
+  }
+
+  .reply-attachments-preview {
+    padding: 6px;
+  }
+
+  .reply-attachment-item {
+    padding: 3px 4px;
+  }
+
+  .reply-attachment-name {
+    max-width: 120px;
+    font-size: 11px;
+  }
+
   .reply-submit-button {
-    padding: 0 8px !important;
+    padding: 6px 8px !important;
     font-size: 11px !important;
+    min-height: 32px !important;
   }
 
   /* Remove the mobile join conversation button entirely */

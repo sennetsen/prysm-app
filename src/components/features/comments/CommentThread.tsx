@@ -1,8 +1,8 @@
 // CommentThread.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../supabaseClient';
 import { Avatar, Button, Popconfirm, Tooltip } from 'antd';
-import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined, EllipsisOutlined, FileOutlined } from '@ant-design/icons';
+import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined, EllipsisOutlined, FileOutlined, PaperClipOutlined } from '@ant-design/icons';
 import './CommentThread.css';
 
 interface CommentThreadProps {
@@ -44,10 +44,12 @@ export function CommentThread({
 }: CommentThreadProps) {
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [replyAttachments, setReplyAttachments] = useState<File[]>([]);
   const [localComments, setLocalComments] = useState<Comment[]>(comments);
   const [minimizedComments, setMinimizedComments] = useState<number[]>([]);
   const [expandedReplies, setExpandedReplies] = useState<number[]>([]);
   const [commentLikes, setCommentLikes] = useState(0);
+  const replyFileInputRef = useRef<HTMLInputElement>(null);
 
   // Update local comments when props change
   useEffect(() => {
@@ -57,6 +59,22 @@ export function CommentThread({
   const handleReplyClick = (commentId: number) => {
     setReplyingToId(commentId);
     setReplyText('');
+    setReplyAttachments([]);
+  };
+
+  const handleReplyAttachment = () => {
+    replyFileInputRef.current?.click();
+  };
+
+  const handleReplyFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setReplyAttachments(prev => [...prev, ...newFiles]);
+    }
+  };
+
+  const removeReplyAttachment = (fileToRemove: File) => {
+    setReplyAttachments(prev => prev.filter(file => file !== fileToRemove));
   };
 
   const handleSubmitReply = (parentId: number) => {
@@ -386,22 +404,58 @@ export function CommentThread({
 
               {!isReply && replyingToId === comment.id && (
                 <div className="reply-input-container" onClick={(e) => e.stopPropagation()}>
+                  <div className="reply-input-row">
+                    <div className="reply-input-wrapper">
+                      <input
+                        type="text"
+                        placeholder="Write a reply..."
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSubmitReply(comment.id)}
+                        className="reply-input"
+                        autoFocus
+                      />
+                      <Button
+                        className="reply-attachment-button"
+                        icon={<PaperClipOutlined />}
+                        onClick={handleReplyAttachment}
+                        type="text"
+                      />
+                    </div>
+                    <Button
+                      className="reply-submit-button"
+                      onClick={() => handleSubmitReply(comment.id)}
+                      disabled={!replyText.trim() && replyAttachments.length === 0}
+                    >
+                      Reply
+                    </Button>
+                  </div>
+                  {replyAttachments.length > 0 && (
+                    <div className="reply-attachments-preview">
+                      {replyAttachments.map((file, index) => (
+                        <div key={index} className="reply-attachment-item">
+                          <FileOutlined />
+                          <span className="reply-attachment-name">{file.name}</span>
+                          <Button
+                            size="small"
+                            type="text"
+                            onClick={() => removeReplyAttachment(file)}
+                            className="reply-attachment-remove"
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <input
-                    type="text"
-                    placeholder="Write a reply..."
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSubmitReply(comment.id)}
-                    className="reply-input"
-                    autoFocus
+                    ref={replyFileInputRef}
+                    type="file"
+                    multiple
+                    style={{ display: 'none' }}
+                    onChange={handleReplyFileChange}
+                    accept="image/*,.pdf,.doc,.docx,.txt"
                   />
-                  <Button
-                    className="reply-submit-button"
-                    onClick={() => handleSubmitReply(comment.id)}
-                    disabled={!replyText.trim()}
-                  >
-                    Reply
-                  </Button>
                 </div>
               )}
             </>
