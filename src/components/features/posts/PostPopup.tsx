@@ -34,6 +34,13 @@ interface PostPopupProps {
     reaction_counts?: {
       like: number;
     };
+    attachments?: {
+      id: string;
+      storage_path: string;
+      file_name: string;
+      file_type: string;
+      file_size: number;
+    }[];
   };
   isOpen: boolean;
   onClose: () => void;
@@ -664,7 +671,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         .select('*')
         .eq('parent_type', 'comment')
         .in('parent_id', commentIds);
-      
+
       if (!attachmentsError && attachments) {
         attachmentsData = attachments;
       }
@@ -705,7 +712,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       topLevel.forEach((c: any) => {
         // Find attachments for this comment
         const commentAttachments = attachmentsData.filter(att => att.parent_id === c.id);
-        
+
         commentMap[c.id] = {
           id: c.id,
           author: {
@@ -726,7 +733,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         if (parent) {
           // Find attachments for this reply
           const replyAttachments = attachmentsData.filter(att => att.parent_id === c.id);
-          
+
           parent.replies.push({
             id: c.id,
             author: {
@@ -822,6 +829,76 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                   <h2 className="post-title">{post.title}</h2>
                   <div className="post-content">
                     <p>{post.content}</p>
+
+                    {/* Display post attachments if any */}
+                    {post.attachments && post.attachments.length > 0 && (
+                      <div className="post-attachments">
+                        {(() => {
+                          // Separate attachments by type while maintaining original order within each group
+                          type AttachmentWithIndex = {
+                            id: string;
+                            storage_path: string;
+                            file_name: string;
+                            file_type: string;
+                            file_size: number;
+                            originalIndex: number;
+                          };
+                          const images: AttachmentWithIndex[] = [];
+                          const nonImages: AttachmentWithIndex[] = [];
+
+                          post.attachments.forEach((attachment, originalIndex) => {
+                            // Check if it's an image file by extension and MIME type
+                            const isImage = attachment.file_type.startsWith('image/') ||
+                              /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(attachment.file_name);
+
+                            const attachmentWithIndex: AttachmentWithIndex = { ...attachment, originalIndex };
+
+                            if (isImage) {
+                              images.push(attachmentWithIndex);
+                            } else {
+                              nonImages.push(attachmentWithIndex);
+                            }
+                          });
+
+                          return (
+                            <>
+                              {/* Images container */}
+                              {images.length > 0 && (
+                                <div className="post-images-container">
+                                  {images.map((attachment) => (
+                                    <div key={attachment.id} className="post-attachment-preview">
+                                      <div className="post-attachment-image-container">
+                                        <img
+                                          src={`https://prysm-r2-worker.prysmapp.workers.dev/file/${attachment.storage_path}`}
+                                          alt={attachment.file_name}
+                                          className="post-attachment-image"
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Non-image files container */}
+                              {nonImages.length > 0 && (
+                                <div className="post-files-container">
+                                  {nonImages.map((attachment) => (
+                                    <div key={attachment.id} className="post-attachment-preview">
+                                      <div className="post-attachment-file-preview">
+                                        <FileOutlined />
+                                        <span className="attachment-file-name" title={attachment.file_name}>
+                                          {attachment.file_name}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
                   </div>
 
                   <div className="post-actions">

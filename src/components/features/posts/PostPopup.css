@@ -874,3 +874,75 @@
   width: 80px;
   height: 50px;
 }
+
+/* EXTRA STYLES CREATED BY CURSOR FOR POST ATTACHMENTS */
+/* Post attachments styles for PostPopup */
+.post-attachments {
+  margin-top: 16px;
+}
+
+.post-images-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.post-attachment-preview {
+  position: relative;
+}
+
+.post-attachment-image-container {
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(40, 16, 16, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.post-attachment-image-container:hover {
+  transform: scale(1.02);
+}
+
+.post-attachment-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.post-files-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.post-attachment-file-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: rgba(40, 16, 16, 0.05);
+  border-radius: 6px;
+  font-size: 14px;
+  color: #281010;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.post-attachment-file-preview:hover {
+  background-color: rgba(40, 16, 16, 0.1);
+}
+
+.post-attachment-file-preview .anticon {
+  font-size: 16px;
+  color: #76746c;
+}
+
+.attachment-file-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}

@@ -21,6 +21,47 @@ import { PostPopup } from './components/features/posts/PostPopup';
 import './components/features/posts/PostPopup.css';
 import { PaperClipOutlined, CloseOutlined, FileOutlined } from '@ant-design/icons';
 
+// Add this function after the imports and before the BoardView component
+async function uploadPostAttachment(file, postId, authorId) {
+  console.log('Uploading attachment for postId:', postId, 'Type:', typeof postId);
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("fileName", file.name);
+  formData.append("parentId", postId);
+  formData.append("parentType", "post");
+
+  const res = await fetch("https://prysm-r2-worker.prysmapp.workers.dev/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error('R2 upload failed:', text);
+    throw new Error("Failed to upload file to R2: " + text);
+  }
+
+  const { storage_path } = await res.json();
+
+  const { error } = await supabase.from('attachments').insert([{
+    storage_path,
+    file_name: file.name,
+    file_type: file.type,
+    file_size: file.size,
+    parent_type: 'post',
+    parent_id: postId,
+    author_id: authorId,
+  }]);
+
+  if (error) {
+    console.error('Supabase insert error:', error);
+    throw new Error("Failed to upload attachment into database: " + error.message);
+  }
+
+  return storage_path;
+}
+
 function BoardView() {
   const { boardPath } = useParams();
   const [boardData, setBoardData] = useState(null);
@@ -140,25 +181,45 @@ function BoardView() {
 
     if (error) {
       console.error('Error fetching posts:', error);
-    } else {
-      const postsWithLikes = data.map(post => {
-        const likesCount = post.reaction_counts?.like || 0;
-        return {
-          ...post,
-          likesCount,
-          author: post.author || {
-            full_name: 'Anonymous',
-            avatar_url: null,
-            email: null,
-            created_at: null
-          }
-        };
-      });
-
-      const sortedPosts = postsWithLikes.sort((a, b) => b.likesCount - a.likesCount);
-      setCards(sortedPosts);
-      setTotalPosts(sortedPosts.length);
+      return;
     }
+
+    // Fetch attachments for all posts
+    let attachmentsData = [];
+    if (data && data.length > 0) {
+      const postIds = data.map(post => post.id);
+      const { data: attachments, error: attachmentsError } = await supabase
+        .from('attachments')
+        .select('*')
+        .eq('parent_type', 'post')
+        .in('parent_id', postIds);
+
+      if (!attachmentsError && attachments) {
+        attachmentsData = attachments;
+      }
+    }
+
+    const postsWithLikes = data.map(post => {
+      const likesCount = post.reaction_counts?.like || 0;
+      // Find attachments for this post
+      const postAttachments = attachmentsData.filter(att => att.parent_id === post.id);
+
+      return {
+        ...post,
+        likesCount,
+        attachments: postAttachments,
+        author: post.author || {
+          full_name: 'Anonymous',
+          avatar_url: null,
+          email: null,
+          created_at: null
+        }
+      };
+    });
+
+    const sortedPosts = postsWithLikes.sort((a, b) => b.likesCount - a.likesCount);
+    setCards(sortedPosts);
+    setTotalPosts(sortedPosts.length);
   }, [boardData]);
 
   useEffect(() => {
@@ -257,11 +318,11 @@ function BoardView() {
       const target = e.target;
       if (target.files && target.files.length > 0) {
         const files = Array.from(target.files);
-        
+
         // Check file size
         const totalSize = files.reduce((acc, file) => acc + file.size, 0);
-        if (totalSize > 5 * 1024 * 1024) {
-          message.error('Total file size should not exceed 5MB');
+        if (totalSize > 50 * 1024 * 1024) {
+          message.error('Total file size should not exceed 50MB');
           return;
         }
 
@@ -294,7 +355,7 @@ function BoardView() {
     setIsAnonymous(false);
     setPostFileList([]);
     setModalColor(postColors[Math.floor(Math.random() * postColors.length)]);
-    
+
     // Clean up file previews
     postFileList.forEach(file => {
       if (file.preview) {
@@ -326,7 +387,24 @@ function BoardView() {
 
       if (error) {
         console.error('Error adding post:', error);
-      } else if (data && data.length > 0) {
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const postId = data[0].id;
+
+        // Upload attachments if any
+        if (postFileList.length > 0) {
+          try {
+            for (const file of postFileList) {
+              await uploadPostAttachment(file, postId, user.id);
+            }
+          } catch (err) {
+            console.error('Attachment upload error:', err);
+            message.error('Failed to upload one or more attachments');
+          }
+        }
+
         // Initialize reactions as an empty array
         const newPost = {
           ...data[0],
@@ -636,6 +714,7 @@ function BoardView() {
               index={index}
               onContactCardToggle={() => handleContactCardToggle(card)}
               onPostClick={handlePostClick}
+              attachments={card.attachments || []}
             />
           ))}
           <Tooltip title="Make a Request" placement="right">
@@ -692,7 +771,7 @@ function BoardView() {
                 <span className="hide-name-text">Hide my name</span>
               </Checkbox>
             </Form.Item>
-            
+
             {/* File attachment section */}
             {postFileList.length > 0 && (
               <div className="post-file-preview-container">
@@ -701,8 +780,8 @@ function BoardView() {
                     {file.type.startsWith('image/') ? (
                       <div className="post-image-preview-with-name">
                         <div className="post-image-preview">
-                          <img 
-                            src={file.preview || URL.createObjectURL(file)} 
+                          <img
+                            src={file.preview || URL.createObjectURL(file)}
                             alt={file.name}
                             className="preview-image"
                           />
@@ -736,7 +815,7 @@ function BoardView() {
                 ))}
               </div>
             )}
-            
+
             <div className="modal-footer">
               <button
                 className="attach-button"
