@@ -24,7 +24,7 @@
 
 .card-skeleton {
   width: 250px;
-  height: 250px;
+  min-height: 250px;
   background: #e0e0e0;
   border-radius: 8px;
   animation: pulse 1.5s infinite;

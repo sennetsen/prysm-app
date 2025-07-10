@@ -124,83 +124,53 @@ export default React.memo(
           <h3 className="card-title">
             {title}
           </h3>
+
+          {/* Display first image attachment after title */}
+          {attachments && attachments.length > 0 && (() => {
+            const firstImage = attachments.find(attachment => 
+              attachment.file_type.startsWith('image/') ||
+              /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(attachment.file_name)
+            );
+            
+            return firstImage ? (
+              <div className="first-image-container">
+                <img
+                  src={`https://prysm-r2-worker.prysmapp.workers.dev/file/${firstImage.storage_path}`}
+                  alt={firstImage.file_name}
+                  className="first-attachment-image"
+                />
+              </div>
+            ) : null;
+          })()}
+
           <div className="request-content">
             <div className="scroll-container">
               <p>{content}</p>
             </div>
           </div>
 
-          {/* Display attachments if any */}
-          {attachments && attachments.length > 0 && (
-            <div className="post-attachments">
-              {(() => {
-                // Separate attachments by type while maintaining original order within each group
-                const images = [];
-                const nonImages = [];
+          {/* Display remaining attachments as filenames */}
+          {attachments && attachments.length > 0 && (() => {
+            const firstImageIndex = attachments.findIndex(attachment => 
+              attachment.file_type.startsWith('image/') ||
+              /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(attachment.file_name)
+            );
+            
+            const remainingAttachments = attachments.filter((attachment, index) => {
+              return index !== firstImageIndex; // Exclude the first image
+            });
 
-                attachments.forEach((attachment, originalIndex) => {
-                  // Check if it's an image file by extension and MIME type
-                  const isImage = attachment.file_type.startsWith('image/') ||
-                    /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(attachment.file_name);
-
-                  const attachmentWithIndex = { ...attachment, originalIndex };
-
-                  if (isImage) {
-                    images.push(attachmentWithIndex);
-                  } else {
-                    nonImages.push(attachmentWithIndex);
-                  }
-                });
-
-                return (
-                  <>
-                    {/* Images container */}
-                    {images.length > 0 && (
-                      <div className="post-images-container">
-                        {images.slice(0, 3).map((attachment) => (
-                          <div key={attachment.id} className="post-attachment-preview">
-                            <div className="post-attachment-image-container">
-                              <img
-                                src={`https://prysm-r2-worker.prysmapp.workers.dev/file/${attachment.storage_path}`}
-                                alt={attachment.file_name}
-                                className="post-attachment-image"
-                              />
-                            </div>
-                          </div>
-                        ))}
-                        {images.length > 3 && (
-                          <div className="post-attachment-more">
-                            <span>+{images.length - 3}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Non-image files container */}
-                    {nonImages.length > 0 && (
-                      <div className="post-files-container">
-                        {nonImages.slice(0, 2).map((attachment) => (
-                          <div key={attachment.id} className="post-attachment-preview">
-                            <div className="post-attachment-file-preview">
-                              <FileOutlined />
-                              <span className="attachment-file-name" title={attachment.file_name}>
-                                {attachment.file_name}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                        {nonImages.length > 2 && (
-                          <div className="post-attachment-more">
-                            <span>+{nonImages.length - 2}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-            </div>
-          )}
+            return remainingAttachments.length > 0 ? (
+              <div className="remaining-attachments">
+                {remainingAttachments.map((attachment) => (
+                  <div key={attachment.id} className="attachment-filename">
+                    <FileOutlined />
+                    <span className="filename-text">{attachment.file_name}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null;
+          })()}
         </div>
 
         <span className="timestamp">{timestamp}</span>
