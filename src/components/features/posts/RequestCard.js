@@ -155,7 +155,7 @@ export default React.memo(
               attachment.file_type.startsWith('image/') ||
               /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(attachment.file_name)
             );
-            
+
             const remainingAttachments = attachments.filter((attachment, index) => {
               return index !== firstImageIndex; // Exclude the first image
             });
@@ -164,13 +164,13 @@ export default React.memo(
               <div className="remaining-attachments">
                 {remainingAttachments.map((attachment) => (
                   <div key={attachment.id} className="attachment-filename">
-                    <FileOutlined />
+                              <FileOutlined />
                     <span className="filename-text">{attachment.file_name}</span>
-                  </div>
-                ))}
-              </div>
+                          </div>
+                        ))}
+                          </div>
             ) : null;
-          })()}
+              })()}
         </div>
 
         <span className="timestamp">{timestamp}</span>
