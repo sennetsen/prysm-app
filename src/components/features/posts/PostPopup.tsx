@@ -18,6 +18,7 @@ import './PostPopup.css';
 import { supabase } from '../../../supabaseClient';
 import SendArrow from '../../../img/send-arrow.svg';
 import MailIcon from '../../../img/mail.svg';
+import BoardActivityStream from '../board/BoardActivityStream';
 
 interface PostPopupProps {
   post: {
@@ -31,6 +32,7 @@ interface PostPopupProps {
     };
     created_at: string;
     color: string;
+    board_id: string; // <-- add this
     reaction_counts?: {
       like: number;
     };
@@ -46,6 +48,7 @@ interface PostPopupProps {
   onClose: () => void;
   currentUser: any;
   onPostLikeChange: (postId: string) => void;
+  boardCreatorId?: string;
 }
 
 interface Attachment {
@@ -116,7 +119,7 @@ async function uploadCommentAttachment(file: File, commentId: string, authorId: 
   return storage_path;
 }
 
-export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange }: PostPopupProps) {
+export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange, boardCreatorId }: PostPopupProps) {
   const [liked, setLiked] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
   const [commentText, setCommentText] = useState('');
@@ -995,6 +998,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
             <div className="right-column">
               <div className="post-activity-section">
+                <BoardActivityStream 
+                  boardId={post.board_id} 
+                  currentUserId={currentUser?.id}
+                  boardCreatorId={boardCreatorId}
+                />
                 <div className="about-section">
                   <h3>About</h3>
                   <div className="author-info">
