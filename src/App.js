@@ -715,15 +715,6 @@ function BoardView() {
 
 // Main App component
 function App() {
-  useEffect(() => {
-    if (
-      typeof window !== "undefined" &&
-      window.location.hostname === "prysmapp.com" &&
-      window.location.pathname === "/"
-    ) {
-      window.location.replace("https://www.prysmapp.com");
-    }
-  }, []);
   return (
     <>
       <SpeedInsights />
