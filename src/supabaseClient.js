@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import React, { useEffect, useState, useRef } from 'react';
-import UserProfile from './components/UserProfile';
 
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
