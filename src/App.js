@@ -206,6 +206,7 @@ function BoardView() {
 
       return {
         ...post,
+        board_id: boardData?.id, // Ensure board_id is included
         likesCount,
         attachments: postAttachments,
         author: post.author || {
@@ -256,6 +257,7 @@ function BoardView() {
             ...prev,
             {
               ...newPost,
+              board_id: boardData?.id, // Ensure board_id is included
               likesCount: newPost.reactions.filter(r => r.reaction_type === 'like').length,
               isNew: true
             }
@@ -408,6 +410,7 @@ function BoardView() {
         // Initialize reactions as an empty array
         const newPost = {
           ...data[0],
+          board_id: boardData?.id, // Ensure board_id is included
           author: {
             full_name: user.user_metadata.full_name,
             avatar_url: user.user_metadata.avatar_url
@@ -626,7 +629,11 @@ function BoardView() {
   };
 
   const handlePostClick = (post) => {
-    setSelectedPost(post);
+    // Ensure the post has the board_id for the activity stream
+    setSelectedPost({
+      ...post,
+      board_id: boardData?.id
+    });
   };
 
   // Added function to update likes in the board view from a post popup
@@ -653,6 +660,7 @@ function BoardView() {
     if (selectedPost && selectedPost.id === postId) {
       setSelectedPost({
         ...selectedPost,
+        board_id: boardData?.id, // Ensure board_id is preserved
         likesCount: newLikeCount,
         reactions: isLiked
           ? [...(selectedPost.reactions || []), { user_id: user?.id, reaction_type: 'like' }]

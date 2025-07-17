@@ -1,7 +1,7 @@
 import React from 'react';
 import { Avatar } from 'antd';
 
-export type ActivityType = 'post' | 'comment' | 'reaction';
+export type ActivityType = 'post' | 'comment' | 'reply' | 'reaction' | 'comment_reaction';
 
 export interface Activity {
   type: ActivityType;
@@ -28,7 +28,7 @@ const getActivityText = (activity: Activity, onLinkClick: (id: string) => void) 
       return (
         <>
           <span className="activity-username">{activity.user?.full_name || 'Someone'}</span>
-          <span> just posted ✏️: </span>
+          <span> just posted ✍️ </span>
           {activity.post?.id ? (
             <span
               className="activity-link"
@@ -61,7 +61,31 @@ const getActivityText = (activity: Activity, onLinkClick: (id: string) => void) 
             <span className="activity-link">a post</span>
           )}
           {activity.comment?.content && (
-            <blockquote className="activity-comment">{activity.comment.content}</blockquote>
+            <div className="activity-comment">{activity.comment.content}</div>
+          )}
+        </>
+      );
+    case 'reply':
+      return (
+        <>
+          <span className="activity-username">{activity.user?.full_name || 'Someone'}</span>
+          <span> replied ✉️ to </span>
+          <span className="activity-link">{activity.comment?.parentCommentAuthor || 'someone'}</span>
+          <span> in </span>
+          {activity.post?.id ? (
+            <span
+              className="activity-link"
+              onClick={() => onLinkClick(activity.post.id)}
+              tabIndex={0}
+              role="button"
+            >
+              {activity.post?.title || 'a post'}
+            </span>
+          ) : (
+            <span className="activity-link">a post</span>
+          )}
+          {activity.comment?.content && (
+            <div className="activity-comment">{activity.comment.content}</div>
           )}
         </>
       );
@@ -70,6 +94,25 @@ const getActivityText = (activity: Activity, onLinkClick: (id: string) => void) 
         <>
           <span className="activity-username">{activity.user?.full_name || 'Someone'}</span>
           <span> liked ❤️ </span>
+          {activity.post?.id ? (
+            <span
+              className="activity-link"
+              onClick={() => onLinkClick(activity.post.id)}
+              tabIndex={0}
+              role="button"
+            >
+              {activity.post?.title || 'a post'}
+            </span>
+          ) : (
+            <span className="activity-link">a post</span>
+          )}
+        </>
+      );
+    case 'comment_reaction':
+      return (
+        <>
+          <span className="activity-username">{activity.user?.full_name || 'Someone'}</span>
+          <span> liked ❤️ a comment on </span>
           {activity.post?.id ? (
             <span
               className="activity-link"
@@ -107,11 +150,28 @@ const ActivityItem: React.FC<ActivityItemProps> = ({ activity, currentUserId, bo
       className={`activity-item${highlight ? ' highlight' : ''}${isOwn ? ' own' : ''}${isCreator ? ' creator' : ''}`}
       tabIndex={0}
     >
-      <Avatar src={activity.user?.avatar_url} className="activity-avatar" size={32} />
+      <Avatar src={activity.user?.avatar_url} className="activity-avatar" size={24} />
       <div className="activity-content">
         {getActivityText(activity, handleLinkClick)}
         <div className="activity-timestamp">
-          {new Date(activity.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          {(() => {
+            const date = new Date(activity.timestamp);
+            const now = new Date();
+            const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+            
+            if (diffInHours < 1) {
+              const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+              return `${diffInMinutes} minutes ago`;
+            } else if (diffInHours < 24) {
+              const hours = Math.floor(diffInHours);
+              return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            } else if (diffInHours < 48) {
+              return '1 day ago';
+            } else {
+              const days = Math.floor(diffInHours / 24);
+              return `${days} days ago`;
+            }
+          })()}
         </div>
       </div>
     </div>

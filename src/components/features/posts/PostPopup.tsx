@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal, Button, Avatar, message } from 'antd';
 import { CommentThread } from '../comments/CommentThread';
-import { ActivityBar } from './ActivityBar';
+
 import {
   HeartOutlined,
   HeartFilled,
@@ -998,11 +998,6 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
             <div className="right-column">
               <div className="post-activity-section">
-                <BoardActivityStream 
-                  boardId={post.board_id} 
-                  currentUserId={currentUser?.id}
-                  boardCreatorId={boardCreatorId}
-                />
                 <div className="about-section">
                   <h3>About</h3>
                   <div className="author-info">
@@ -1062,7 +1057,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
                 <div className="activity-section">
                   <h3>Activity</h3>
-                  <ActivityBar postId={post.id} />
+                  <BoardActivityStream 
+                    boardId={post.board_id} 
+                    currentUserId={currentUser?.id}
+                    boardCreatorId={boardCreatorId}
+                  />
                 </div>
               </div>
             </div>

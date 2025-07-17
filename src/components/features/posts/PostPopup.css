@@ -946,3 +946,22 @@
   text-overflow: ellipsis;
   max-width: 200px;
 }
+
+/* Activity section improvements */
+.activity-section {
+  margin-top: 24px;
+}
+
+.activity-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #281010;
+  margin-bottom: 12px;
+  font-family: 'Lexend Deca', sans-serif;
+}
+
+/* Ensure the activity stream fits well in the right column */
+.post-activity-section .board-activity-stream {
+  max-height: 300px;
+  margin-top: 8px;
+}
