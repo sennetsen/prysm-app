@@ -43,13 +43,32 @@
   min-height: 150px;
   display: block;
   break-inside: avoid;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   position: relative;
   overflow: hidden;
   animation: bubbleScale 0.5s ease-out;
   animation-fill-mode: both;
   backface-visibility: hidden;
   will-change: transform;
+}
+
+/* Responsive card sizing */
+@media (max-width: 768px) {
+  .request-card {
+    width: calc(50vw - 20px);
+    max-width: 280px;
+    min-width: 200px;
+  }
+}
+
+@media (max-width: 600px) {
+  .request-card {
+    width: 100% !important;
+    max-width: 400px;
+    min-width: 250px;
+    margin: 0 auto 12px auto !important;
+    break-inside: unset !important;
+  }
 }
 
 .request-card:hover {

@@ -49,12 +49,29 @@ img {
   transition: margin-left 0.3s cubic-bezier(.4, 0, .2, 1);
 }
 
+/* Responsive main content */
+@media (max-width: 1200px) {
+  .main-content.sidebar-open,
+  .main-content.sidebar-hidden {
+    margin-left: 0 !important;
+    padding-right: 10px;
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .main-content {
+    padding-right: 5px;
+    padding-left: 0;
+  }
+}
+
 .board {
   margin: 0 0;
   /* max-width: 1200px; */
   min-height: 80vh;
   column-count: 4;
-  column-gap: 20px;
+  column-gap: 12px;
   column-fill: balance;
   padding: 20px;
   background-color: #FDFCFC;
@@ -76,10 +93,28 @@ img {
   transition: width 0.3s cubic-bezier(.4, 0, .2, 1);
 }
 
+/* Disable sidebar width adjustments on tablets and mobile */
+@media (max-width: 1200px) {
+  .board.sidebar-open,
+  .board.sidebar-hidden {
+    width: 100% !important;
+    transition: none !important;
+  }
+}
+
 /* Responsive column adjustments */
-@media (max-width: 1400px) {
+@media (max-width: 1600px) {
   .board.sidebar-hidden {
     column-count: 4;
+  }
+}
+
+@media (max-width: 1400px) {
+  .board.sidebar-hidden {
+    column-count: 3;
+  }
+  .board.sidebar-open {
+    column-count: 3;
   }
 }
 
@@ -92,12 +127,38 @@ img {
 @media (max-width: 900px) {
   .board {
     column-count: 2;
+    column-gap: 10px;
+    padding: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .board {
+    column-count: 2;
+    column-gap: 8px;
+    padding: 12px;
   }
 }
 
 @media (max-width: 600px) {
   .board {
-    column-count: 1;
+    display: block !important;
+    column-count: unset !important;
+    column-gap: unset !important;
+    column-fill: unset !important;
+    padding: 15px;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 600px) {
+  .board {
+    display: block;
+    column-count: unset;
+    column-gap: unset;
+    column-fill: unset;
+    padding: 10px;
+    overflow: hidden;
   }
 }
 
@@ -216,6 +277,35 @@ img {
   background-color: var(--navbar-color, #b43144);
   transform: scale(1.01);
   box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Responsive create button */
+@media (max-width: 900px) {
+  .create-post-it-button {
+    right: 5%;
+    bottom: 8%;
+    width: 56px;
+    height: 56px;
+  }
+  
+  .create-post-it-button img {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 600px) {
+  .create-post-it-button {
+    right: 4%;
+    bottom: 6%;
+    width: 48px;
+    height: 48px;
+  }
+  
+  .create-post-it-button img {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 .modal-overlay {
