@@ -96,7 +96,7 @@ export function CommentThread({
         avatar: currentUser?.user_metadata?.avatar_url || 'https://i.pravatar.cc/150?img=1',
       },
       content: replyText,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date().toISOString(),
       likes: 0,
       liked: false
     };
@@ -201,33 +201,52 @@ export function CommentThread({
   // Helper function to format the time difference
   const formatTimeDifference = (timestamp: string) => {
     const now = new Date();
-    const commentDate = new Date(timestamp);
+    let commentDate = new Date(timestamp);
+
+    // If the standard parsing failed, try to parse the formatted timestamp
+    if (isNaN(commentDate.getTime())) {
+      // Try to parse formats like "July 21st, 2025 at 1:48 PM"
+      const formattedDateMatch = timestamp.match(/(\w+)\s+(\d{1,2})\w{2},\s+(\d{4})\s+at\s+(\d{1,2}):(\d{2})\s+(AM|PM)/);
+      if (formattedDateMatch) {
+        const [, month, day, year, hour, minute, ampm] = formattedDateMatch;
+        const monthIndex = new Date(Date.parse(month + " 1, 2000")).getMonth();
+        let hour24 = parseInt(hour);
+        if (ampm === 'PM' && hour24 !== 12) hour24 += 12;
+        if (ampm === 'AM' && hour24 === 12) hour24 = 0;
+        
+        commentDate = new Date(parseInt(year), monthIndex, parseInt(day), hour24, parseInt(minute));
+      }
+    }
+
+    // Check if we still couldn't parse the date
+    if (isNaN(commentDate.getTime())) {
+      // Fallback: try to extract meaningful info or return a generic time
+      return 'some time ago';
+    }
 
     // Calculate the time difference in milliseconds
     const diffMs = now.getTime() - commentDate.getTime();
 
-    // Convert to minutes
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    // Convert to seconds
+    const diffInSeconds = Math.floor(diffMs / 1000);
 
-    if (diffMinutes < 1) {
+    if (diffInSeconds < 60) {
       return 'just now';
-    } else if (diffMinutes === 1) {
-      return '1 minute ago';
-    } else if (diffMinutes < 60) {
-      return `${diffMinutes} minutes ago`;
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 2592000) { // 30 days
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days} day${days > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 31536000) { // 365 days
+      const months = Math.floor(diffInSeconds / 2592000);
+      return `${months} month${months > 1 ? 's' : ''} ago`;
     } else {
-      // Convert to hours
-      const diffHours = Math.floor(diffMinutes / 60);
-
-      if (diffHours === 1) {
-        return '1 hour ago';
-      } else if (diffHours < 24) {
-        return `${diffHours} hours ago`;
-      } else {
-        // Convert to days
-        const diffDays = Math.floor(diffHours / 24);
-        return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
-      }
+      const years = Math.floor(diffInSeconds / 31536000);
+      return `${years} year${years > 1 ? 's' : ''} ago`;
     }
   };
 
@@ -274,7 +293,7 @@ export function CommentThread({
         <div className="comment-content">
           <div className="comment-header">
             <span className="comment-author">{comment.author.name}</span>
-            <span className="comment-timestamp">{comment.timestamp}</span>
+            <span className="comment-timestamp">{formatTimeDifference(comment.timestamp)}</span>
           </div>
           {!isDeleted && !isMinimized && (
             <>
