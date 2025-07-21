@@ -70,8 +70,8 @@ img {
   margin: 0 0;
   /* max-width: 1200px; */
   min-height: 80vh;
-  column-count: 4;
-  column-gap: 12px;
+  column-count: 5;
+  column-gap: 20px;
   column-fill: balance;
   padding: 20px;
   background-color: #FDFCFC;
@@ -103,12 +103,6 @@ img {
 }
 
 /* Responsive column adjustments */
-@media (max-width: 1600px) {
-  .board.sidebar-hidden {
-    column-count: 4;
-  }
-}
-
 @media (max-width: 1400px) {
   .board.sidebar-hidden {
     column-count: 3;
@@ -121,6 +115,7 @@ img {
 @media (max-width: 1200px) {
   .board {
     column-count: 3;
+    column-gap: 12px;
   }
 }
 
