@@ -36,46 +36,76 @@
 
 .request-card {
   background-color: #fff;
-  border-radius: 8px;
-  padding: 10px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.08);
   width: 250px;
   min-height: 150px;
   display: block;
   break-inside: avoid;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   position: relative;
   overflow: hidden;
   animation: bubbleScale 0.5s ease-out;
   animation-fill-mode: both;
   backface-visibility: hidden;
   will-change: transform;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Responsive card sizing */
+@media (max-width: 1024px) and (min-width: 901px) {
+  .request-card {
+    width: 100%;
+    max-width: 320px;
+    min-width: 260px;
+  }
+}
+
+@media (max-width: 900px) {
+  .request-card {
+    width: 100%;
+    max-width: 300px;
+    min-width: 240px;
+  }
+}
+
 @media (max-width: 768px) {
   .request-card {
-    width: calc(50vw - 20px);
+    width: 100%;
     max-width: 280px;
-    min-width: 200px;
+    min-width: 220px;
+  }
+}
+
+@media (max-width: 640px) {
+  .request-card {
+    width: 100% !important;
+    max-width: 380px !important;
+    min-width: 280px !important;
+    margin: 0 auto 18px auto !important;
+    break-inside: unset !important;
+    border-radius: 16px;
+    padding: 16px;
   }
 }
 
 @media (max-width: 600px) {
   .request-card {
     width: 100% !important;
-    max-width: 400px;
-    min-width: 250px;
-    margin: 0 auto 12px auto !important;
+    max-width: 360px !important;
+    min-width: 280px !important;
+    margin: 0 auto 16px auto !important;
     break-inside: unset !important;
+    border-radius: 16px;
+    padding: 16px;
   }
 }
 
 .request-card:hover {
-  transform: scale(1.03) translateZ(0) !important;
-  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15) !important;
-  will-change: tranform;
-  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  transform: scale(1.02) translateZ(0);
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.12);
+  will-change: transform;
 }
 
 .request-card.animate-in {
