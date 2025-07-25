@@ -134,6 +134,14 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const popupContainerRef = useRef<HTMLDivElement>(null);
   const [showMobileInfo, setShowMobileInfo] = useState(false);
 
+  // Initialize likeCount from post.likes or post.likesCount
+  const [likeCount, setLikeCount] = useState(post.reaction_counts?.like ?? 0);
+
+  // Keep likeCount in sync with post prop
+  useEffect(() => {
+    setLikeCount(post.reaction_counts?.like ?? 0);
+  }, [post.reaction_counts?.like]);
+
   // Add resize listener to detect mobile/desktop
   useEffect(() => {
     const handleResize = () => {
@@ -814,7 +822,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       <div className={`mobile-sticky-header${showStickyHeader ? ' sticky-visible' : ''}`}>
         <div className="sticky-title">{post.title}</div>
         <div className="sticky-meta">
-          <span className="sticky-likes">{post.reaction_counts?.like || 0} likes</span>
+          <span className="sticky-likes">{likeCount} likes</span>
           <span className="sticky-comments">{commentCount} comments</span>
         </div>
       </div>
@@ -1057,8 +1065,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
                 <div className="activity-section">
                   <h3>Activity</h3>
-                  <BoardActivityStream 
-                    boardId={post.board_id} 
+                  <BoardActivityStream
+                    boardId={post.board_id}
                     currentUserId={currentUser?.id}
                     boardCreatorId={boardCreatorId}
                   />

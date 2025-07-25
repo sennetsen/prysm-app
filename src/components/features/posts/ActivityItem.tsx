@@ -28,7 +28,7 @@ const getActivityText = (activity: Activity, onLinkClick: (id: string) => void) 
       return (
         <>
           <span className="activity-username">{activity.user?.full_name || 'Someone'}</span>
-          <span> just posted ✍️ </span>
+          <span>just posted ✍️</span>
           {activity.post?.id ? (
             <span
               className="activity-link"
@@ -47,7 +47,7 @@ const getActivityText = (activity: Activity, onLinkClick: (id: string) => void) 
       return (
         <>
           <span className="activity-username">{activity.user?.full_name || 'Someone'}</span>
-          <span> commented 💬 on </span>
+          <span>commented 💬 on</span>
           {activity.post?.id ? (
             <span
               className="activity-link"
@@ -61,7 +61,11 @@ const getActivityText = (activity: Activity, onLinkClick: (id: string) => void) 
             <span className="activity-link">a post</span>
           )}
           {activity.comment?.content && (
-            <div className="activity-comment">{activity.comment.content}</div>
+            <div className="activity-comment">
+              {activity.comment.content.length > 25
+                ? activity.comment.content.slice(0, 25) + '…'
+                : activity.comment.content}
+            </div>
           )}
         </>
       );
@@ -69,8 +73,8 @@ const getActivityText = (activity: Activity, onLinkClick: (id: string) => void) 
       return (
         <>
           <span className="activity-username">{activity.user?.full_name || 'Someone'}</span>
-          <span> replied ✉️ to </span>
-          <span className="activity-link">{activity.comment?.parentCommentAuthor || 'someone'}</span>
+          <span>replied ✉️ to</span>
+          <span className="activity-username">{activity.comment?.parentCommentAuthor || 'someone'}</span>
           <span> in </span>
           {activity.post?.id ? (
             <span
@@ -85,7 +89,11 @@ const getActivityText = (activity: Activity, onLinkClick: (id: string) => void) 
             <span className="activity-link">a post</span>
           )}
           {activity.comment?.content && (
-            <div className="activity-comment">{activity.comment.content}</div>
+            <div className="activity-comment">
+              {activity.comment.content.length > 25
+                ? activity.comment.content.slice(0, 25) + '…'
+                : activity.comment.content}
+            </div>
           )}
         </>
       );
@@ -93,7 +101,7 @@ const getActivityText = (activity: Activity, onLinkClick: (id: string) => void) 
       return (
         <>
           <span className="activity-username">{activity.user?.full_name || 'Someone'}</span>
-          <span> liked ❤️ </span>
+          <span>liked ❤️</span>
           {activity.post?.id ? (
             <span
               className="activity-link"
@@ -112,7 +120,7 @@ const getActivityText = (activity: Activity, onLinkClick: (id: string) => void) 
       return (
         <>
           <span className="activity-username">{activity.user?.full_name || 'Someone'}</span>
-          <span> liked ❤️ a comment on </span>
+          <span>liked ❤️ a comment on</span>
           {activity.post?.id ? (
             <span
               className="activity-link"
@@ -158,7 +166,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({ activity, currentUserId, bo
             const date = new Date(activity.timestamp);
             const now = new Date();
             const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-            
+
             if (diffInHours < 1) {
               const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
               return `${diffInMinutes} minutes ago`;

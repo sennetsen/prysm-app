@@ -50,6 +50,7 @@ export function CommentThread({
   const [expandedReplies, setExpandedReplies] = useState<number[]>([]);
   const [commentLikes, setCommentLikes] = useState(0);
   const replyFileInputRef = useRef<HTMLInputElement>(null);
+  const replyInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Update local comments when props change
   useEffect(() => {
@@ -75,6 +76,14 @@ export function CommentThread({
 
   const removeReplyAttachment = (fileToRemove: File) => {
     setReplyAttachments(prev => prev.filter(file => file !== fileToRemove));
+  };
+
+  const handleReplyInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setReplyText(e.target.value);
+    if (replyInputRef.current) {
+      replyInputRef.current.style.height = 'auto';
+      replyInputRef.current.style.height = replyInputRef.current.scrollHeight + 'px';
+    }
   };
 
   const handleSubmitReply = (parentId: number) => {
@@ -213,7 +222,7 @@ export function CommentThread({
         let hour24 = parseInt(hour);
         if (ampm === 'PM' && hour24 !== 12) hour24 += 12;
         if (ampm === 'AM' && hour24 === 12) hour24 = 0;
-        
+
         commentDate = new Date(parseInt(year), monthIndex, parseInt(day), hour24, parseInt(minute));
       }
     }
@@ -305,7 +314,7 @@ export function CommentThread({
                   </>
                 ) : comment.content}
               </p>
-              
+
               {/* Display file previews if attachments exist */}
               {comment.attachments && comment.attachments.length > 0 && (
                 <div className="comment-attachments">
@@ -321,21 +330,21 @@ export function CommentThread({
                     };
                     const images: AttachmentWithIndex[] = [];
                     const nonImages: AttachmentWithIndex[] = [];
-                    
+
                     comment.attachments.forEach((attachment, originalIndex) => {
                       // Check if it's an image file by extension and MIME type
-                      const isImage = attachment.file_type.startsWith('image/') || 
+                      const isImage = attachment.file_type.startsWith('image/') ||
                         /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(attachment.file_name);
-                      
+
                       const attachmentWithIndex: AttachmentWithIndex = { ...attachment, originalIndex };
-                      
+
                       if (isImage) {
                         images.push(attachmentWithIndex);
                       } else {
                         nonImages.push(attachmentWithIndex);
                       }
                     });
-                    
+
                     return (
                       <>
                         {/* Images container */}
@@ -354,7 +363,7 @@ export function CommentThread({
                             ))}
                           </div>
                         )}
-                        
+
                         {/* Non-image files container */}
                         {nonImages.length > 0 && (
                           <div className="comment-files-container">
@@ -375,7 +384,7 @@ export function CommentThread({
                   })()}
                 </div>
               )}
-              
+
               <div className="actions-wrapper">
                 <div className="comment-actions">
                   <Button
@@ -425,14 +434,20 @@ export function CommentThread({
                 <div className="reply-input-container" onClick={(e) => e.stopPropagation()}>
                   <div className="reply-input-row">
                     <div className="reply-input-wrapper">
-                      <input
-                        type="text"
+                      <textarea
+                        ref={replyInputRef}
                         placeholder="Write a reply..."
                         value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSubmitReply(comment.id)}
+                        onChange={handleReplyInput}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSubmitReply(comment.id);
+                          }
+                        }}
                         className="reply-input"
                         autoFocus
+                        rows={1}
                       />
                       <Button
                         className="reply-attachment-button"
@@ -517,19 +532,8 @@ export function CommentThread({
                         {/* Show only the first 2 replies by default, show all if expanded */}
                         {(isExpanded ? comment.replies : comment.replies.slice(0, 2)).map((reply, idx) => renderComment(reply, true))}
                       </div>
-                      <div className="reply-connector">
-                        {isExpanded && comment.replies.length > 2 && (
-                          <button
-                            className="collapse-replies-btn"
-                            onClick={() => toggleReplies(comment.id)}
-                            aria-label="Collapse replies"
-                          >
-                            <span>–</span>
-                          </button>
-                        )}
-                      </div>
                       {/* Show "X more replies" summary if there are more than 2 replies and not expanded */}
-                      {comment.replies.length > 2 && !isExpanded && (
+                      {hasAdditionalReplies && !isExpanded && (
                         <div className="more-replies" onClick={() => toggleReplies(comment.id)}>
                           <Avatar.Group className="avatars" maxCount={3}>
                             {additionalUserAvatars.map((user, index) => (

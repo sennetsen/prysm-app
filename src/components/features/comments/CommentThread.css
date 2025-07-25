@@ -67,6 +67,11 @@
   font-size: 15px;
   line-height: 1.5;
   padding-left: 0;
+  word-break: break-word;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  /* Ensure it doesn't overflow the container */
 }
 
 .actions-wrapper {
@@ -133,57 +138,6 @@
   flex-direction: column;
   margin-top: 8px;
   overflow: visible;
-}
-
-.reply-connector {
-  position: absolute;
-  left: -3px;
-  top: -50px;
-  bottom: 0;
-  width: 2px;
-  background-color: #ddd;
-  height: 100%;
-  transition: background-color 0.2s;
-}
-
-.reply-connector-hovering .reply-connector,
-.reply-connector:hover {
-  background-color: #ffe6f0;
-}
-
-.collapse-replies-btn {
-  position: absolute;
-  left: 50%;
-  top: 34px;
-  transform: translate(-50%, -50%);
-  background: white;
-  border: 2px solid #D9D9D9;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 10;
-  transition: border-color 0.2s;
-}
-
-.collapse-replies-btn:hover {
-  border-color: #ffe6f0;
-}
-
-.collapse-replies-btn span {
-  font-size: 20px;
-  color: #D9D9D9;
-  font-weight: 500;
-  line-height: 1;
-  margin-top: 1px;
-  transition: color 0.2s;
-}
-
-.collapse-replies-btn:hover span {
-  color: #ffe6f0;
 }
 
 .reply-comment {
@@ -261,6 +215,9 @@
   outline: none;
   font-size: 14px;
   background: transparent;
+  white-space: pre-wrap;
+  word-break: break-word;
+  resize: none;
 }
 
 .reply-attachment-button {
@@ -430,11 +387,6 @@
     margin-left: 12px;
     padding-left: 18px;
     width: calc(100% - 12px);
-  }
-
-  .reply-connector {
-    left: 0;
-    width: 1px;
   }
 
   .reply-comment {
@@ -607,30 +559,30 @@
   .comment-attachments {
     gap: 8px;
   }
-  
+
   .comment-images-container {
     gap: 8px;
     margin-bottom: 6px;
   }
-  
+
   .comment-files-container {
     gap: 6px;
   }
-  
+
   .comment-attachment-image-container {
     width: 100px !important;
     height: 100px !important;
   }
-  
+
   .comment-attachment-file-preview {
     padding: 4px 6px !important;
     font-size: 11px !important;
   }
-  
+
   .comment-attachment-file-preview .anticon {
     font-size: 12px !important;
   }
-  
+
   .attachment-file-name {
     font-size: 10px !important;
   }

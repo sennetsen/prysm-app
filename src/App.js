@@ -697,6 +697,10 @@ function BoardView() {
           color={boardData?.color}
           isHidden={isSidebarHidden}
           toggleSidebar={toggleSidebar}
+          boardId={boardData?.id}
+          currentUserId={user?.id}
+          boardCreatorId={boardData?.owner_id}
+
         />
         <div className={`board${isSidebarHidden ? ' sidebar-hidden' : ' sidebar-open'}`}>
           {cards.length === 0 && (
