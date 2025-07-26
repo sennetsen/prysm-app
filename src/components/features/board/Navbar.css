@@ -42,6 +42,56 @@
     .divider {
         display: none;
     }
+
+    .sort-toggle {
+        display: none;
+    }
+}
+
+/* Sort toggle styles */
+.sort-toggle {
+    position: relative;
+    display: flex;
+    background: white;
+    border-radius: 10px;
+    width: 110px;
+    height: 36.67px;
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: calc(50% - 2px);
+    height: calc(100% - 4px);
+    border-radius: 10px;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+}
+
+.sort-toggle.toggled .toggle-slider {
+    transform: translateX(100%);
+}
+
+.toggle-option {
+    flex: 1;
+    border: none;
+    background: none;
+    /* color: #666; */
+    cursor: pointer;
+    z-index: 2;
+    position: relative;
+    transition: color 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0px;
+    box-shadow: none;
+}
+
+.sort-toggle:not(.toggled) .toggle-option:first-of-type,
+.sort-toggle.toggled .toggle-option:last-of-type {
+    color: white;
 }
 
 .navbar-title-container {
@@ -162,7 +212,6 @@
     width: 1px;
     height: 35px;
     background-color: rgba(255, 255, 255, 0.8);
-    margin: 0 8px;
     position: relative;
 }
 
@@ -205,7 +254,7 @@
 .profile-icon {
     background: none;
     border: none;
-    padding: 10px;
+    padding: 0px;
     box-shadow: none;
     cursor: pointer;
     color: white;

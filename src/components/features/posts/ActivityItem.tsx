@@ -73,7 +73,7 @@ const getActivityText = (activity: Activity, onLinkClick: (id: string) => void) 
       return (
         <>
           <span className="activity-username">{activity.user?.full_name || 'Someone'}</span>
-          <span>replied ✉️ to</span>
+          <span>replied ✉️ to </span>
           <span className="activity-username">{activity.comment?.parentCommentAuthor || 'someone'}</span>
           <span> in </span>
           {activity.post?.id ? (

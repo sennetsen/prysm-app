@@ -88,6 +88,25 @@ function BoardView() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
   const [postFileList, setPostFileList] = useState([]);
+  const [sortType, setSortType] = useState('new'); // Add sort state
+
+  // Sort handler function
+  const handleSortChange = (newSortType) => {
+    setSortType(newSortType);
+  };
+
+  // Helper function to sort cards
+  const sortCards = (cards, sortType) => {
+    return [...cards].sort((a, b) => {
+      if (sortType === 'top') {
+        // Sort by likes count (descending)
+        return b.likesCount - a.likesCount;
+      } else {
+        // Sort by created_at (newest first)
+        return new Date(b.created_at) - new Date(a.created_at);
+      }
+    });
+  };
 
   const defaultColors = useMemo(() => [
     "#FEEAA4",
@@ -218,16 +237,22 @@ function BoardView() {
       };
     });
 
-    const sortedPosts = postsWithLikes.sort((a, b) => b.likesCount - a.likesCount);
+    // Sort posts using helper function
+    const sortedPosts = sortCards(postsWithLikes, sortType);
     setCards(sortedPosts);
     setTotalPosts(sortedPosts.length);
-  }, [boardData]);
+  }, [boardData, sortType]);
 
   useEffect(() => {
     if (boardData) {
       fetchPosts();
     }
   }, [boardData, fetchPosts]);
+
+  // Re-sort cards when sort type changes
+  useEffect(() => {
+    setCards(prev => sortCards(prev, sortType));
+  }, [sortType]);
 
   useEffect(() => {
     if (!boardData?.id) return;
@@ -253,15 +278,16 @@ function BoardView() {
           .single();
 
         if (newPost) {
-          setCards(prev => [
-            ...prev,
-            {
+          setCards(prev => {
+            const newCardData = {
               ...newPost,
               board_id: boardData?.id, // Ensure board_id is included
               likesCount: newPost.reactions.filter(r => r.reaction_type === 'like').length,
               isNew: true
-            }
-          ]);
+            };
+            const updatedCards = [...prev, newCardData];
+            return sortCards(updatedCards, sortType);
+          });
           setTotalPosts(prev => prev + 1);
         }
       })
@@ -684,6 +710,7 @@ function BoardView() {
         color={navbarColor}
         onJoinClick={handleJoinClick}
         onShare={handleShareClick}
+        onSortChange={handleSortChange}
       />
       <div className={`main-content${isSidebarHidden ? ' sidebar-hidden' : ' sidebar-open'}`}>
         <Sidebar

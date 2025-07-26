@@ -51,6 +51,7 @@ img {
 
 /* Responsive main content */
 @media (max-width: 1200px) {
+
   .main-content.sidebar-open,
   .main-content.sidebar-hidden {
     margin-left: 0 !important;
@@ -96,6 +97,7 @@ img {
 
 /* Disable sidebar width adjustments on tablets and mobile */
 @media (max-width: 1200px) {
+
   .board.sidebar-open,
   .board.sidebar-hidden {
     width: 100% !important;
@@ -108,6 +110,7 @@ img {
   .board.sidebar-hidden {
     column-count: 4;
   }
+
   .board.sidebar-open {
     column-count: 3;
   }
@@ -296,7 +299,7 @@ img {
     width: 56px;
     height: 56px;
   }
-  
+
   .create-post-it-button img {
     width: 36px;
     height: 36px;
@@ -310,7 +313,7 @@ img {
     width: 48px;
     height: 48px;
   }
-  
+
   .create-post-it-button img {
     width: 32px;
     height: 32px;
@@ -996,7 +999,7 @@ p {
   }
 
   .share-button {
-    padding: 4px 8px;
+    padding: 8px 8px;
     font-size: 14px;
   }
 
