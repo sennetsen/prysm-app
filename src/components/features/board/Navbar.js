@@ -135,7 +135,7 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
         <div className="divider"></div>
         <button className="share-button" onClick={onShare}>
           <img src={icon} alt="Share" />
-          Share
+          <span className="share-text">Share</span>
         </button>
       </div>
     </nav>

@@ -30,9 +30,10 @@
     }
 
     .join-button {
-        padding: 6px 12px;
+        /* padding: 6px 12px;
         font-size: 12px;
-        max-width: 100px;
+        max-width: 100px; */
+        display: none !important;
     }
 
     .profile-icon span {
@@ -44,6 +45,10 @@
     }
 
     .sort-toggle {
+        display: none;
+    }
+
+    .share-text {
         display: none;
     }
 }
@@ -118,11 +123,6 @@
 
     .share-button {
         display: none;
-    }
-
-    .join-button {
-        padding: 4px 8px;
-        font-size: 10px;
     }
 
     .profile-pic {

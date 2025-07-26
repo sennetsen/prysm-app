@@ -257,9 +257,9 @@ img {
 }
 
 .create-post-it-button {
-  position: absolute;
+  /* position: absolute;
   bottom: 9%;
-  right: 3.5%;
+  right: 3.5%; */
   background-color: var(--navbar-color, #b43144);
   border: none;
   border-radius: 12px;
@@ -268,7 +268,7 @@ img {
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   z-index: 1000;
 
@@ -990,7 +990,7 @@ p {
   }
 
   .navbar-icons {
-    gap: 8px;
+    gap: 10px;
   }
 
   .profile-pic {
