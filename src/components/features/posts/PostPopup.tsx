@@ -134,6 +134,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const popupContainerRef = useRef<HTMLDivElement>(null);
   const [showMobileInfo, setShowMobileInfo] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [userCommentsThisSession, setUserCommentsThisSession] = useState<Set<number>>(new Set());
 
   // Initialize likeCount from post.likes or post.likesCount
   const [likeCount, setLikeCount] = useState(post.reaction_counts?.like ?? 0);
@@ -470,9 +471,17 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       return;
     }
 
-    // Optionally, fetch comments again to refresh the thread
-    fetchComments();
-    setCommentCount(prev => prev + 1);
+    // Track this reply as created in this session
+    if (data && data[0]) {
+      const updatedSessionSet = new Set([...userCommentsThisSession, data[0].id]);
+      setUserCommentsThisSession(updatedSessionSet);
+
+      // Fetch comments again to refresh the thread with proper sorting
+      fetchComments(updatedSessionSet);
+    } else {
+      // Fallback if no data returned
+      fetchComments();
+    }
   };
 
   const handleFileAttachment = () => {
@@ -566,23 +575,15 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         message.error('Failed to upload one or more attachments');
       }
 
-      // 3. Optionally, fetch the new comment from data[0] and add to state
-      setComments([{
-        id: commentId,
-        author: {
-          name: currentUser?.user_metadata?.full_name || 'Current User',
-          avatar: currentUser?.user_metadata?.avatar_url || 'https://i.pravatar.cc/150?img=1',
-        },
-        content: commentText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        likes: 0,
-        liked: false,
-        attachments: uploadedAttachments, // Include the uploaded attachments
-      }, ...comments]);
+      // 3. Track this comment as created in this session
+      const updatedSessionSet = new Set([...userCommentsThisSession, commentId]);
+      setUserCommentsThisSession(updatedSessionSet);
+
+      // 4. Refresh comments to get proper sorting with updated session data
+      fetchComments(updatedSessionSet);
 
       setCommentText('');
       setFileList([]);
-      setCommentCount(commentCount + 1);
     }
   };
 
@@ -680,7 +681,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   );
 
   // Refactor fetchComments to nest replies
-  const fetchComments = async () => {
+  const fetchComments = async (updatedSessionSet?: Set<number>) => {
+    // Use the updated session set if provided, otherwise use current state
+    const currentSessionSet = updatedSessionSet || userCommentsThisSession;
     // Fetch all comments for the post
     const { data: commentsData, error: commentsError } = await supabase
       .from('comments')
@@ -747,6 +750,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           },
           content: c.content,
           timestamp: formatTimestamp(c.created_at),
+          created_at: c.created_at, // Keep raw timestamp for sorting
           likes: c.reaction_counts?.like || 0,
           liked: !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like'),
           replies: [],
@@ -768,14 +772,81 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             },
             content: c.content,
             timestamp: formatTimestamp(c.created_at),
+            created_at: c.created_at, // Keep raw timestamp for sorting
             likes: c.reaction_counts?.like || 0,
             liked: !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like'),
             attachments: replyAttachments,
           });
         }
       });
-      // Set state with nested comments
-      setComments(Object.values(commentMap));
+      // Sophisticated comment sorting
+      const sortComments = (comments: any[]) => {
+        return comments.sort((a, b) => {
+          const aIsUserComment = currentUser && a.author.name === currentUser.user_metadata?.full_name;
+          const bIsUserComment = currentUser && b.author.name === currentUser.user_metadata?.full_name;
+          const aFromSession = currentSessionSet.has(a.id);
+          const bFromSession = currentSessionSet.has(b.id);
+
+          // Prioritize session comments at the very top
+          if (aFromSession && !bFromSession) return -1;
+          if (!aFromSession && bFromSession) return 1;
+
+          // Both are from this session - sort by most recent first
+          if (aFromSession && bFromSession) {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          }
+
+          // Neither from session - use original sophisticated sorting
+          // If both are user comments, sort by most liked first, then by creation time
+          if (aIsUserComment && bIsUserComment) {
+            if (a.likes !== b.likes) {
+              return b.likes - a.likes; // Most liked first
+            }
+            // Same likes, maintain original order by creation time
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          }
+
+          // If only one is user comment, user comment goes to top
+          if (aIsUserComment && !bIsUserComment) return -1;
+          if (!aIsUserComment && bIsUserComment) return 1;
+
+          // For non-user comments, sort by most liked
+          return b.likes - a.likes;
+        });
+      };
+
+      // Sort replies chronologically (oldest first) with session replies at top
+      const sortReplies = (replies: any[]) => {
+        return replies.sort((a, b) => {
+          const aFromSession = currentSessionSet.has(a.id);
+          const bFromSession = currentSessionSet.has(b.id);
+
+          // Prioritize session replies at the very top
+          if (aFromSession && !bFromSession) return -1;
+          if (!aFromSession && bFromSession) return 1;
+
+          // Both are from this session - sort by most recent first
+          if (aFromSession && bFromSession) {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          }
+
+          // Neither from session - use chronological order (oldest first)
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        });
+      };
+
+      // Sort top-level comments with sophisticated logic
+      const sortedComments = sortComments(Object.values(commentMap));
+
+      // Sort replies within each comment chronologically
+      sortedComments.forEach(comment => {
+        if (comment.replies && comment.replies.length > 0) {
+          comment.replies = sortReplies(comment.replies);
+        }
+      });
+
+      // Set state with sorted nested comments
+      setComments(sortedComments);
       setCommentCount(commentsData.length);
     }
   };
@@ -1011,6 +1082,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     onLike={handleCommentLike}
                     onAddReply={handleAddReply}
                     onDelete={handleDeleteComment}
+                    userCommentsThisSession={userCommentsThisSession}
                   />
                 </div>
               </div>
@@ -1133,6 +1205,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                   onLike={handleCommentLike}
                   onAddReply={handleAddReply}
                   onDelete={handleDeleteComment}
+                  userCommentsThisSession={userCommentsThisSession}
                 />
               </div>
             </div>

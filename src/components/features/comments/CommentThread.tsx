@@ -12,6 +12,7 @@ interface CommentThreadProps {
   onLike: (commentId: number) => void;
   onAddReply?: (parentId: number, reply: Comment) => void;
   onDelete?: (commentId: number) => void;
+  userCommentsThisSession?: Set<number>;
 }
 
 interface Comment {
@@ -22,6 +23,7 @@ interface Comment {
   };
   content: string;
   timestamp: string;
+  created_at?: string; // Add optional created_at for sorting
   likes: number;
   liked: boolean;
   replies?: Comment[];
@@ -40,7 +42,8 @@ export function CommentThread({
   comments,
   onLike,
   onAddReply,
-  onDelete
+  onDelete,
+  userCommentsThisSession = new Set()
 }: CommentThreadProps) {
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState('');
@@ -515,8 +518,12 @@ export function CommentThread({
               console.log('Reply IDs:', comment.replies.map(r => r.id));
             }
 
-            const hasAdditionalReplies = comment.replies && comment.replies.length > 1;
-            const additionalRepliesCount = hasAdditionalReplies ? comment.replies!.length - 1 : 0;
+            // Calculate hidden replies (excluding session replies which are always shown)
+            const sessionRepliesCount = comment.replies ? comment.replies.filter(reply => userCommentsThisSession.has(reply.id)).length : 0;
+            const nonSessionRepliesCount = comment.replies ? comment.replies.length - sessionRepliesCount : 0;
+            const hiddenNonSessionReplies = Math.max(0, nonSessionRepliesCount - 2);
+            const hasAdditionalReplies = hiddenNonSessionReplies > 0;
+            const additionalRepliesCount = hiddenNonSessionReplies;
             const isExpanded = expandedReplies.includes(comment.id);
             const mostRecentTimestamp = hasAdditionalReplies ? getMostRecentReplyTimestamp(comment.replies!) : '';
             const additionalUserAvatars = hasAdditionalReplies ? getAdditionalReplyAvatars(comment.replies!) : [];
@@ -529,8 +536,22 @@ export function CommentThread({
                   {!minimizedComments.includes(comment.id) && comment.replies && comment.replies.length > 0 && (
                     <div className="replies-container" style={{ position: 'relative' }}>
                       <div className="all-replies-wrapper">
-                        {/* Show only the first 2 replies by default, show all if expanded */}
-                        {(isExpanded ? comment.replies : comment.replies.slice(0, 2)).map((reply, idx) => renderComment(reply, true))}
+                        {/* Show first 2 replies + session replies, or all if expanded */}
+                        {(isExpanded ? comment.replies : (() => {
+                          const sessionReplies = comment.replies.filter(reply => userCommentsThisSession.has(reply.id));
+                          const nonSessionReplies = comment.replies.filter(reply => !userCommentsThisSession.has(reply.id));
+                          const firstTwoNonSession = nonSessionReplies.slice(0, 2);
+
+                          // Combine and maintain chronological order (oldest first)
+                          const visibleReplies = [...firstTwoNonSession, ...sessionReplies]
+                            .sort((a, b) => {
+                              const aTime = (a as any).created_at || a.timestamp;
+                              const bTime = (b as any).created_at || b.timestamp;
+                              return new Date(aTime).getTime() - new Date(bTime).getTime();
+                            });
+
+                          return visibleReplies;
+                        })()).map((reply, idx) => renderComment(reply, true))}
                       </div>
                       {/* Show "X more replies" summary if there are more than 2 replies and not expanded */}
                       {hasAdditionalReplies && !isExpanded && (
@@ -544,7 +565,7 @@ export function CommentThread({
                           </Avatar.Group>
                           <span className="more-replies-text">
                             <span style={{ fontWeight: 600 }}>
-                              {comment.replies.length - 2} more {comment.replies.length - 2 === 1 ? 'reply' : 'replies'}
+                              {additionalRepliesCount} more {additionalRepliesCount === 1 ? 'reply' : 'replies'}
                             </span>
                             <span style={{ fontWeight: 400 }}>
                               {' • '}{formatTimeDifference(mostRecentTimestamp)}
