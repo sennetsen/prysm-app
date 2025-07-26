@@ -133,9 +133,24 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const postContentRef = useRef<HTMLDivElement>(null);
   const popupContainerRef = useRef<HTMLDivElement>(null);
   const [showMobileInfo, setShowMobileInfo] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   // Initialize likeCount from post.likes or post.likesCount
   const [likeCount, setLikeCount] = useState(post.reaction_counts?.like ?? 0);
+
+  // Handle mobile popup closing with animation
+  const handleClose = () => {
+    if (isMobile) {
+      setIsClosing(true);
+      // Wait for animation to complete before actually closing
+      setTimeout(() => {
+        setIsClosing(false);
+        onClose();
+      }, 180); // Match animation duration (180ms for exit)
+    } else {
+      onClose();
+    }
+  };
 
   // Keep likeCount in sync with post prop
   useEffect(() => {
@@ -791,12 +806,12 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   return (
     <Modal
       open={isOpen}
-      onCancel={onClose}
+      onCancel={handleClose}
       footer={null}
       maskClosable={false}
       mask={true}
       width={isMobile ? window.innerWidth - 50 : '97%'}
-      className={`post-popup ${isMobile ? 'mobile' : 'desktop'}`}
+      className={`post-popup ${isMobile ? 'mobile' : 'desktop'} ${isClosing ? 'closing' : ''}`}
       style={{
         top: isMobile ? '72px' : '70px',
         bottom: isMobile ? '64px' : 'auto',
@@ -809,7 +824,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       {/* Mobile Navbar - only show on mobile */}
       {isMobile && (
         <div className="mobile-navbar">
-          <div className="mobile-navbar-back" onClick={onClose}>
+          <div className="mobile-navbar-back" onClick={handleClose}>
             <LeftOutlined />
           </div>
           <div className="mobile-navbar-title">Board Name</div>

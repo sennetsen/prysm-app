@@ -979,6 +979,7 @@ function BoardView() {
           onClose={() => setSelectedPost(null)}
           currentUser={user}
           onLikeUpdate={handlePostLikeUpdate}
+          navbarColor={navbarColor}
         />
       )}
 

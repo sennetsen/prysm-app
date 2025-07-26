@@ -113,10 +113,6 @@
         max-width: 60px;
     }
 
-    .navbar {
-        height: 60px;
-    }
-
     .navbar-icons {
         gap: 5px;
     }
@@ -137,7 +133,7 @@
     justify-content: space-between;
     padding: 0px 20px;
     color: white;
-    height: 55px;
+    height: 60px;
     position: fixed;
     top: 0;
     left: 0;
