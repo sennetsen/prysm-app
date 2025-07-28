@@ -34,6 +34,7 @@ interface Comment {
     file_type: string;
     file_size: number;
   }[];
+  is_deleted?: boolean;
 }
 
 export function CommentThread({
@@ -148,18 +149,32 @@ export function CommentThread({
           // Mark the top-level comment as deleted
           return {
             ...comment,
-            author: { name: 'Comment Deleted', avatar: '' }, // Change author
+            is_deleted: true,
+            author: { name: 'Deleted comment', avatar: '' }, // Change author
             content: '', // Clear content
             likes: 0, // Reset likes
             liked: false, // Reset liked status
+            attachments: [], // Clear attachments
             // Keep replies intact
           };
         }
-        // If it's a reply being deleted, keep the current logic
+        // If it's a reply being deleted, mark it as deleted
         if (comment.replies && comment.replies.some(reply => reply.id === commentId)) {
           return {
             ...comment,
-            replies: comment.replies.filter(reply => reply.id !== commentId)
+            replies: comment.replies.map(reply => 
+              reply.id === commentId 
+                ? {
+                    ...reply,
+                    is_deleted: true,
+                    author: { name: 'Deleted comment', avatar: '' },
+                    content: '',
+                    likes: 0,
+                    liked: false,
+                    attachments: []
+                  }
+                : reply
+            )
           };
         }
         return comment;
@@ -290,7 +305,7 @@ export function CommentThread({
   };
 
   const renderComment = (comment: Comment, isReply = false) => {
-    const isDeleted = comment.author.name === 'Comment Deleted';
+    const isDeleted = comment.is_deleted || comment.author.name === 'Deleted comment';
 
     const isCurrentUserAuthor =
       currentUser?.user_metadata?.full_name === comment.author.name;
@@ -307,19 +322,25 @@ export function CommentThread({
             <span className="comment-author">{comment.author.name}</span>
             <span className="comment-timestamp">{formatTimeDifference(comment.timestamp)}</span>
           </div>
-          {!isDeleted && !isMinimized && (
+          {!isMinimized && (
             <>
-              <p className="comment-text">
-                {comment.content.startsWith('@') ? (
-                  <>
-                    <span className="mention">@Everyone</span>
-                    {comment.content.substring(9)}
-                  </>
-                ) : comment.content}
-              </p>
+              {isDeleted ? (
+                <p className="comment-text deleted-comment-text">
+                  <em>This comment has been deleted.</em>
+                </p>
+              ) : (
+                <p className="comment-text">
+                  {comment.content.startsWith('@') ? (
+                    <>
+                      <span className="mention">@Everyone</span>
+                      {comment.content.substring(9)}
+                    </>
+                  ) : comment.content}
+                </p>
+              )}
 
               {/* Display file previews if attachments exist */}
-              {comment.attachments && comment.attachments.length > 0 && (
+              {!isDeleted && comment.attachments && comment.attachments.length > 0 && (
                 <div className="comment-attachments">
                   {(() => {
                     // Separate attachments by type while maintaining original order within each group
@@ -388,52 +409,56 @@ export function CommentThread({
                 </div>
               )}
 
-              <div className="actions-wrapper">
-                <div className="comment-actions">
-                  <Button
-                    className={`heart-button ${comment.liked ? 'liked' : ''}`}
-                    icon={comment.liked ? <HeartFilled /> : <HeartOutlined />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onLike(comment.id);
-                    }}
-                  >
-                    {comment.likes}
-                  </Button>
-                  {!isReply && (
-                    <Button
-                      className="reply-button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleReplyClick(comment.id);
-                      }}
-                    >
-                      <MessageOutlined /> Reply
-                    </Button>
-                  )}
-                  {isCurrentUserAuthor && (
-                    <Popconfirm
-                      title="Delete this comment?"
-                      description="This action cannot be undone."
-                      okText="Delete"
-                      cancelText="Cancel"
-                      okButtonProps={{ danger: true }}
-                      onConfirm={() => handleDeleteComment(comment.id)}
-                      onCancel={(e) => e?.stopPropagation()}
-                    >
+              {!isDeleted && (
+                <div className="actions-wrapper">
+                  <div className="comment-actions">
+                    {!isDeleted && (
                       <Button
-                        className="delete-button"
-                        icon={<DeleteOutlined />}
-                        onClick={(e) => e.stopPropagation()}
+                        className={`heart-button ${comment.liked ? 'liked' : ''}`}
+                        icon={comment.liked ? <HeartFilled /> : <HeartOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLike(comment.id);
+                        }}
                       >
-                        Delete
+                        {comment.likes}
                       </Button>
-                    </Popconfirm>
-                  )}
+                    )}
+                    {!isReply && !isDeleted && (
+                      <Button
+                        className="reply-button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReplyClick(comment.id);
+                        }}
+                      >
+                        <MessageOutlined /> Reply
+                      </Button>
+                    )}
+                    {isCurrentUserAuthor && !isDeleted && (
+                      <Popconfirm
+                        title="Delete this comment?"
+                        description="This action cannot be undone."
+                        okText="Delete"
+                        cancelText="Cancel"
+                        okButtonProps={{ danger: true }}
+                        onConfirm={() => handleDeleteComment(comment.id)}
+                        onCancel={(e) => e?.stopPropagation()}
+                      >
+                        <Button
+                          className="delete-button"
+                          icon={<DeleteOutlined />}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Delete
+                        </Button>
+                      </Popconfirm>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {!isReply && replyingToId === comment.id && (
+              {!isReply && !isDeleted && replyingToId === comment.id && (
                 <div className="reply-input-container" onClick={(e) => e.stopPropagation()}>
                   <div className="reply-input-row">
                     <div className="reply-input-wrapper">

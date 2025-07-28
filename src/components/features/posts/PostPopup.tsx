@@ -72,6 +72,7 @@ interface Comment {
   liked: boolean;
   replies?: Comment[];
   attachments?: Attachment[];
+  is_deleted?: boolean;
 }
 
 interface FilePreview extends File {
@@ -119,6 +120,66 @@ async function uploadCommentAttachment(file: File, commentId: string, authorId: 
   return storage_path;
 }
 
+async function deleteAttachmentFromR2(storagePath: string) {
+  try {
+    const response = await fetch(`https://prysm-r2-worker.prysmapp.workers.dev/delete/${storagePath}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Failed to delete file from R2:', errorText);
+      throw new Error(`Failed to delete file from R2: ${errorText}`);
+    }
+
+    const result = await response.json();
+    return result.success;
+  } catch (error) {
+    console.error('Error deleting attachment from R2:', error);
+    throw error;
+  }
+}
+
+async function deleteCommentAttachments(commentId: string) {
+  try {
+    // Fetch all attachments for this comment
+    const { data: attachments, error } = await supabase
+      .from('attachments')
+      .select('*')
+      .eq('parent_type', 'comment')
+      .eq('parent_id', commentId);
+
+    if (error) {
+      console.error('Error fetching attachments:', error);
+      throw error;
+    }
+
+    // Delete each attachment from R2 and database
+    for (const attachment of attachments || []) {
+      try {
+        // Delete from R2
+        await deleteAttachmentFromR2(attachment.storage_path);
+        
+        // Delete from database
+        const { error: deleteError } = await supabase
+          .from('attachments')
+          .delete()
+          .eq('id', attachment.id);
+
+        if (deleteError) {
+          console.error('Error deleting attachment from database:', deleteError);
+        }
+      } catch (attachmentError) {
+        console.error('Error deleting attachment:', attachmentError);
+        // Continue with other attachments even if one fails
+      }
+    }
+  } catch (error) {
+    console.error('Error in deleteCommentAttachments:', error);
+    throw error;
+  }
+}
+
 export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange, boardCreatorId }: PostPopupProps) {
   const [liked, setLiked] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
@@ -135,10 +196,6 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [showMobileInfo, setShowMobileInfo] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [userCommentsThisSession, setUserCommentsThisSession] = useState<Set<number>>(new Set());
-  const [isMobileInputExpanded, setIsMobileInputExpanded] = useState(false);
-  const [isActionButtonClicked, setIsActionButtonClicked] = useState(false);
-  const [displayText, setDisplayText] = useState(''); // For showing truncated text when collapsed
-  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
   // Initialize likeCount from post.likes or post.likesCount
   const [likeCount, setLikeCount] = useState(post.reaction_counts?.like ?? 0);
@@ -157,133 +214,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   };
 
-  // Handle mobile comment input focus/blur
-  const handleMobileInputFocus = () => {
-    setIsMobileInputExpanded(true);
-  };
-
-  // Calculate truncated text for collapsed state
-  const getTruncatedText = (text: string, element: HTMLTextAreaElement) => {
-    if (!element || !text) return text;
-
-    // Create a temporary element to measure text
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    if (!context) return text;
-
-    // Get computed styles
-    const styles = window.getComputedStyle(element);
-    context.font = `${styles.fontSize} ${styles.fontFamily}`;
-
-    // Calculate available width (element width minus padding)
-    const paddingLeft = parseInt(styles.paddingLeft) || 0;
-    const paddingRight = parseInt(styles.paddingRight) || 0;
-    const availableWidth = element.clientWidth - paddingLeft - paddingRight - 20; // Extra margin for ellipses
-
-    // Measure text width
-    const textWidth = context.measureText(text).width;
-
-    if (textWidth <= availableWidth) {
-      return text; // Text fits in one line
-    }
-
-    // Binary search to find the longest text that fits
-    let start = 0;
-    let end = text.length;
-    let result = text;
-
-    while (start <= end) {
-      const mid = Math.floor((start + end) / 2);
-      const testText = text.substring(0, mid);
-      const testWidth = context.measureText(testText + '...').width;
-
-      if (testWidth <= availableWidth) {
-        result = testText;
-        start = mid + 1;
-      } else {
-        end = mid - 1;
-      }
-    }
-
-    return result === text ? text : result + '...';
-  };
-
-  const handleMobileInputBlur = () => {
-    // Don't collapse if an action button was clicked
-    if (isActionButtonClicked) {
-      setIsActionButtonClicked(false);
-      return;
-    }
-
-    // Collapse when clicking out of the input
-    setTimeout(() => {
-      setIsMobileInputExpanded(false);
-    }, 150); // Small delay to prevent flickering
-  };
-
   // Keep likeCount in sync with post prop
   useEffect(() => {
     setLikeCount(post.reaction_counts?.like ?? 0);
   }, [post.reaction_counts?.like]);
-
-  // Update display text based on expanded state
-  useEffect(() => {
-    if (isMobile && commentInputRef.current) {
-      if (isMobileInputExpanded) {
-        setDisplayText(commentText);
-      } else {
-        const truncated = getTruncatedText(commentText, commentInputRef.current);
-        setDisplayText(truncated);
-      }
-    } else {
-      setDisplayText(commentText);
-    }
-  }, [commentText, isMobileInputExpanded, isMobile]);
-
-  // Handle viewport changes for keyboard behavior (Reddit-style)
-  useEffect(() => {
-    if (!isMobile) return;
-
-    const handleViewportChange = () => {
-      // Update viewport height
-      const newHeight = window.innerHeight;
-      setViewportHeight(newHeight);
-
-      // Handle keyboard appearance/disappearance
-      const heightDifference = window.screen.height - newHeight;
-      const isKeyboardVisible = heightDifference > 150; // Threshold for keyboard detection
-
-      if (isKeyboardVisible && isMobileInputExpanded) {
-        // Keyboard is visible and input is expanded
-        // Ensure the input stays visible above keyboard
-        setTimeout(() => {
-          if (commentInputRef.current) {
-            commentInputRef.current.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center'
-            });
-          }
-        }, 100);
-      }
-    };
-
-    // Listen for viewport changes
-    window.addEventListener('resize', handleViewportChange);
-    window.addEventListener('orientationchange', handleViewportChange);
-
-    // Visual viewport API for better keyboard detection (modern browsers)
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleViewportChange);
-    }
-
-    return () => {
-      window.removeEventListener('resize', handleViewportChange);
-      window.removeEventListener('orientationchange', handleViewportChange);
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleViewportChange);
-      }
-    };
-  }, [isMobile, isMobileInputExpanded]);
 
   // Add resize listener to detect mobile/desktop
   useEffect(() => {
@@ -550,33 +484,76 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   };
 
-  const handleDeleteComment = (commentId: number) => {
-    // Check if it's a top-level comment
-    const isTopLevelComment = comments.some(c => c.id === commentId);
+  const handleDeleteComment = async (commentId: number) => {
+    try {
+      // Soft delete the comment
+      const { error: updateError } = await supabase
+        .from('comments')
+        .update({ is_deleted: true })
+        .eq('id', commentId);
 
-    if (isTopLevelComment) {
-      // Delete the top-level comment
-      setComments(currentComments =>
-        currentComments.filter(comment => comment.id !== commentId)
-      );
-    } else {
-      // It must be a reply - look through all comments to find and remove the reply
+      if (updateError) {
+        console.error('Error soft deleting comment:', updateError);
+        message.error('Failed to delete comment');
+        return;
+      }
+
+      // Cascade delete all attachments associated with the comment
+      await deleteCommentAttachments(commentId.toString());
+
+      // Delete all comment reactions for this comment
+      const { error: reactionsError } = await supabase
+        .from('comment_reactions')
+        .delete()
+        .eq('comment_id', commentId);
+
+      if (reactionsError) {
+        console.error('Error deleting comment reactions:', reactionsError);
+      }
+
+      // Update local state to mark comment as deleted
       setComments(currentComments =>
         currentComments.map(comment => {
-          // If the comment has replies, check if the reply needs to be deleted
+          if (comment.id === commentId) {
+            // Mark the top-level comment as deleted
+            return {
+              ...comment,
+              is_deleted: true,
+              content: '',
+              author: { name: 'Deleted comment', avatar: '' },
+              likes: 0,
+              liked: false,
+              attachments: []
+            };
+          }
+          // If it's a reply being deleted, check in replies
           if (comment.replies && comment.replies.some(reply => reply.id === commentId)) {
             return {
               ...comment,
-              replies: comment.replies.filter(reply => reply.id !== commentId)
+              replies: comment.replies.map(reply => 
+                reply.id === commentId 
+                  ? {
+                      ...reply,
+                      is_deleted: true,
+                      content: '',
+                      author: { name: 'Deleted comment', avatar: '' },
+                      likes: 0,
+                      liked: false,
+                      attachments: []
+                    }
+                  : reply
+              )
             };
           }
           return comment;
         })
       );
-    }
 
-    // Update the comment count
-    setCommentCount(prev => prev - 1);
+      message.success('Comment deleted successfully');
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      message.error('Failed to delete comment');
+    }
   };
 
   const handleAddReply = async (parentId: number, reply: Comment) => {
@@ -711,11 +688,6 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
       setCommentText('');
       setFileList([]);
-
-      // Collapse mobile input after posting
-      if (isMobile) {
-        setIsMobileInputExpanded(false);
-      }
     }
   };
 
@@ -850,7 +822,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
 
     if (!commentsError && commentsData) {
-      // Separate top-level comments and replies
+      // Separate top-level comments and replies (include deleted comments)
       const topLevel = commentsData.filter((c: any) => !c.parent_comment_id);
       const replies = commentsData.filter((c: any) => c.parent_comment_id);
 
@@ -877,16 +849,17 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         commentMap[c.id] = {
           id: c.id,
           author: {
-            name: c.author.full_name,
-            avatar: c.author.avatar_url,
+            name: c.is_deleted ? 'Deleted comment' : c.author.full_name,
+            avatar: c.is_deleted ? '' : c.author.avatar_url,
           },
-          content: c.content,
+          content: c.is_deleted ? '' : c.content,
           timestamp: formatTimestamp(c.created_at),
           created_at: c.created_at, // Keep raw timestamp for sorting
-          likes: c.reaction_counts?.like || 0,
-          liked: !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like'),
+          likes: c.is_deleted ? 0 : (c.reaction_counts?.like || 0),
+          liked: c.is_deleted ? false : !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like'),
           replies: [],
-          attachments: commentAttachments,
+          attachments: c.is_deleted ? [] : commentAttachments,
+          is_deleted: c.is_deleted || false,
         };
       });
       // Attach replies to their parent
@@ -899,15 +872,16 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           parent.replies.push({
             id: c.id,
             author: {
-              name: c.author.full_name,
-              avatar: c.author.avatar_url,
+              name: c.is_deleted ? 'Deleted comment' : c.author.full_name,
+              avatar: c.is_deleted ? '' : c.author.avatar_url,
             },
-            content: c.content,
+            content: c.is_deleted ? '' : c.content,
             timestamp: formatTimestamp(c.created_at),
             created_at: c.created_at, // Keep raw timestamp for sorting
-            likes: c.reaction_counts?.like || 0,
-            liked: !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like'),
-            attachments: replyAttachments,
+            likes: c.is_deleted ? 0 : (c.reaction_counts?.like || 0),
+            liked: c.is_deleted ? false : !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like'),
+            attachments: c.is_deleted ? [] : replyAttachments,
+            is_deleted: c.is_deleted || false,
           });
         }
       });
@@ -1341,69 +1315,53 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                 />
               </div>
             </div>
-            {/* Fixed mobile comment bar - Reddit style */}
-            <div className={`mobile-comment-bar ${isMobileInputExpanded ? 'expanded' : 'collapsed'}`}>
-              {/* File previews - show above input when expanded */}
-              {fileList.length > 0 && isMobileInputExpanded && (
-                <div className="comment-file-preview-container mobile-preview">
-                  {fileList.map((file, index) => (
-                    <div key={index} className="comment-file-preview-wrapper">
-                      <div className="file-preview-item">
-                        <FileOutlined />
-                        <span className="file-name">{file.name}</span>
-                        <button
-                          className="remove-file"
-                          onClick={() => removeFile(file)}
-                          title="Remove file"
-                        >
-                          <CloseOutlined />
-                        </button>
+            {/* Fixed mobile comment bar */}
+            <div className="mobile-comment-bar">
+              <div className="input-with-buttons mobile-input-row">
+                {fileList.length > 0 && (
+                  <div className="comment-file-preview-container mobile-preview">
+                    {fileList.map((file, index) => (
+                      <div key={index} className="comment-file-preview-wrapper">
+                        <div className="file-preview-item">
+                          <FileOutlined />
+                          <span className="file-name">{file.name}</span>
+                          <button
+                            className="remove-file"
+                            onClick={() => removeFile(file)}
+                            title="Remove file"
+                          >
+                            <CloseOutlined />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Main input row */}
-              <div className="mobile-input-main-row">
+                    ))}
+                  </div>
+                )}
+                <button
+                  className="comment-action-button"
+                  onClick={handleFileAttachment}
+                  title="Attach files"
+                  type="button"
+                >
+                  <PaperClipOutlined />
+                </button>
                 <textarea
                   ref={commentInputRef}
                   placeholder="Join the conversation"
-                  className="comment-input mobile-comment-input"
-                  value={isMobileInputExpanded ? commentText : displayText}
+                  className="comment-input"
+                  value={commentText}
                   onChange={handleCommentChange}
-                  onFocus={handleMobileInputFocus}
-                  onBlur={handleMobileInputBlur}
                   rows={1}
                 />
+                <button
+                  className="comment-action-button send"
+                  onClick={handleCommentSubmit}
+                  title="Send comment"
+                  type="button"
+                >
+                  <img src={SendArrow} alt="Send" className="send-arrow-icon" />
+                </button>
               </div>
-
-              {/* Action buttons row - only show when expanded */}
-              {isMobileInputExpanded && (
-                <>
-                  <div className="mobile-input-divider"></div>
-                  <div className="mobile-action-buttons-row">
-                    <button
-                      className="comment-action-button"
-                      onClick={handleFileAttachment}
-                      onMouseDown={() => setIsActionButtonClicked(true)}
-                      title="Attach files"
-                      type="button"
-                    >
-                      <PaperClipOutlined />
-                    </button>
-                    <button
-                      className="comment-action-button send"
-                      onClick={handleCommentSubmit}
-                      onMouseDown={() => setIsActionButtonClicked(true)}
-                      title="Send comment"
-                      type="button"
-                    >
-                      <img src={SendArrow} alt="Send" className="send-arrow-icon" />
-                    </button>
-                  </div>
-                </>
-              )}
             </div>
           </>
         )}

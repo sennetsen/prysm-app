@@ -178,12 +178,18 @@
 
 .deleted-comment {
   opacity: 1;
-  font-style: italic;
 }
 
 .deleted-comment .comment-author {
   color: #667085;
   font-weight: 400;
+  font-style: italic;
+}
+
+.deleted-comment-text {
+  color: #667085 !important;
+  font-style: italic !important;
+  margin: -2px 0 10px !important;
 }
 
 .reply-input-container {
