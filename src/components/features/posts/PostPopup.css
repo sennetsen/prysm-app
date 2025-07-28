@@ -655,20 +655,119 @@
 
   .mobile-comment-bar {
     position: fixed;
+    bottom: 0;
     left: 0;
     right: 0;
-    bottom: 0;
-    background: #FDFCFC;
-    padding: 12px 18px 12px 18px;
-    z-index: 2000;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
-    border-top: 1px solid #ececec;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+    padding: 12px 16px;
+    z-index: 1002;
+    transition: all 0.3s ease;
+    /* Ensure it stays above keyboard on mobile */
+    bottom: env(keyboard-inset-height, 0);
   }
 
-  .mobile-comment-bar .mobile-input-row {
-    margin-top: 16px;
+  /* Ensure proper viewport behavior */
+  @supports (bottom: env(keyboard-inset-height)) {
+    .mobile-comment-bar {
+      bottom: env(keyboard-inset-height, 0);
+    }
+  }
+
+  /* Fallback for older browsers */
+  @supports not (bottom: env(keyboard-inset-height)) {
+    .mobile-comment-bar {
+      bottom: 0;
+    }
+  }
+
+  /* Reddit-style mobile comment bar states */
+  .mobile-comment-bar.collapsed {
+    padding: 8px 16px;
+  }
+
+  .mobile-comment-bar.expanded {
+    padding: 12px 16px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .mobile-input-main-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .mobile-comment-input {
+    flex: 1;
+    border: 1px solid #e0e0e0;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 16px;
+    line-height: 1.4;
+    resize: none;
+    outline: none;
+    transition: all 0.3s ease;
+    min-height: 36px;
+    max-height: 120px;
+    overflow-y: auto;
+    word-wrap: break-word;
+  }
+
+  /* Handle text overflow when collapsed */
+  .mobile-comment-bar.collapsed .mobile-comment-input {
+    max-height: 36px;
+  }
+
+  .mobile-comment-bar.expanded .mobile-comment-input {
+    overflow-y: auto;
+  }
+
+  .mobile-comment-input:focus {
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+  }
+
+  .mobile-input-divider {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 12px 0 8px 0;
+  }
+
+  .mobile-action-buttons-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mobile-action-buttons-row .comment-action-button {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 50%;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-action-buttons-row .comment-action-button:hover {
+    background: #f0f0f0;
+  }
+
+  .mobile-action-buttons-row .comment-action-button.send {
+    background: #007AFF;
+    color: white;
+  }
+
+  .mobile-action-buttons-row .comment-action-button.send:hover {
+    background: #0056CC;
+  }
+
+  /* File preview adjustments for mobile */
+  .comment-file-preview-container.mobile-preview {
+    margin-bottom: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
   }
 
 
@@ -1029,4 +1128,21 @@
       background-color: rgba(0, 0, 0, 0);
     }
   }
+}
+
+/* Ensure content doesn't get hidden behind sticky comment bar */
+.post-popup.mobile .post-popup-container.mobile-layout {
+  padding-bottom: 80px;
+  /* Space for comment bar */
+}
+
+.post-popup.mobile .comments-section-container {
+  padding-bottom: 20px;
+}
+
+/* Adjust padding when comment bar is expanded */
+.post-popup.mobile .mobile-comment-bar.expanded~.post-popup-container,
+.post-popup.mobile .mobile-comment-bar.expanded~* .post-popup-container {
+  padding-bottom: 120px;
+  /* More space when expanded */
 }

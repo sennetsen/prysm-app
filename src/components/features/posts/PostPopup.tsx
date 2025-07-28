@@ -135,6 +135,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [showMobileInfo, setShowMobileInfo] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [userCommentsThisSession, setUserCommentsThisSession] = useState<Set<number>>(new Set());
+  const [isMobileInputExpanded, setIsMobileInputExpanded] = useState(false);
+  const [isActionButtonClicked, setIsActionButtonClicked] = useState(false);
+  const [displayText, setDisplayText] = useState(''); // For showing truncated text when collapsed
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
   // Initialize likeCount from post.likes or post.likesCount
   const [likeCount, setLikeCount] = useState(post.reaction_counts?.like ?? 0);
@@ -153,10 +157,133 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   };
 
+  // Handle mobile comment input focus/blur
+  const handleMobileInputFocus = () => {
+    setIsMobileInputExpanded(true);
+  };
+
+  // Calculate truncated text for collapsed state
+  const getTruncatedText = (text: string, element: HTMLTextAreaElement) => {
+    if (!element || !text) return text;
+
+    // Create a temporary element to measure text
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return text;
+
+    // Get computed styles
+    const styles = window.getComputedStyle(element);
+    context.font = `${styles.fontSize} ${styles.fontFamily}`;
+
+    // Calculate available width (element width minus padding)
+    const paddingLeft = parseInt(styles.paddingLeft) || 0;
+    const paddingRight = parseInt(styles.paddingRight) || 0;
+    const availableWidth = element.clientWidth - paddingLeft - paddingRight - 20; // Extra margin for ellipses
+
+    // Measure text width
+    const textWidth = context.measureText(text).width;
+
+    if (textWidth <= availableWidth) {
+      return text; // Text fits in one line
+    }
+
+    // Binary search to find the longest text that fits
+    let start = 0;
+    let end = text.length;
+    let result = text;
+
+    while (start <= end) {
+      const mid = Math.floor((start + end) / 2);
+      const testText = text.substring(0, mid);
+      const testWidth = context.measureText(testText + '...').width;
+
+      if (testWidth <= availableWidth) {
+        result = testText;
+        start = mid + 1;
+      } else {
+        end = mid - 1;
+      }
+    }
+
+    return result === text ? text : result + '...';
+  };
+
+  const handleMobileInputBlur = () => {
+    // Don't collapse if an action button was clicked
+    if (isActionButtonClicked) {
+      setIsActionButtonClicked(false);
+      return;
+    }
+
+    // Collapse when clicking out of the input
+    setTimeout(() => {
+      setIsMobileInputExpanded(false);
+    }, 150); // Small delay to prevent flickering
+  };
+
   // Keep likeCount in sync with post prop
   useEffect(() => {
     setLikeCount(post.reaction_counts?.like ?? 0);
   }, [post.reaction_counts?.like]);
+
+  // Update display text based on expanded state
+  useEffect(() => {
+    if (isMobile && commentInputRef.current) {
+      if (isMobileInputExpanded) {
+        setDisplayText(commentText);
+      } else {
+        const truncated = getTruncatedText(commentText, commentInputRef.current);
+        setDisplayText(truncated);
+      }
+    } else {
+      setDisplayText(commentText);
+    }
+  }, [commentText, isMobileInputExpanded, isMobile]);
+
+  // Handle viewport changes for keyboard behavior (Reddit-style)
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const handleViewportChange = () => {
+      // Update viewport height
+      const newHeight = window.innerHeight;
+      setViewportHeight(newHeight);
+
+      // Handle keyboard appearance/disappearance
+      const heightDifference = window.screen.height - newHeight;
+      const isKeyboardVisible = heightDifference > 150; // Threshold for keyboard detection
+
+      if (isKeyboardVisible && isMobileInputExpanded) {
+        // Keyboard is visible and input is expanded
+        // Ensure the input stays visible above keyboard
+        setTimeout(() => {
+          if (commentInputRef.current) {
+            commentInputRef.current.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center'
+            });
+          }
+        }, 100);
+      }
+    };
+
+    // Listen for viewport changes
+    window.addEventListener('resize', handleViewportChange);
+    window.addEventListener('orientationchange', handleViewportChange);
+
+    // Visual viewport API for better keyboard detection (modern browsers)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleViewportChange);
+      window.removeEventListener('orientationchange', handleViewportChange);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportChange);
+      }
+    };
+  }, [isMobile, isMobileInputExpanded]);
 
   // Add resize listener to detect mobile/desktop
   useEffect(() => {
@@ -584,6 +711,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
       setCommentText('');
       setFileList([]);
+
+      // Collapse mobile input after posting
+      if (isMobile) {
+        setIsMobileInputExpanded(false);
+      }
     }
   };
 
@@ -1209,53 +1341,69 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                 />
               </div>
             </div>
-            {/* Fixed mobile comment bar */}
-            <div className="mobile-comment-bar">
-              <div className="input-with-buttons mobile-input-row">
-                {fileList.length > 0 && (
-                  <div className="comment-file-preview-container mobile-preview">
-                    {fileList.map((file, index) => (
-                      <div key={index} className="comment-file-preview-wrapper">
-                        <div className="file-preview-item">
-                          <FileOutlined />
-                          <span className="file-name">{file.name}</span>
-                          <button
-                            className="remove-file"
-                            onClick={() => removeFile(file)}
-                            title="Remove file"
-                          >
-                            <CloseOutlined />
-                          </button>
-                        </div>
+            {/* Fixed mobile comment bar - Reddit style */}
+            <div className={`mobile-comment-bar ${isMobileInputExpanded ? 'expanded' : 'collapsed'}`}>
+              {/* File previews - show above input when expanded */}
+              {fileList.length > 0 && isMobileInputExpanded && (
+                <div className="comment-file-preview-container mobile-preview">
+                  {fileList.map((file, index) => (
+                    <div key={index} className="comment-file-preview-wrapper">
+                      <div className="file-preview-item">
+                        <FileOutlined />
+                        <span className="file-name">{file.name}</span>
+                        <button
+                          className="remove-file"
+                          onClick={() => removeFile(file)}
+                          title="Remove file"
+                        >
+                          <CloseOutlined />
+                        </button>
                       </div>
-                    ))}
-                  </div>
-                )}
-                <button
-                  className="comment-action-button"
-                  onClick={handleFileAttachment}
-                  title="Attach files"
-                  type="button"
-                >
-                  <PaperClipOutlined />
-                </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Main input row */}
+              <div className="mobile-input-main-row">
                 <textarea
                   ref={commentInputRef}
                   placeholder="Join the conversation"
-                  className="comment-input"
-                  value={commentText}
+                  className="comment-input mobile-comment-input"
+                  value={isMobileInputExpanded ? commentText : displayText}
                   onChange={handleCommentChange}
+                  onFocus={handleMobileInputFocus}
+                  onBlur={handleMobileInputBlur}
                   rows={1}
                 />
-                <button
-                  className="comment-action-button send"
-                  onClick={handleCommentSubmit}
-                  title="Send comment"
-                  type="button"
-                >
-                  <img src={SendArrow} alt="Send" className="send-arrow-icon" />
-                </button>
               </div>
+
+              {/* Action buttons row - only show when expanded */}
+              {isMobileInputExpanded && (
+                <>
+                  <div className="mobile-input-divider"></div>
+                  <div className="mobile-action-buttons-row">
+                    <button
+                      className="comment-action-button"
+                      onClick={handleFileAttachment}
+                      onMouseDown={() => setIsActionButtonClicked(true)}
+                      title="Attach files"
+                      type="button"
+                    >
+                      <PaperClipOutlined />
+                    </button>
+                    <button
+                      className="comment-action-button send"
+                      onClick={handleCommentSubmit}
+                      onMouseDown={() => setIsActionButtonClicked(true)}
+                      title="Send comment"
+                      type="button"
+                    >
+                      <img src={SendArrow} alt="Send" className="send-arrow-icon" />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </>
         )}
