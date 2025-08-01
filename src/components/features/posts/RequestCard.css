@@ -269,10 +269,11 @@
 .like-section {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
 
-.custom-like-button {
+.custom-like-button,
+.custom-comment-button {
   display: flex !important;
   align-items: center !important;
   gap: 5px !important;
@@ -283,12 +284,14 @@
   transition: all 0.2s ease !important;
 }
 
-.custom-like-button:active {
+.custom-like-button:active,
+.custom-comment-button:active {
   transform: scale(0.85);
 }
 
-/* Not liked state */
-.custom-like-button .anticon {
+/* Not liked state / default comment state */
+.custom-like-button .anticon,
+.custom-comment-button .anticon {
   font-size: 14px;
   color: #281010 !important;
 }

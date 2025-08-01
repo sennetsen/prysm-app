@@ -37,12 +37,33 @@ function Board({ boardId }) {
             .eq("board_id", boardId)
         ]);
 
-        if (!boardResponse.error) {
-          setBoardData(boardResponse.data);
+        if (!postsResponse.error && postsResponse.data) {
+          // Fetch comment counts for each post
+          const postIds = postsResponse.data.map(post => post.id);
+          const { data: commentCounts } = await supabase
+            .from('comments')
+            .select('post_id')
+            .in('post_id', postIds);
+
+          // Calculate comment counts per post
+          const commentCountsMap = {};
+          if (commentCounts) {
+            commentCounts.forEach(comment => {
+              commentCountsMap[comment.post_id] = (commentCountsMap[comment.post_id] || 0) + 1;
+            });
+          }
+
+          // Add comment counts to posts
+          const postsWithCommentCounts = postsResponse.data.map(post => ({
+            ...post,
+            commentCount: commentCountsMap[post.id] || 0
+          }));
+
+          setPosts(postsWithCommentCounts);
         }
 
-        if (!postsResponse.error) {
-          setPosts(postsResponse.data);
+        if (!boardResponse.error) {
+          setBoardData(boardResponse.data);
         }
       }
     };
@@ -84,6 +105,7 @@ function Board({ boardId }) {
           currentUserId={currentUser.id}
           setUser={setUser}
           isBoardOwner={boardData.owner_id === currentUser.id}
+          commentCount={post.commentCount}
         />
       ))}
     </div>

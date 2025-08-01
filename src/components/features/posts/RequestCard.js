@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./RequestCard.css";
 import { bigNumberFormatter, formatNumberWithCommas } from '../../../utils/bigNumberFormatter';
-import { HeartFilled, HeartOutlined, FileOutlined } from "@ant-design/icons";
+import { HeartFilled, HeartOutlined, FileOutlined, MessageOutlined } from "@ant-design/icons";
 import { Button, Tooltip } from "antd";
 import fallbackImg from '../../../img/fallback.png';
 
@@ -24,7 +24,8 @@ export default React.memo(
     index,
     onContactCardToggle,
     onPostClick,
-    attachments = []
+    attachments = [],
+    commentCount = 0
   }) {
     const [timestamp, setTimestamp] = useState('');
     const [isNew, setIsNew] = useState(true);
@@ -250,6 +251,26 @@ export default React.memo(
                 className={`custom-like-button ${hasLiked ? 'liked' : ''}`}
               >
                 <span className="like-count">{bigNumberFormatter(likesCount)}</span>
+              </Button>
+            )}
+            
+            {commentCount >= 1000 ? (
+              <Tooltip title={`${formatNumberWithCommas(commentCount)} comments`} placement="bottom">
+                <Button
+                  type="text"
+                  icon={<MessageOutlined />}
+                  className="custom-comment-button"
+                >
+                  <span className="comment-count">{bigNumberFormatter(commentCount)}</span>
+                </Button>
+              </Tooltip>
+            ) : (
+              <Button
+                type="text"
+                icon={<MessageOutlined />}
+                className="custom-comment-button"
+              >
+                <span className="comment-count">{bigNumberFormatter(commentCount)}</span>
               </Button>
             )}
           </div>

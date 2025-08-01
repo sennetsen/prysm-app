@@ -199,6 +199,22 @@ function BoardView() {
       }
     }
 
+    // Fetch comment counts for all posts
+    let commentCountsMap = {};
+    if (data && data.length > 0) {
+      const postIds = data.map(post => post.id);
+      const { data: commentCounts } = await supabase
+        .from('comments')
+        .select('post_id')
+        .in('post_id', postIds);
+
+      if (commentCounts) {
+        commentCounts.forEach(comment => {
+          commentCountsMap[comment.post_id] = (commentCountsMap[comment.post_id] || 0) + 1;
+        });
+      }
+    }
+
     const postsWithLikes = data.map(post => {
       const likesCount = post.reaction_counts?.like || 0;
       // Find attachments for this post
@@ -208,6 +224,7 @@ function BoardView() {
         ...post,
         board_id: boardData?.id, // Ensure board_id is included
         likesCount,
+        commentCount: commentCountsMap[post.id] || 0,
         attachments: postAttachments,
         author: post.author || {
           full_name: 'Anonymous',
@@ -723,6 +740,7 @@ function BoardView() {
               onContactCardToggle={() => handleContactCardToggle(card)}
               onPostClick={handlePostClick}
               attachments={card.attachments || []}
+              commentCount={card.commentCount}
             />
           ))}
           <Tooltip title="Make a Request" placement="right">
