@@ -329,14 +329,14 @@ export function CommentThread({
                   <em>This comment has been deleted.</em>
                 </p>
               ) : (
-                <p className="comment-text">
-                  {comment.content.startsWith('@') ? (
-                    <>
-                      <span className="mention">@Everyone</span>
-                      {comment.content.substring(9)}
-                    </>
-                  ) : comment.content}
-                </p>
+              <p className="comment-text">
+                {comment.content.startsWith('@') ? (
+                  <>
+                    <span className="mention">@Everyone</span>
+                    {comment.content.substring(9)}
+                  </>
+                ) : comment.content}
+              </p>
               )}
 
               {/* Display file previews if attachments exist */}
@@ -410,52 +410,52 @@ export function CommentThread({
               )}
 
               {!isDeleted && (
-                <div className="actions-wrapper">
-                  <div className="comment-actions">
+              <div className="actions-wrapper">
+                <div className="comment-actions">
                     {!isDeleted && (
-                      <Button
-                        className={`heart-button ${comment.liked ? 'liked' : ''}`}
-                        icon={comment.liked ? <HeartFilled /> : <HeartOutlined />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onLike(comment.id);
-                        }}
-                      >
-                        {comment.likes}
-                      </Button>
+                  <Button
+                    className={`heart-button ${comment.liked ? 'liked' : ''}`}
+                    icon={comment.liked ? <HeartFilled /> : <HeartOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLike(comment.id);
+                    }}
+                  >
+                    {comment.likes}
+                  </Button>
                     )}
                     {!isReply && !isDeleted && (
-                      <Button
-                        className="reply-button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleReplyClick(comment.id);
-                        }}
-                      >
-                        <MessageOutlined /> Reply
-                      </Button>
-                    )}
+                    <Button
+                      className="reply-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReplyClick(comment.id);
+                      }}
+                    >
+                      <MessageOutlined /> Reply
+                    </Button>
+                  )}
                     {isCurrentUserAuthor && !isDeleted && (
-                      <Popconfirm
-                        title="Delete this comment?"
-                        description="This action cannot be undone."
-                        okText="Delete"
-                        cancelText="Cancel"
-                        okButtonProps={{ danger: true }}
-                        onConfirm={() => handleDeleteComment(comment.id)}
-                        onCancel={(e) => e?.stopPropagation()}
+                    <Popconfirm
+                      title="Delete this comment?"
+                      description="This action cannot be undone."
+                      okText="Delete"
+                      cancelText="Cancel"
+                      okButtonProps={{ danger: true }}
+                      onConfirm={() => handleDeleteComment(comment.id)}
+                      onCancel={(e) => e?.stopPropagation()}
+                    >
+                      <Button
+                        className="delete-button"
+                        icon={<DeleteOutlined />}
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <Button
-                          className="delete-button"
-                          icon={<DeleteOutlined />}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Delete
-                        </Button>
-                      </Popconfirm>
-                    )}
-                  </div>
+                        Delete
+                      </Button>
+                    </Popconfirm>
+                  )}
                 </div>
+              </div>
               )}
 
               {!isReply && !isDeleted && replyingToId === comment.id && (

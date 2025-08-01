@@ -159,7 +159,7 @@ async function deleteCommentAttachments(commentId: string) {
       try {
         // Delete from R2
         await deleteAttachmentFromR2(attachment.storage_path);
-        
+
         // Delete from database
         const { error: deleteError } = await supabase
           .from('attachments')
@@ -196,6 +196,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [showMobileInfo, setShowMobileInfo] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [userCommentsThisSession, setUserCommentsThisSession] = useState<Set<number>>(new Set());
+  const [isMobileInputExpanded, setIsMobileInputExpanded] = useState(false);
+  const [isActionButtonClicked, setIsActionButtonClicked] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
   // Initialize likeCount from post.likes or post.likesCount
   const [likeCount, setLikeCount] = useState(post.reaction_counts?.like ?? 0);
@@ -214,10 +217,99 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   };
 
+  const handleMobileInputFocus = () => {
+    setIsMobileInputExpanded(true);
+  };
+
+  const handleMobileInputBlur = () => {
+    // Only collapse if not clicking on action buttons
+    if (!isActionButtonClicked) {
+      setTimeout(() => {
+        setIsMobileInputExpanded(false);
+      }, 100);
+    }
+    setIsActionButtonClicked(false);
+  };
+
+  const handleMobileCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setCommentText(value);
+
+    // Auto-expand if text is long or files are attached
+    if (value.length > 50 || fileList.length > 0) {
+      setIsMobileInputExpanded(true);
+    }
+  };
+
+  // Auto-expand when files are added/removed
+  useEffect(() => {
+    if (fileList.length > 0) {
+      setIsMobileInputExpanded(true);
+    }
+  }, [fileList.length]);
+
+  // Collapse after comment submission
+  const handleMobileCommentSubmit = async () => {
+    await handleCommentSubmit();
+    setIsMobileInputExpanded(false);
+  };
+
   // Keep likeCount in sync with post prop
   useEffect(() => {
     setLikeCount(post.reaction_counts?.like ?? 0);
   }, [post.reaction_counts?.like]);
+
+  // Update display text when comment text changes
+  useEffect(() => {
+    if (isMobile && commentInputRef.current) {
+      // Simplified logic - no more displayText
+    }
+  }, [commentText, isMobileInputExpanded, isMobile]);
+
+  // Handle viewport changes for keyboard behavior (Reddit-style)
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const handleViewportChange = () => {
+      // Update viewport height
+      const newHeight = window.innerHeight;
+      setViewportHeight(newHeight);
+
+      // Handle keyboard appearance/disappearance
+      const heightDifference = window.screen.height - newHeight;
+      const isKeyboardVisible = heightDifference > 150; // Threshold for keyboard detection
+
+      if (isKeyboardVisible && isMobileInputExpanded) {
+        // Keyboard is visible and input is expanded
+        // Ensure the input stays visible above keyboard
+        setTimeout(() => {
+          if (commentInputRef.current) {
+            commentInputRef.current.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center'
+            });
+          }
+        }, 100);
+      }
+    };
+
+    // Listen for viewport changes
+    window.addEventListener('resize', handleViewportChange);
+    window.addEventListener('orientationchange', handleViewportChange);
+
+    // Visual viewport API for better keyboard detection (modern browsers)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleViewportChange);
+      window.removeEventListener('orientationchange', handleViewportChange);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportChange);
+      }
+    };
+  }, [isMobile, isMobileInputExpanded]);
 
   // Add resize listener to detect mobile/desktop
   useEffect(() => {
@@ -530,17 +622,17 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           if (comment.replies && comment.replies.some(reply => reply.id === commentId)) {
             return {
               ...comment,
-              replies: comment.replies.map(reply => 
-                reply.id === commentId 
+              replies: comment.replies.map(reply =>
+                reply.id === commentId
                   ? {
-                      ...reply,
-                      is_deleted: true,
-                      content: '',
-                      author: { name: 'Deleted comment', avatar: '' },
-                      likes: 0,
-                      liked: false,
-                      attachments: []
-                    }
+                    ...reply,
+                    is_deleted: true,
+                    content: '',
+                    author: { name: 'Deleted comment', avatar: '' },
+                    likes: 0,
+                    liked: false,
+                    attachments: []
+                  }
                   : reply
               )
             };
@@ -688,6 +780,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
       setCommentText('');
       setFileList([]);
+
+      // Collapse mobile input after posting
+      if (isMobile) {
+        setIsMobileInputExpanded(false);
+      }
     }
   };
 
@@ -970,9 +1067,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
     const handleScroll = () => {
       if (!postContentRef.current) return;
-      const contentBottom = postContentRef.current.getBoundingClientRect().bottom;
+      const contentRect = postContentRef.current.getBoundingClientRect();
       const navbarHeight = 60; // px
-      setShowStickyHeader(contentBottom < navbarHeight + 8); // 8px buffer
+      // Show sticky header when the post content has scrolled past the navbar
+      setShowStickyHeader(contentRect.top < navbarHeight + 8); // 8px buffer
     };
 
     modalWrap.addEventListener('scroll', handleScroll);
@@ -980,130 +1078,382 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     return () => modalWrap.removeEventListener('scroll', handleScroll);
   }, [isMobile, isOpen]);
 
-  return (
-    <Modal
-      open={isOpen}
-      onCancel={handleClose}
-      footer={null}
-      maskClosable={false}
-      mask={true}
-      width={isMobile ? window.innerWidth - 50 : '97%'}
-      className={`post-popup ${isMobile ? 'mobile' : 'desktop'} ${isClosing ? 'closing' : ''}`}
-      style={{
-        top: isMobile ? '72px' : '70px',
-        bottom: isMobile ? '64px' : 'auto',
-        height: 'auto',
-        maxHeight: isMobile ? '100vh' : '80vh',
-        maxWidth: isMobile ? 'none' : '97vw'
-      }}
-      closeIcon={<span style={{ fontSize: '24px' }}>×</span>}
-    >
-      {/* Mobile Navbar - only show on mobile */}
-      {isMobile && (
-        <div className="mobile-navbar">
-          <div className="mobile-navbar-back" onClick={handleClose}>
-            <LeftOutlined />
-          </div>
-          <div className="mobile-navbar-title">Board Name</div>
-          <div className="mobile-navbar-info" onClick={() => setShowMobileInfo(true)}>
-            <InfoCircleOutlined />
-          </div>
+  const MobileCommentBar = () => (
+    <div className={`mobile-comment-bar ${isMobileInputExpanded ? 'expanded' : 'collapsed'}`}>
+      {/* File previews */}
+      {fileList.length > 0 && (
+        <div className="comment-file-preview-container mobile-preview">
+          {fileList.map((file, index) => (
+            <div key={index} className="comment-file-preview-wrapper">
+              <div className="file-preview-item">
+                <FileOutlined />
+                <span className="file-name">{file.name}</span>
+                <button
+                  className="remove-file"
+                  onClick={() => removeFile(file)}
+                  title="Remove file"
+                >
+                  <CloseOutlined />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      <div className={`mobile-sticky-header${showStickyHeader ? ' sticky-visible' : ''}`}>
-        <div className="sticky-title">{post.title}</div>
-        <div className="sticky-meta">
-          <span className="sticky-likes">{likeCount} likes</span>
-          <span className="sticky-comments">{commentCount} comments</span>
-        </div>
+      <div className="mobile-input-main-row">
+        <textarea
+          ref={commentInputRef}
+          placeholder="Join the conversation"
+          className="comment-input mobile-comment-input"
+          value={commentText}
+          onChange={handleMobileCommentChange}
+          onFocus={handleMobileInputFocus}
+          onBlur={handleMobileInputBlur}
+          rows={isMobileInputExpanded ? 1 : 1}
+        />
       </div>
 
-      <div
-        ref={isMobile ? popupContainerRef : undefined}
-        className={`post-popup-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
-        style={isMobile ? { paddingBottom: 80 } : {}} // add bottom padding for fixed bar
+      {isMobileInputExpanded && (
+        <>
+          <div className="mobile-input-divider"></div>
+          <div className="mobile-action-buttons-row">
+            <button
+              className="comment-action-button"
+              onClick={() => {
+                setIsActionButtonClicked(true);
+                handleFileAttachment();
+              }}
+              title="Attach files"
+            >
+              <PaperClipOutlined />
+            </button>
+            <button
+              className="comment-action-button send"
+              onClick={() => {
+                setIsActionButtonClicked(true);
+                handleMobileCommentSubmit();
+              }}
+              title="Send comment"
+            >
+              <img src={SendArrow} alt="Send" className="send-arrow-icon" />
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  // Mobile sticky header component (rendered outside modal to ensure viewport positioning)
+  const MobileStickyHeader = () => (
+    <div className={`mobile-sticky-header${showStickyHeader ? ' sticky-visible' : ''}`}>
+      <div className="sticky-title">{post.title}</div>
+      <div className="sticky-meta">
+        <span className="sticky-likes">{likeCount} likes</span>
+        <span className="sticky-comments">{commentCount} comments</span>
+      </div>
+    </div>
+  );
+
+  // Mobile navbar component (rendered outside modal to ensure viewport positioning)
+  const MobileNavbar = () => (
+    <div className="mobile-navbar">
+      <div className="mobile-navbar-back" onClick={handleClose}>
+        <LeftOutlined />
+      </div>
+      <div className="mobile-navbar-title">Board Name</div>
+      <div className="mobile-navbar-info" onClick={() => setShowMobileInfo(true)}>
+        <InfoCircleOutlined />
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <Modal
+        open={isOpen}
+        onCancel={handleClose}
+        footer={null}
+        maskClosable={false}
+        mask={true}
+        width={isMobile ? window.innerWidth - 50 : '97%'}
+        className={`post-popup ${isMobile ? 'mobile' : 'desktop'} ${isClosing ? 'closing' : ''}`}
+        style={{
+          top: isMobile ? '72px' : '70px',
+          bottom: isMobile ? '64px' : 'auto',
+          height: 'auto',
+          maxHeight: isMobile ? '100vh' : '80vh',
+          maxWidth: isMobile ? 'none' : '97vw'
+        }}
+        closeIcon={<span style={{ fontSize: '24px' }}>×</span>}
       >
-        {!isMobile ? (
-          <>
-            <div className="left-column">
-              <div className="post-content-section">
+        {/* Mobile Navbar - now rendered outside modal */}
+        <div
+          ref={isMobile ? popupContainerRef : undefined}
+          className={`post-popup-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
+          style={isMobile ? { paddingBottom: 80 } : {}} // add bottom padding for fixed bar
+        >
+          {!isMobile ? (
+            <>
+              <div className="left-column">
+                <div className="post-content-section">
+                  <div className="post-header">
+                    <h2 className="post-title">{post.title}</h2>
+                    <div className="post-content">
+                      <p>{post.content}</p>
+
+                      {/* Display post attachments if any */}
+                      {post.attachments && post.attachments.length > 0 && (
+                        <div className="post-attachments">
+                          {(() => {
+                            // Separate attachments by type while maintaining original order within each group
+                            type AttachmentWithIndex = {
+                              id: string;
+                              storage_path: string;
+                              file_name: string;
+                              file_type: string;
+                              file_size: number;
+                              originalIndex: number;
+                            };
+                            const images: AttachmentWithIndex[] = [];
+                            const nonImages: AttachmentWithIndex[] = [];
+
+                            post.attachments.forEach((attachment, originalIndex) => {
+                              // Check if it's an image file by extension and MIME type
+                              const isImage = attachment.file_type.startsWith('image/') ||
+                                /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(attachment.file_name);
+
+                              const attachmentWithIndex: AttachmentWithIndex = { ...attachment, originalIndex };
+
+                              if (isImage) {
+                                images.push(attachmentWithIndex);
+                              } else {
+                                nonImages.push(attachmentWithIndex);
+                              }
+                            });
+
+                            return (
+                              <>
+                                {/* Images container */}
+                                {images.length > 0 && (
+                                  <div className="post-images-container">
+                                    {images.map((attachment) => (
+                                      <div key={attachment.id} className="post-attachment-preview">
+                                        <div className="post-attachment-image-container">
+                                          <img
+                                            src={`https://prysm-r2-worker.prysmapp.workers.dev/file/${attachment.storage_path}`}
+                                            alt={attachment.file_name}
+                                            className="post-attachment-image"
+                                          />
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Non-image files container */}
+                                {nonImages.length > 0 && (
+                                  <div className="post-files-container">
+                                    {nonImages.map((attachment) => (
+                                      <div key={attachment.id} className="post-attachment-preview">
+                                        <div className="post-attachment-file-preview">
+                                          <FileOutlined />
+                                          <span className="attachment-file-name" title={attachment.file_name}>
+                                            {attachment.file_name}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="post-actions">
+                      <Button
+                        className={`custom-like-button ${liked ? 'liked' : ''}`}
+                        icon={liked ? <HeartFilled /> : <HeartOutlined />}
+                        onClick={handleLike}
+                      >
+                        <span className="like-count">{post.reaction_counts?.like || 0}</span>
+                      </Button>
+
+                      <Button className="custom-comment-button" icon={<MessageOutlined />}>
+                        <span className="comment-count">{commentCount}</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="post-comment-divider"></div>
+
+                <div className="comments-section-container">
+                  <div className="comments-section">
+                    <div className="comment-input-container">
+                      <div className="input-with-buttons">
+                        <textarea
+                          ref={commentInputRef}
+                          placeholder="Leave a comment..."
+                          className="comment-input"
+                          value={commentText}
+                          onChange={handleCommentChange}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleCommentSubmit();
+                            }
+                          }}
+                          rows={1}
+                        />
+                        {fileList.length > 0 && (
+                          <div className="comment-file-preview-container">
+                            {fileList.map((file, index) => (
+                              <div key={index} className="comment-file-preview-wrapper">
+                                <div className="file-preview-item">
+                                  <FileOutlined />
+                                  <span className="file-name">{file.name}</span>
+                                  <button
+                                    className="remove-file"
+                                    onClick={() => removeFile(file)}
+                                    title="Remove file"
+                                  >
+                                    <CloseOutlined />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div className="input-buttons">
+                          <div className="action-buttons-group">
+                            <button
+                              className="comment-action-button"
+                              onClick={handleFileAttachment}
+                              title="Attach files"
+                            >
+                              <PaperClipOutlined />
+                            </button>
+                            <button
+                              className="comment-action-button send"
+                              onClick={handleCommentSubmit}
+                              title="Send comment"
+                            >
+                              <img src={SendArrow} alt="Send" className="send-arrow-icon" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <CommentThread
+                      postId={post.id}
+                      currentUser={currentUser}
+                      comments={comments}
+                      onLike={handleCommentLike}
+                      onAddReply={handleAddReply}
+                      onDelete={handleDeleteComment}
+                      userCommentsThisSession={userCommentsThisSession}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* New vertical divider */}
+              <div className="vertical-divider"></div>
+
+              <div className="right-column">
+                <div className="post-activity-section">
+                  <div className="about-section">
+                    <h3>About</h3>
+                    <div className="author-info">
+                      <Avatar
+                        src={post.author.avatar_url}
+                        className="author-avatar"
+                      />
+                      <span className="author-name">{post.author.full_name}</span>
+                    </div>
+                    <div className="author-email" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <img src={MailIcon} alt="mail" className="mail-icon" />
+                      <span>{post.author.email}</span>
+                    </div>
+                    <div className="post-date">
+                      <CalendarIcon />
+                      <div className="date-time">
+                        <span>
+                          {(() => {
+                            const date = new Date(post.created_at);
+                            const day = date.getDate();
+                            const month = date.toLocaleDateString('en-US', { month: 'long' });
+                            const year = date.getFullYear();
+                            return `${month} ${day}${getOrdinalSuffix(day)}, ${year}`;
+                          })()}
+                        </span>
+                        <span className="post-time">
+                          {new Date(post.created_at).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="subscribers-section">
+                    <h3>Subscribers</h3>
+                    <div className="avatar-group">
+                      <Avatar.Group
+                        maxCount={4}
+                        maxStyle={{
+                          color: '#281010',
+                          backgroundColor: '#f5f5f5',
+                          border: '2px solid #fff'
+                        }}
+                      >
+                        <Avatar src="https://i.pravatar.cc/150?img=1" />
+                        <Avatar src="https://i.pravatar.cc/150?img=2" />
+                        <Avatar src="https://i.pravatar.cc/150?img=3" />
+                        <Avatar src="https://i.pravatar.cc/150?img=4" />
+                        <Avatar src="https://i.pravatar.cc/150?img=5" />
+                      </Avatar.Group>
+                      <SubscribeButton />
+                    </div>
+                  </div>
+
+                  <div className="activity-section">
+                    <h3>Activity</h3>
+                    <BoardActivityStream
+                      boardId={post.board_id}
+                      currentUserId={currentUser?.id}
+                      boardCreatorId={boardCreatorId}
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mobile-post-header">
+                <Avatar
+                  src={post.author.avatar_url}
+                  className="author-avatar"
+                />
+                <span className="author-name">{post.author.full_name}</span>
+                <span className="post-time">
+                  {new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              <div className="post-content-section" ref={postContentRef}>
                 <div className="post-header">
                   <h2 className="post-title">{post.title}</h2>
                   <div className="post-content">
                     <p>{post.content}</p>
-
-                    {/* Display post attachments if any */}
-                    {post.attachments && post.attachments.length > 0 && (
-                      <div className="post-attachments">
-                        {(() => {
-                          // Separate attachments by type while maintaining original order within each group
-                          type AttachmentWithIndex = {
-                            id: string;
-                            storage_path: string;
-                            file_name: string;
-                            file_type: string;
-                            file_size: number;
-                            originalIndex: number;
-                          };
-                          const images: AttachmentWithIndex[] = [];
-                          const nonImages: AttachmentWithIndex[] = [];
-
-                          post.attachments.forEach((attachment, originalIndex) => {
-                            // Check if it's an image file by extension and MIME type
-                            const isImage = attachment.file_type.startsWith('image/') ||
-                              /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(attachment.file_name);
-
-                            const attachmentWithIndex: AttachmentWithIndex = { ...attachment, originalIndex };
-
-                            if (isImage) {
-                              images.push(attachmentWithIndex);
-                            } else {
-                              nonImages.push(attachmentWithIndex);
-                            }
-                          });
-
-                          return (
-                            <>
-                              {/* Images container */}
-                              {images.length > 0 && (
-                                <div className="post-images-container">
-                                  {images.map((attachment) => (
-                                    <div key={attachment.id} className="post-attachment-preview">
-                                      <div className="post-attachment-image-container">
-                                        <img
-                                          src={`https://prysm-r2-worker.prysmapp.workers.dev/file/${attachment.storage_path}`}
-                                          alt={attachment.file_name}
-                                          className="post-attachment-image"
-                                        />
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-
-                              {/* Non-image files container */}
-                              {nonImages.length > 0 && (
-                                <div className="post-files-container">
-                                  {nonImages.map((attachment) => (
-                                    <div key={attachment.id} className="post-attachment-preview">
-                                      <div className="post-attachment-file-preview">
-                                        <FileOutlined />
-                                        <span className="attachment-file-name" title={attachment.file_name}>
-                                          {attachment.file_name}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </>
-                          );
-                        })()}
-                      </div>
-                    )}
                   </div>
-
                   <div className="post-actions">
                     <Button
                       className={`custom-like-button ${liked ? 'liked' : ''}`}
@@ -1112,75 +1462,17 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     >
                       <span className="like-count">{post.reaction_counts?.like || 0}</span>
                     </Button>
-
                     <Button className="custom-comment-button" icon={<MessageOutlined />}>
                       <span className="comment-count">{commentCount}</span>
                     </Button>
                   </div>
+                  {/* Divider */}
+                  <div className="post-comment-divider"></div>
                 </div>
               </div>
-
-              {/* Divider */}
-              <div className="post-comment-divider"></div>
-
+              {/* Comments Section */}
               <div className="comments-section-container">
                 <div className="comments-section">
-                  <div className="comment-input-container">
-                    <div className="input-with-buttons">
-                      <textarea
-                        ref={commentInputRef}
-                        placeholder="Leave a comment..."
-                        className="comment-input"
-                        value={commentText}
-                        onChange={handleCommentChange}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleCommentSubmit();
-                          }
-                        }}
-                        rows={1}
-                      />
-                      {fileList.length > 0 && (
-                        <div className="comment-file-preview-container">
-                          {fileList.map((file, index) => (
-                            <div key={index} className="comment-file-preview-wrapper">
-                              <div className="file-preview-item">
-                                <FileOutlined />
-                                <span className="file-name">{file.name}</span>
-                                <button
-                                  className="remove-file"
-                                  onClick={() => removeFile(file)}
-                                  title="Remove file"
-                                >
-                                  <CloseOutlined />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <div className="input-buttons">
-                        <div className="action-buttons-group">
-                          <button
-                            className="comment-action-button"
-                            onClick={handleFileAttachment}
-                            title="Attach files"
-                          >
-                            <PaperClipOutlined />
-                          </button>
-                          <button
-                            className="comment-action-button send"
-                            onClick={handleCommentSubmit}
-                            title="Send comment"
-                          >
-                            <img src={SendArrow} alt="Send" className="send-arrow-icon" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
                   <CommentThread
                     postId={post.id}
                     currentUser={currentUser}
@@ -1192,243 +1484,93 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                   />
                 </div>
               </div>
-            </div>
-
-            {/* New vertical divider */}
-            <div className="vertical-divider"></div>
-
-            <div className="right-column">
-              <div className="post-activity-section">
-                <div className="about-section">
-                  <h3>About</h3>
-                  <div className="author-info">
-                    <Avatar
-                      src={post.author.avatar_url}
-                      className="author-avatar"
-                    />
-                    <span className="author-name">{post.author.full_name}</span>
-                  </div>
-                  <div className="author-email" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <img src={MailIcon} alt="mail" className="mail-icon" />
-                    <span>{post.author.email}</span>
-                  </div>
-                  <div className="post-date">
-                    <CalendarIcon />
-                    <div className="date-time">
-                      <span>
-                        {(() => {
-                          const date = new Date(post.created_at);
-                          const day = date.getDate();
-                          const month = date.toLocaleDateString('en-US', { month: 'long' });
-                          const year = date.getFullYear();
-                          return `${month} ${day}${getOrdinalSuffix(day)}, ${year}`;
-                        })()}
-                      </span>
-                      <span className="post-time">
-                        {new Date(post.created_at).toLocaleTimeString('en-US', {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="subscribers-section">
-                  <h3>Subscribers</h3>
-                  <div className="avatar-group">
-                    <Avatar.Group
-                      maxCount={4}
-                      maxStyle={{
-                        color: '#281010',
-                        backgroundColor: '#f5f5f5',
-                        border: '2px solid #fff'
-                      }}
-                    >
-                      <Avatar src="https://i.pravatar.cc/150?img=1" />
-                      <Avatar src="https://i.pravatar.cc/150?img=2" />
-                      <Avatar src="https://i.pravatar.cc/150?img=3" />
-                      <Avatar src="https://i.pravatar.cc/150?img=4" />
-                      <Avatar src="https://i.pravatar.cc/150?img=5" />
-                    </Avatar.Group>
-                    <SubscribeButton />
-                  </div>
-                </div>
-
-                <div className="activity-section">
-                  <h3>Activity</h3>
-                  <BoardActivityStream
-                    boardId={post.board_id}
-                    currentUserId={currentUser?.id}
-                    boardCreatorId={boardCreatorId}
-                  />
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="mobile-post-header">
-              <Avatar
-                src={post.author.avatar_url}
-                className="author-avatar"
-              />
-              <span className="author-name">{post.author.full_name}</span>
-              <span className="post-time">
-                {new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-            <div className="post-content-section" ref={postContentRef}>
-              <div className="post-header">
-                <h2 className="post-title">{post.title}</h2>
-                <div className="post-content">
-                  <p>{post.content}</p>
-                </div>
-                <div className="post-actions">
-                  <Button
-                    className={`custom-like-button ${liked ? 'liked' : ''}`}
-                    icon={liked ? <HeartFilled /> : <HeartOutlined />}
-                    onClick={handleLike}
-                  >
-                    <span className="like-count">{post.reaction_counts?.like || 0}</span>
-                  </Button>
-                  <Button className="custom-comment-button" icon={<MessageOutlined />}>
-                    <span className="comment-count">{commentCount}</span>
-                  </Button>
-                </div>
-                {/* Divider */}
-                <div className="post-comment-divider"></div>
-              </div>
-            </div>
-            {/* Comments Section */}
-            <div className="comments-section-container">
-              <div className="comments-section">
-                <CommentThread
-                  postId={post.id}
-                  currentUser={currentUser}
-                  comments={comments}
-                  onLike={handleCommentLike}
-                  onAddReply={handleAddReply}
-                  onDelete={handleDeleteComment}
-                  userCommentsThisSession={userCommentsThisSession}
-                />
-              </div>
-            </div>
-            {/* Fixed mobile comment bar */}
-            <div className="mobile-comment-bar">
-              <div className="input-with-buttons mobile-input-row">
-                {fileList.length > 0 && (
-                  <div className="comment-file-preview-container mobile-preview">
-                    {fileList.map((file, index) => (
-                      <div key={index} className="comment-file-preview-wrapper">
-                        <div className="file-preview-item">
-                          <FileOutlined />
-                          <span className="file-name">{file.name}</span>
-                          <button
-                            className="remove-file"
-                            onClick={() => removeFile(file)}
-                            title="Remove file"
-                          >
-                            <CloseOutlined />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <button
-                  className="comment-action-button"
-                  onClick={handleFileAttachment}
-                  title="Attach files"
-                  type="button"
-                >
-                  <PaperClipOutlined />
-                </button>
-                <textarea
-                  ref={commentInputRef}
-                  placeholder="Join the conversation"
-                  className="comment-input"
-                  value={commentText}
-                  onChange={handleCommentChange}
-                  rows={1}
-                />
-                <button
-                  className="comment-action-button send"
-                  onClick={handleCommentSubmit}
-                  title="Send comment"
-                  type="button"
-                >
-                  <img src={SendArrow} alt="Send" className="send-arrow-icon" />
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {isMobile && showMobileInfo && (
-        <div className="mobile-info-panel">
-          <button className="mobile-info-close" onClick={() => setShowMobileInfo(false)}>
-            <CloseOutlined />
-          </button>
-          <div className="about-section">
-            <h3>About</h3>
-            <div className="author-info">
-              <Avatar
-                src={post.author.avatar_url}
-                className="author-avatar"
-              />
-              <span className="author-name">{post.author.full_name}</span>
-            </div>
-            <div className="author-email" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <img src={MailIcon} alt="mail" className="mail-icon" />
-              <span>{post.author.email}</span>
-            </div>
-            <div className="post-date">
-              <CalendarIcon />
-              <div className="date-time">
-                <span>
-                  {(() => {
-                    const date = new Date(post.created_at);
-                    const day = date.getDate();
-                    const month = date.toLocaleDateString('en-US', { month: 'long' });
-                    const year = date.getFullYear();
-                    return `${month} ${day}${getOrdinalSuffix(day)}, ${year}`;
-                  })()}
-                </span>
-                <span className="post-time">
-                  {new Date(post.created_at).toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                  })}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="subscribers-section">
-            <h3>Subscribers</h3>
-            <div className="avatar-group">
-              <Avatar.Group
-                maxCount={4}
-                maxStyle={{
-                  color: '#281010',
-                  backgroundColor: '#f5f5f5',
-                  border: '2px solid #fff'
-                }}
-              >
-                <Avatar src="https://i.pravatar.cc/150?img=1" />
-                <Avatar src="https://i.pravatar.cc/150?img=2" />
-                <Avatar src="https://i.pravatar.cc/150?img=3" />
-                <Avatar src="https://i.pravatar.cc/150?img=4" />
-                <Avatar src="https://i.pravatar.cc/150?img=5" />
-              </Avatar.Group>
-              <SubscribeButton />
-            </div>
-          </div>
+              {/* Fixed mobile comment bar - Reddit style */}
+              {/* This component is now rendered outside the modal */}
+            </>
+          )}
         </div>
+      </Modal>
+      {isMobile && isOpen && <MobileNavbar />}
+      {isMobile && isOpen && <MobileCommentBar />}
+      {isMobile && isOpen && <MobileStickyHeader />}
+
+      {/* Mobile Info Panel */}
+      {isMobile && showMobileInfo && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="blur-background"
+            onClick={() => setShowMobileInfo(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 200000,
+            }}
+          />
+          {/* Info Panel */}
+          <div className="mobile-info-panel">
+            <div className="about-section">
+              <h3>About</h3>
+              <div className="author-info">
+                <Avatar
+                  src={post.author.avatar_url}
+                  className="author-avatar"
+                />
+                <span className="author-name">{post.author.full_name}</span>
+              </div>
+              <div className="author-email">
+                <img src={MailIcon} alt="mail" className="mail-icon" />
+                <span>{post.author.email}</span>
+              </div>
+              <div className="post-date">
+                <CalendarIcon />
+                <div className="date-time">
+                  <span>
+                    {(() => {
+                      const date = new Date(post.created_at);
+                      const day = date.getDate();
+                      const month = date.toLocaleDateString('en-US', { month: 'long' });
+                      const year = date.getFullYear();
+                      return `${month} ${day}${getOrdinalSuffix(day)}, ${year}`;
+                    })()}
+                  </span>
+                  <span className="post-time">
+                    {new Date(post.created_at).toLocaleTimeString('en-US', {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true
+                    })}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="subscribers-section">
+              <h3>Subscribers</h3>
+              <div className="avatar-group">
+                <Avatar.Group
+                  maxCount={4}
+                  maxStyle={{
+                    color: '#281010',
+                    backgroundColor: '#f5f5f5',
+                    border: '2px solid #fff'
+                  }}
+                >
+                  <Avatar src="https://i.pravatar.cc/150?img=1" />
+                  <Avatar src="https://i.pravatar.cc/150?img=2" />
+                  <Avatar src="https://i.pravatar.cc/150?img=3" />
+                  <Avatar src="https://i.pravatar.cc/150?img=4" />
+                  <Avatar src="https://i.pravatar.cc/150?img=5" />
+                </Avatar.Group>
+                <SubscribeButton />
+              </div>
+            </div>
+          </div>
+        </>
       )}
-    </Modal>
+    </>
   );
 } 
