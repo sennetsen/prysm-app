@@ -1,3 +1,37 @@
+/* === Subscribe and Export Buttons === */
+.subscribe-export-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  min-height: 40px;
+}
+
+.export-csv-button {
+  background-color: #f0f0f0;
+  border: 1px solid #d9d9d9;
+  color: #666;
+  font-size: 12px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.export-csv-button:hover {
+  background-color: #e6e6e6;
+  border-color: #bfbfbf;
+  color: #333;
+}
+
+.export-csv-button .anticon {
+  font-size: 14px;
+}
+
 /* === Base styles for PostPopup modal === */
 .post-popup {
   top: 70px;
@@ -415,7 +449,7 @@
 
 .unsubscribe-button,
 .subscribe-button {
-  height: 36px;
+  height: 32px;
   padding: 0 16px;
   border-radius: 8px;
   font-size: 14px;
@@ -931,6 +965,7 @@
   }
 }
 
+
 .author-avatar {
   width: 24px;
   height: 24px;
@@ -1382,4 +1417,10 @@
 .post-popup.mobile .mobile-comment-bar.expanded~* .post-popup-container {
   padding-bottom: 120px;
   /* More space when expanded */
+}
+
+.comment-action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
 }

@@ -126,7 +126,7 @@ function BoardView() {
     const fetchBoardData = async () => {
       const { data, error } = await supabase
         .from('boards')
-        .select('*, owner:users(avatar_url)')
+        .select('*, owner:users(avatar_url, id)')
         .eq('url_path', boardPath)
         .maybeSingle();
 
@@ -136,6 +136,7 @@ function BoardView() {
         return;
       }
 
+      console.log('Board data fetched:', data);
       setBoardData(data);
       setNavbarColor(data.color);
       setIsBoardOwner(user?.email === data.email);
@@ -1015,18 +1016,27 @@ function BoardView() {
       )}
 
       {selectedPost && (
-        <PostPopup
-          post={selectedPost}
-          isOpen={!!selectedPost}
-          onClose={() => {
-            setSelectedPost(null);
-            // Navigate back to the board
-            navigate(`/${boardPath}`);
-          }}
-          currentUser={user}
-          onPostLikeChange={handlePostLikeUpdate}
-          boardCreatorId={boardData?.owner_id}
-        />
+        <>
+          {console.log('PostPopup props:', {
+            boardData: boardData,
+            boardCreatorId: boardData?.owner_id,
+            userEmail: user?.email,
+            boardEmail: boardData?.email
+          })}
+          <PostPopup
+            post={selectedPost}
+            isOpen={!!selectedPost}
+            onClose={() => {
+              setSelectedPost(null);
+              // Navigate back to the board
+              navigate(`/${boardPath}`);
+            }}
+            currentUser={user}
+            onPostLikeChange={handlePostLikeUpdate}
+            boardCreatorId={boardData?.owner_id}
+            boardEmail={boardData?.email}
+          />
+        </>
       )}
 
     </div>

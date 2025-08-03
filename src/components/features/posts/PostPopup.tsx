@@ -12,7 +12,9 @@ import {
   InfoCircleOutlined,
   CloseOutlined,
   FileOutlined,
-  ShareAltOutlined
+  ShareAltOutlined,
+  DownloadOutlined,
+  LoadingOutlined
 } from '@ant-design/icons';
 import { ReactComponent as CalendarIcon } from '../../../img/calendar.svg';
 import './PostPopup.css';
@@ -50,6 +52,7 @@ interface PostPopupProps {
   currentUser: any;
   onPostLikeChange: (postId: string) => void;
   boardCreatorId?: string;
+  boardEmail?: string;
 }
 
 interface Attachment {
@@ -181,7 +184,7 @@ async function deleteCommentAttachments(commentId: string) {
   }
 }
 
-export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange, boardCreatorId }: PostPopupProps) {
+export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange, boardCreatorId, boardEmail }: PostPopupProps) {
   const [liked, setLiked] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
   const [commentText, setCommentText] = useState('');
@@ -202,6 +205,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [replyingToComment, setReplyingToComment] = useState<string | null>(null); // Track which comment we're replying to
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isExportingCSV, setIsExportingCSV] = useState(false);
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [isFileUploading, setIsFileUploading] = useState(false);
 
   // Initialize likeCount from post.likes or post.likesCount
   const [likeCount, setLikeCount] = useState(post.reaction_counts?.like ?? 0);
@@ -248,7 +254,36 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     setLikeCount(post.reaction_counts?.like ?? 0);
   }, [post.reaction_counts?.like]);
 
-  // Removed empty useEffect that was causing unnecessary re-renders
+  // Fetch subscription state when component mounts or user changes
+  useEffect(() => {
+    if (isOpen && currentUser) {
+      fetchSubscriptionState();
+    }
+  }, [isOpen, currentUser?.id, post.id]);
+
+  // Fetch subscribers when component mounts (for board creators)
+  useEffect(() => {
+    console.log('useEffect debug:', {
+      currentUserId: currentUser?.id,
+      currentUserEmail: currentUser?.email,
+      boardCreatorId: boardCreatorId,
+      boardEmail: boardEmail,
+      isOpen: isOpen,
+      shouldFetch: currentUser?.email === boardEmail && isOpen
+    });
+
+    if (currentUser?.email === boardEmail && isOpen) {
+      console.log('Fetching subscribers...');
+      fetchSubscribers();
+    }
+  }, [currentUser?.id, currentUser?.email, boardEmail, isOpen]);
+
+  // Update display text when comment text changes
+  useEffect(() => {
+    if (isMobile && commentInputRef.current) {
+      // Simplified logic - no more displayText
+    }
+  }, [commentText, isMobileInputExpanded, isMobile]);
 
   // Handle viewport changes for keyboard behavior (Reddit-style)
   useEffect(() => {
@@ -744,21 +779,26 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
       // 2. Upload each attachment with the correct commentId and collect attachment data
       const uploadedAttachments: Attachment[] = [];
-      try {
-        for (const file of fileList) {
-          const storage_path = await uploadCommentAttachment(file, commentId, currentUser.id);
-          // Create attachment object to include in the local comment
-          uploadedAttachments.push({
-            id: `temp-${Date.now()}-${Math.random()}`, // Temporary ID for display
-            storage_path,
-            file_name: file.name,
-            file_type: file.type,
-            file_size: file.size,
-          });
+      if (fileList.length > 0) {
+        setIsFileUploading(true);
+        try {
+          for (const file of fileList) {
+            const storage_path = await uploadCommentAttachment(file, commentId, currentUser.id);
+            // Create attachment object to include in the local comment
+            uploadedAttachments.push({
+              id: `temp-${Date.now()}-${Math.random()}`, // Temporary ID for display
+              storage_path,
+              file_name: file.name,
+              file_type: file.type,
+              file_size: file.size,
+            });
+          }
+        } catch (err) {
+          console.error('Attachment upload error:', err);
+          message.error('Failed to upload one or more attachments');
+        } finally {
+          setIsFileUploading(false);
         }
-      } catch (err) {
-        console.error('Attachment upload error:', err);
-        message.error('Failed to upload one or more attachments');
       }
 
       // 3. Track this comment as created in this session
@@ -775,9 +815,14 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       if (isMobile) {
         setIsMobileInputExpanded(false);
       }
+
+      // Show success notification
+      if (!internal) {
+        message.success('Comment submitted successfully!');
+      }
     } catch (error) {
       console.error('Error submitting comment:', error);
-      message.error('Failed to submit comment');
+      message.error('Failed to post comment');
     } finally {
       if (!internal) setIsSubmitting(false);
     }
@@ -825,6 +870,30 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   };
 
+  // Fetch current subscription state
+  const fetchSubscriptionState = async () => {
+    if (!currentUser || !post.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('user_id', currentUser.id)
+        .eq('post_id', post.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.error('Error fetching subscription state:', error);
+        return;
+      }
+
+      setIsSubscribed(!!data);
+      console.log('Subscription state fetched:', !!data);
+    } catch (error) {
+      console.error('Error fetching subscription state:', error);
+    }
+  };
+
   const handleSubscribe = async () => {
     if (!currentUser) {
       message.info('Please sign in to subscribe to this post');
@@ -833,23 +902,24 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
     setIsSubscribeLoading(true);
     try {
-      // Simulate API call with timeout
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const { error } = await supabase
+        .from('subscriptions')
+        .insert([{
+          user_id: currentUser.id,
+          post_id: post.id
+        }]);
+
+      if (error) {
+        console.error('Error subscribing:', error);
+        message.error('Failed to subscribe to the post. Please try again.');
+        return;
+      }
 
       setIsSubscribed(true);
-      message.success({
-        content: 'Successfully subscribed to this post',
-        style: {
-          marginTop: '80px',
-        },
-      });
+      message.success('Successfully subscribed to this post');
     } catch (error) {
-      message.error({
-        content: 'Failed to subscribe to the post. Please try again.',
-        style: {
-          marginTop: '80px',
-        },
-      });
+      console.error('Error subscribing:', error);
+      message.error('Failed to subscribe to the post. Please try again.');
     } finally {
       setIsSubscribeLoading(false);
     }
@@ -873,28 +943,116 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       onOk: async () => {
         setIsSubscribeLoading(true);
         try {
-          // Simulate API call with timeout
-          await new Promise(resolve => setTimeout(resolve, 500));
+          const { error } = await supabase
+            .from('subscriptions')
+            .delete()
+            .eq('user_id', currentUser.id)
+            .eq('post_id', post.id);
+
+          if (error) {
+            console.error('Error unsubscribing:', error);
+            message.error('Failed to unsubscribe from the post. Please try again.');
+            return;
+          }
 
           setIsSubscribed(false);
-          message.success({
-            content: 'Successfully unsubscribed from this post',
-            style: {
-              marginTop: '80px',
-            },
-          });
+          message.success('Successfully unsubscribed from this post');
         } catch (error) {
-          message.error({
-            content: 'Failed to unsubscribe from the post. Please try again.',
-            style: {
-              marginTop: '80px',
-            },
-          });
+          console.error('Error unsubscribing:', error);
+          message.error('Failed to unsubscribe from the post. Please try again.');
         } finally {
           setIsSubscribeLoading(false);
         }
       },
     });
+  };
+
+  // Fetch subscribers for CSV export
+  const fetchSubscribers = async () => {
+    console.log('fetchSubscribers called for post:', post.id);
+    try {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select(`
+          created_at,
+          user:users(
+            full_name,
+            email
+          )
+        `)
+        .eq('post_id', post.id)
+        .order('created_at', { ascending: false });
+
+      console.log('fetchSubscribers result:', { data, error });
+
+      if (error) {
+        console.error('Error fetching subscribers:', error);
+        return;
+      }
+
+      setSubscribers(data || []);
+      console.log('Subscribers set:', data || []);
+      return data;
+    } catch (error) {
+      console.error('Error fetching subscribers:', error);
+    }
+  };
+
+  // Export subscribers as CSV
+  const handleExportCSV = async () => {
+    // Check if current user is the board creator
+    if (currentUser?.email !== boardEmail) {
+      message.error('Only the board creator can export subscribers');
+      return;
+    }
+
+    setIsExportingCSV(true);
+    try {
+      const subscribersData = await fetchSubscribers();
+
+      if (!subscribersData || subscribersData.length === 0) {
+        message.warning('No subscribers to export');
+        return;
+      }
+
+      // Create CSV content
+      const csvHeaders = ['Subscriber Name', 'Email Address', 'Phone Number', 'Subscribed On'];
+      const csvRows = subscribersData.map((sub: any) => [
+        sub.user?.full_name || 'Unknown',
+        sub.user?.email || '',
+        '', // Phone number (not available in current schema)
+        new Date(sub.created_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      ]);
+
+      const csvContent = [
+        csvHeaders.join(','),
+        ...csvRows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      // Create and download CSV file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `subscribers-${post.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      message.success(`Exported ${subscribersData.length} subscribers to CSV`);
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      message.error('Failed to export CSV');
+    } finally {
+      setIsExportingCSV(false);
+    }
   };
 
   // Update the subscribers section in both desktop and mobile layouts
@@ -907,6 +1065,38 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       {isSubscribed ? "Unsubscribe" : "Subscribe"}
     </Button>
   );
+
+  // CSV Export Button - only visible to board creator
+  const ExportCSVButton = () => {
+    // Debug logging
+    console.log('ExportCSVButton debug:', {
+      currentUserId: currentUser?.id,
+      currentUserEmail: currentUser?.email,
+      boardCreatorId: boardCreatorId,
+      boardEmail: boardEmail,
+      isCreator: currentUser?.email === boardEmail,
+      subscribersCount: subscribers.length
+    });
+
+    // Only show to board creator (check by email)
+    if (currentUser?.email !== boardEmail) {
+      console.log('ExportCSVButton: User is not board creator, hiding button');
+      return null;
+    }
+
+    console.log('ExportCSVButton: User is board creator, showing button');
+    return (
+      <Button
+        className="export-csv-button"
+        icon={<DownloadOutlined />}
+        onClick={handleExportCSV}
+        loading={isExportingCSV}
+        title="Export subscribers as CSV"
+      >
+        Export CSV
+      </Button>
+    );
+  };
 
   // Refactor fetchComments to nest replies
   const fetchComments = async (updatedSessionSet?: Set<number>) => {
@@ -1084,6 +1274,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   useEffect(() => {
     if (isOpen) {
       fetchComments();
+      fetchSubscriptionState(); // Fetch subscription state on open
     }
   }, [isOpen, post.id]);
 
@@ -1380,7 +1571,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                 handleFileAttachment();
               }}
               title="Attach files"
-              type="button"
+              disabled={isSubmitting || isFileUploading}
+              style={{
+                opacity: (isSubmitting || isFileUploading) ? 0.5 : 1,
+                pointerEvents: (isSubmitting || isFileUploading) ? 'none' : 'auto'
+              }}
             >
               <PaperClipOutlined />
             </button>
@@ -1392,11 +1587,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                 await handleMobileCommentSubmit();
               }}
               title="Send comment"
-              type="button"
               disabled={isSubmitting}
-              style={{ opacity: isSubmitting ? 0.6 : 1, pointerEvents: isSubmitting ? 'none' : 'auto' }}
             >
-              <img src={SendArrow} alt="Send" className="send-arrow-icon" />
+              {isSubmitting ? <LoadingOutlined /> : <img src={SendArrow} alt="Send" className="send-arrow-icon" />}
             </button>
           </div>
         </>
@@ -1602,6 +1795,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                               className="comment-action-button"
                               onClick={handleFileAttachment}
                               title="Attach files"
+                              disabled={isSubmitting || isFileUploading}
+                              style={{
+                                opacity: (isSubmitting || isFileUploading) ? 0.5 : 1,
+                                pointerEvents: (isSubmitting || isFileUploading) ? 'none' : 'auto'
+                              }}
                             >
                               <PaperClipOutlined />
                             </button>
@@ -1612,7 +1810,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                               disabled={isSubmitting}
                               style={{ opacity: isSubmitting ? 0.6 : 1, pointerEvents: isSubmitting ? 'none' : 'auto' }}
                             >
-                              <img src={SendArrow} alt="Send" className="send-arrow-icon" />
+                              {isSubmitting ? <LoadingOutlined /> : <img src={SendArrow} alt="Send" className="send-arrow-icon" />}
                             </button>
                           </div>
                         </div>
@@ -1690,7 +1888,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                         <Avatar src="https://i.pravatar.cc/150?img=4" />
                         <Avatar src="https://i.pravatar.cc/150?img=5" />
                       </Avatar.Group>
-                      <SubscribeButton />
+                      <div className="subscribe-export-buttons">
+                        <SubscribeButton />
+                        <ExportCSVButton />
+                      </div>
                     </div>
                   </div>
 
@@ -1836,7 +2037,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                   <Avatar src="https://i.pravatar.cc/150?img=4" />
                   <Avatar src="https://i.pravatar.cc/150?img=5" />
                 </Avatar.Group>
-                <SubscribeButton />
+                <div className="subscribe-export-buttons">
+                  <SubscribeButton />
+                  <ExportCSVButton />
+                </div>
               </div>
             </div>
           </div>
