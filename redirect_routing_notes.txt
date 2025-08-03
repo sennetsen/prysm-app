@@ -1,0 +1,5 @@
+✅ Valid Board: prysmapp.com/my-board
+✅ Valid Post: prysmapp.com/my-board/posts/123e4567-e89b-12d3-a456-426614174000
+❌ Invalid Post: prysmapp.com/my-board/posts/invalid → redirects to prysmapp.com/my-board
+❌ Invalid Path: prysmapp.com/my-board/anything → redirects to prysmapp.com/my-board
+❌ Invalid Posts: prysmapp.com/posts/anything → redirects to homepage

@@ -127,9 +127,10 @@
   font-family: 'Lexend Deca', sans-serif;
 }
 
-/* === Like/Comment Buttons === */
+/* === Like/Comment/Share Buttons === */
 .custom-like-button,
-.custom-comment-button {
+.custom-comment-button,
+.custom-share-button {
   display: flex !important;
   align-items: center !important;
   gap: 5px !important;
@@ -141,12 +142,14 @@
 }
 
 .custom-like-button:active,
-.custom-comment-button:active {
+.custom-comment-button:active,
+.custom-share-button:active {
   transform: scale(0.85);
 }
 
 .custom-like-button .anticon,
-.custom-comment-button .anticon {
+.custom-comment-button .anticon,
+.custom-share-button .anticon {
   font-size: 14px;
   color: #281010 !important;
 }
@@ -158,6 +161,10 @@
 .custom-like-button.liked .anticon,
 .custom-like-button.liked .like-count {
   color: white !important;
+}
+
+.custom-share-button:hover {
+  background: rgba(40, 16, 16, 0.05) !important;
 }
 
 .like-count,

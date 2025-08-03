@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useParams, Navigate, useNavigate } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import HomePage from './CompanySite/HomePage';
@@ -62,8 +62,15 @@ async function uploadPostAttachment(file, postId, authorId) {
   return storage_path;
 }
 
-function BoardView() {
+// Component to handle redirects for invalid board paths
+function BoardRedirect() {
   const { boardPath } = useParams();
+  return <Navigate to={`/${boardPath}`} replace />;
+}
+
+function BoardView() {
+  const { boardPath, postId } = useParams();
+  const navigate = useNavigate();
   const [boardData, setBoardData] = useState(null);
   const [boardNotFound, setBoardNotFound] = useState(false);
   const [user, setUser] = useState(null);
@@ -89,6 +96,7 @@ function BoardView() {
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
   const [postFileList, setPostFileList] = useState([]);
   const [sortType, setSortType] = useState('new'); // Add sort state
+  const [isLoadingDirectPost, setIsLoadingDirectPost] = useState(false);
 
   // Sort handler function
   const handleSortChange = (newSortType) => {
@@ -241,13 +249,44 @@ function BoardView() {
     const sortedPosts = sortCards(postsWithLikes, sortType);
     setCards(sortedPosts);
     setTotalPosts(sortedPosts.length);
-  }, [boardData, sortType]);
+
+    // Check if there's a direct post URL and open it
+    if (postId) {
+      const directPost = sortedPosts.find(post => post.id === postId);
+      if (directPost) {
+        setSelectedPost({
+          ...directPost,
+          board_id: boardData?.id
+        });
+      } else {
+        // Invalid post ID - redirect to board URL
+        navigate(`/${boardPath}`);
+      }
+    }
+  }, [boardData, sortType, postId]);
 
   useEffect(() => {
     if (boardData) {
       fetchPosts();
     }
   }, [boardData, fetchPosts]);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      // Check if there's a post in the URL path
+      const currentPath = window.location.pathname;
+      const isPostPath = currentPath.includes('/posts/');
+
+      if (!isPostPath) {
+        // No post in URL, close the popup
+        setSelectedPost(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Re-sort cards when sort type changes
   useEffect(() => {
@@ -660,6 +699,9 @@ function BoardView() {
       ...post,
       board_id: boardData?.id
     });
+
+    // Navigate to the post URL using React Router
+    navigate(`/${boardPath}/posts/${post.id}`);
   };
 
   // Added function to update likes in the board view from a post popup
@@ -976,10 +1018,14 @@ function BoardView() {
         <PostPopup
           post={selectedPost}
           isOpen={!!selectedPost}
-          onClose={() => setSelectedPost(null)}
+          onClose={() => {
+            setSelectedPost(null);
+            // Navigate back to the board
+            navigate(`/${boardPath}`);
+          }}
           currentUser={user}
-          onLikeUpdate={handlePostLikeUpdate}
-          navbarColor={navbarColor}
+          onPostLikeChange={handlePostLikeUpdate}
+          boardCreatorId={boardData?.owner_id}
         />
       )}
 
@@ -995,8 +1041,11 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/:boardPath" element={<BoardView />} />
           <Route path="/mention-test" element={<MentionTest />} />
+          <Route path="/posts/*" element={<Navigate to="/" />} />
+          <Route path="/:boardPath/posts/:postId" element={<BoardView />} />
+          <Route path="/:boardPath/*" element={<BoardRedirect />} />
+          <Route path="/:boardPath" element={<BoardView />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
         <Analytics />

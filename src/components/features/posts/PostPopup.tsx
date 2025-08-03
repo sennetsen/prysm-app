@@ -11,7 +11,8 @@ import {
   LeftOutlined,
   InfoCircleOutlined,
   CloseOutlined,
-  FileOutlined
+  FileOutlined,
+  ShareAltOutlined
 } from '@ant-design/icons';
 import { ReactComponent as CalendarIcon } from '../../../img/calendar.svg';
 import './PostPopup.css';
@@ -215,6 +216,16 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     } else {
       onClose();
     }
+  };
+
+  const handleShare = () => {
+    // Extract board url_path from current URL
+    const currentPath = window.location.pathname;
+    const pathParts = currentPath.split('/');
+    const boardPath = pathParts[1]; // The board path is the first part after the domain
+    const postUrl = `${window.location.origin}/${boardPath}/posts/${post.id}`;
+    navigator.clipboard.writeText(postUrl);
+    message.success('Post link copied to clipboard!');
   };
 
   const handleMobileInputFocus = () => {
@@ -1285,6 +1296,13 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                       <Button className="custom-comment-button" icon={<MessageOutlined />}>
                         <span className="comment-count">{commentCount}</span>
                       </Button>
+
+                      <Button
+                        className="custom-share-button"
+                        icon={<ShareAltOutlined />}
+                        onClick={handleShare}
+                        title="Share post"
+                      />
                     </div>
                   </div>
                 </div>
