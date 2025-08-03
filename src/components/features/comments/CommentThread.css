@@ -593,3 +593,12 @@
     font-size: 10px !important;
   }
 }
+
+/* Highlight comment being replied to on mobile */
+.comment.replying-to {
+  background-color: rgba(0, 122, 255, 0.05);
+  border-left: 3px solid #007AFF;
+  padding-left: 12px;
+  margin-left: -15px;
+  border-radius: 8px;
+}

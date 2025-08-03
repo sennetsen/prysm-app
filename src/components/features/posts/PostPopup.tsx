@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Modal, Button, Avatar, message } from 'antd';
 import { CommentThread } from '../comments/CommentThread';
 
@@ -199,7 +199,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [userCommentsThisSession, setUserCommentsThisSession] = useState<Set<number>>(new Set());
   const [isMobileInputExpanded, setIsMobileInputExpanded] = useState(false);
   const [isActionButtonClicked, setIsActionButtonClicked] = useState(false);
+  const [replyingToComment, setReplyingToComment] = useState<string | null>(null); // Track which comment we're replying to
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize likeCount from post.likes or post.likesCount
   const [likeCount, setLikeCount] = useState(post.reaction_counts?.like ?? 0);
@@ -228,29 +230,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     message.success('Post link copied to clipboard!');
   };
 
-  const handleMobileInputFocus = () => {
-    setIsMobileInputExpanded(true);
-  };
 
-  const handleMobileInputBlur = () => {
-    // Only collapse if not clicking on action buttons
-    if (!isActionButtonClicked) {
-      setTimeout(() => {
-        setIsMobileInputExpanded(false);
-      }, 100);
-    }
-    setIsActionButtonClicked(false);
-  };
-
-  const handleMobileCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setCommentText(value);
-
-    // Auto-expand if text is long or files are attached
-    if (value.length > 50 || fileList.length > 0) {
-      setIsMobileInputExpanded(true);
-    }
-  };
 
   // Auto-expand when files are added/removed
   useEffect(() => {
@@ -259,23 +239,16 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   }, [fileList.length]);
 
-  // Collapse after comment submission
-  const handleMobileCommentSubmit = async () => {
-    await handleCommentSubmit();
-    setIsMobileInputExpanded(false);
-  };
+  // Removed debug logging
+
+  // Mobile comment submission restored
 
   // Keep likeCount in sync with post prop
   useEffect(() => {
     setLikeCount(post.reaction_counts?.like ?? 0);
   }, [post.reaction_counts?.like]);
 
-  // Update display text when comment text changes
-  useEffect(() => {
-    if (isMobile && commentInputRef.current) {
-      // Simplified logic - no more displayText
-    }
-  }, [commentText, isMobileInputExpanded, isMobile]);
+  // Removed empty useEffect that was causing unnecessary re-renders
 
   // Handle viewport changes for keyboard behavior (Reddit-style)
   useEffect(() => {
@@ -290,18 +263,17 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       const heightDifference = window.screen.height - newHeight;
       const isKeyboardVisible = heightDifference > 150; // Threshold for keyboard detection
 
-      if (isKeyboardVisible && isMobileInputExpanded) {
-        // Keyboard is visible and input is expanded
-        // Ensure the input stays visible above keyboard
-        setTimeout(() => {
-          if (commentInputRef.current) {
-            commentInputRef.current.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center'
-            });
-          }
-        }, 100);
-      }
+      // Disabled scrollIntoView as it was causing focus loss
+      // if (isKeyboardVisible && isMobileInputExpanded) {
+      //   setTimeout(() => {
+      //     if (commentInputRef.current) {
+      //       commentInputRef.current.scrollIntoView({
+      //         behavior: 'smooth',
+      //         block: 'center'
+      //       });
+      //     }
+      //   }, 100);
+      // }
     };
 
     // Listen for viewport changes
@@ -312,6 +284,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', handleViewportChange);
     }
+
+
 
     return () => {
       window.removeEventListener('resize', handleViewportChange);
@@ -472,7 +446,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   };
 
-  const handleCommentLike = async (commentId: number) => {
+  const handleCommentLike = useCallback(async (commentId: number) => {
     if (!currentUser) {
       message.info('Please sign in to like comments');
       return;
@@ -585,9 +559,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       );
       message.error('Failed to update like status');
     }
-  };
+  }, [currentUser, comments]);
 
-  const handleDeleteComment = async (commentId: number) => {
+  const handleDeleteComment = useCallback(async (commentId: number) => {
     try {
       // Soft delete the comment
       const { error: updateError } = await supabase
@@ -657,9 +631,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       console.error('Error deleting comment:', error);
       message.error('Failed to delete comment');
     }
-  };
+  }, []);
 
-  const handleAddReply = async (parentId: number, reply: Comment) => {
+  const handleAddReply = useCallback(async (parentId: number | string, reply: Comment) => {
     // Insert reply into Supabase with parent_comment_id
     const { data, error } = await supabase
       .from('comments')
@@ -669,7 +643,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         content: reply.content,
         is_anonymous: false, // or true if you support anonymous
         created_at: new Date().toISOString(),
-        parent_comment_id: parentId,
+        parent_comment_id: parentId, // Can be number or string (UUID)
       }])
       .select();
 
@@ -689,7 +663,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       // Fallback if no data returned
       fetchComments();
     }
-  };
+  }, [post.id, userCommentsThisSession]);
 
   const handleFileAttachment = () => {
     const fileInput = document.createElement('input');
@@ -742,8 +716,13 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     };
   }, []);
 
-  const handleCommentSubmit = async () => {
-    if (commentText.trim() || fileList.length > 0) {
+  const handleCommentSubmit = async (internal = false) => {
+    if (!internal && isSubmitting) return; // Prevent double submission
+    if (!(commentText.trim() || fileList.length > 0)) return;
+
+    if (!internal) setIsSubmitting(true);
+
+    try {
       // 1. Insert comment into Supabase
       const { data, error } = await supabase
         .from('comments')
@@ -796,6 +775,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       if (isMobile) {
         setIsMobileInputExpanded(false);
       }
+    } catch (error) {
+      console.error('Error submitting comment:', error);
+      message.error('Failed to submit comment');
+    } finally {
+      if (!internal) setIsSubmitting(false);
     }
   };
 
@@ -806,6 +790,38 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       case 2: return 'nd';
       case 3: return 'rd';
       default: return 'th';
+    }
+  };
+
+  // Helper function to format relative time (like "1 day ago")
+  const formatRelativeTime = (timestamp: string) => {
+    const now = new Date();
+    const date = new Date(timestamp);
+
+    if (isNaN(date.getTime())) {
+      return 'some time ago';
+    }
+
+    const diffMs = now.getTime() - date.getTime();
+    const diffInSeconds = Math.floor(diffMs / 1000);
+
+    if (diffInSeconds < 60) {
+      return 'just now';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 2592000) { // 30 days
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days} day${days > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 31536000) { // 365 days
+      const months = Math.floor(diffInSeconds / 2592000);
+      return `${months} month${months > 1 ? 's' : ''} ago`;
+    } else {
+      const years = Math.floor(diffInSeconds / 31536000);
+      return `${years} year${years > 1 ? 's' : ''} ago`;
     }
   };
 
@@ -1089,6 +1105,214 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     return () => modalWrap.removeEventListener('scroll', handleScroll);
   }, [isMobile, isOpen]);
 
+  // Handle viewport changes to prevent keyboard dismissal
+  useEffect(() => {
+    const handleViewportChange = () => {
+      if (window.visualViewport) {
+        const currentHeight = window.visualViewport.height;
+        const windowHeight = window.innerHeight;
+
+        // If keyboard is appearing (viewport height decreases)
+        if (currentHeight < windowHeight) {
+          // Ensure input stays focused
+          if (commentInputRef.current && document.activeElement === commentInputRef.current) {
+            setTimeout(() => {
+              commentInputRef.current?.focus();
+            }, 100);
+          }
+        }
+      }
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportChange);
+      }
+    };
+  }, []);
+
+  // Test component removed after debugging
+
+  // Restored original mobile input handlers but with fixes
+
+  const handleMobileInputFocus = () => {
+    setIsMobileInputExpanded(true);
+
+    // Ensure input stays focused after expansion and cursor goes to end
+    setTimeout(() => {
+      if (commentInputRef.current) {
+        commentInputRef.current.focus();
+        // Move cursor to end of text
+        const textLength = commentInputRef.current.value.length;
+        commentInputRef.current.setSelectionRange(textLength, textLength);
+      }
+    }, 0);
+  };
+
+  const handleMobileInputBlur = () => {
+    // Always collapse on blur (unless clicking action buttons)
+    if (!isActionButtonClicked) {
+      setTimeout(() => {
+        setIsMobileInputExpanded(false);
+      }, 100);
+    }
+    // Reset action button state after a delay to avoid race conditions
+    setTimeout(() => {
+      setIsActionButtonClicked(false);
+    }, 200);
+  };
+
+  // Add click-outside detection for more reliable collapsing
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isMobileInputExpanded && commentInputRef.current) {
+        const commentBar = commentInputRef.current.closest('.mobile-comment-bar');
+
+        // If click is outside the comment bar, collapse it
+        if (commentBar && !commentBar.contains(event.target as Node)) {
+          setIsMobileInputExpanded(false);
+        }
+      }
+    };
+
+    if (isMobileInputExpanded) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isMobileInputExpanded]);
+
+  const handleMobileCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+
+    // Store focus state and cursor position before updating
+    const wasFocused = document.activeElement === commentInputRef.current;
+    const cursorPosition = wasFocused ? e.target.selectionStart : 0;
+
+    setCommentText(value);
+
+    // Auto-expand if text is long or files are attached
+    if (value.length > 30 || fileList.length > 0) {
+      setIsMobileInputExpanded(true);
+    }
+
+    // Simple line-based scroll management (when DOM measurements fail)
+    if (commentInputRef.current && value.length > 0) {
+      const textarea = commentInputRef.current;
+
+      // Count lines and estimate when scrolling is needed
+      const lines = value.split('\n').length;
+      const estimatedLines = Math.max(lines, Math.ceil(value.length / 50));
+
+      // Auto-scroll when content likely exceeds 6 lines
+      if (estimatedLines > 6) {
+        setTimeout(() => {
+          if (textarea) {
+            textarea.scrollTop = 99999;
+            textarea.scrollIntoView({ behavior: 'smooth', block: 'end' });
+          }
+        }, 50);
+      }
+    }
+
+    // Restore focus and cursor position if it was lost due to re-render
+    if (wasFocused && commentInputRef.current) {
+      requestAnimationFrame(() => {
+        if (commentInputRef.current && document.activeElement !== commentInputRef.current) {
+          commentInputRef.current.focus();
+          // Restore cursor position
+          commentInputRef.current.setSelectionRange(cursorPosition, cursorPosition);
+        }
+      });
+    }
+  };
+
+  // Handle clicking on the input container
+  const handleInputContainerClick = () => {
+    setIsMobileInputExpanded(true);
+    // Focus the textarea after a brief delay to ensure state is updated
+    requestAnimationFrame(() => {
+      if (commentInputRef.current) {
+        commentInputRef.current.focus();
+        // Move cursor to end of text
+        const textLength = commentInputRef.current.value.length;
+        commentInputRef.current.setSelectionRange(textLength, textLength);
+      }
+    });
+  };
+
+  // Handle reply click - set up unified input for replies
+  const handleReplyClick = useCallback((commentId: string) => {
+    if (isMobile) {
+      // On mobile, use unified input system
+      setReplyingToComment(commentId);
+      setIsMobileInputExpanded(true);
+
+      // Update placeholder and focus
+      setTimeout(() => {
+        if (commentInputRef.current) {
+          commentInputRef.current.placeholder = "Write a reply...";
+          commentInputRef.current.focus();
+          const textLength = commentInputRef.current.value.length;
+          commentInputRef.current.setSelectionRange(textLength, textLength);
+        }
+      }, 0);
+    }
+  }, [isMobile]);
+
+  // Collapse after comment submission
+  const handleMobileCommentSubmit = async () => {
+    if (isSubmitting) return; // Prevent double submission
+    setIsSubmitting(true);
+
+    try {
+      if (replyingToComment) {
+        console.log('🔄 Submitting reply to comment ID:', replyingToComment);
+
+        // Submit as reply - use the existing handleAddReply function directly
+        const replyData = {
+          content: commentText,
+          author: currentUser,
+          id: Date.now(),
+          likes: 0,
+          liked: false,
+          timestamp: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          parent_comment_id: replyingToComment, // Keep as string UUID
+          attachments: []
+        };
+
+        console.log('📝 Reply data:', replyData);
+        console.log('🔢 Parent ID (raw):', replyingToComment, typeof replyingToComment);
+
+        // Pass the parent ID directly (can be string UUID or number)
+        await handleAddReply(replyingToComment, replyData);
+
+        // Clear the input and reset state
+        setCommentText('');
+        setReplyingToComment(null);
+      } else {
+        console.log('💬 Submitting regular comment');
+        // Submit as regular comment
+        await handleCommentSubmit(true);
+      }
+
+      setIsMobileInputExpanded(false);
+
+      // Reset placeholder
+      if (commentInputRef.current) {
+        commentInputRef.current.placeholder = "Join the conversation";
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const MobileCommentBar = () => (
     <div className={`mobile-comment-bar ${isMobileInputExpanded ? 'expanded' : 'collapsed'}`}>
       {/* File previews */}
@@ -1112,40 +1336,65 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         </div>
       )}
 
-      <div className="mobile-input-main-row">
+      {/* Main input row */}
+      <div
+        className="mobile-input-main-row"
+        onClick={handleInputContainerClick}
+      >
         <textarea
           ref={commentInputRef}
-          placeholder="Join the conversation"
+          placeholder={replyingToComment ? "Write a reply..." : "Join the conversation"}
           className="comment-input mobile-comment-input"
           value={commentText}
           onChange={handleMobileCommentChange}
           onFocus={handleMobileInputFocus}
           onBlur={handleMobileInputBlur}
-          rows={isMobileInputExpanded ? 1 : 1}
+          onClick={handleInputContainerClick}
+          rows={1}
+          style={{
+            resize: 'none',
+            outline: 'none',
+            border: 'none',
+            background: 'transparent',
+            fontSize: '16px' // Prevent iOS zoom
+          }}
+          // Prevent iOS zoom and keyboard dismissal
+          inputMode="text"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="sentences"
+          spellCheck="false"
         />
       </div>
 
+      {/* Action buttons - only show when expanded */}
       {isMobileInputExpanded && (
         <>
           <div className="mobile-input-divider"></div>
           <div className="mobile-action-buttons-row">
             <button
               className="comment-action-button"
-              onClick={() => {
+              onMouseDown={(e) => {
+                e.preventDefault(); // Prevent blur from textarea
                 setIsActionButtonClicked(true);
                 handleFileAttachment();
               }}
               title="Attach files"
+              type="button"
             >
               <PaperClipOutlined />
             </button>
             <button
               className="comment-action-button send"
-              onClick={() => {
+              onMouseDown={async (e) => {
+                e.preventDefault(); // Prevent blur from textarea
                 setIsActionButtonClicked(true);
-                handleMobileCommentSubmit();
+                await handleMobileCommentSubmit();
               }}
               title="Send comment"
+              type="button"
+              disabled={isSubmitting}
+              style={{ opacity: isSubmitting ? 0.6 : 1, pointerEvents: isSubmitting ? 'none' : 'auto' }}
             >
               <img src={SendArrow} alt="Send" className="send-arrow-icon" />
             </button>
@@ -1358,8 +1607,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                             </button>
                             <button
                               className="comment-action-button send"
-                              onClick={handleCommentSubmit}
+                              onClick={() => handleCommentSubmit()}
                               title="Send comment"
+                              disabled={isSubmitting}
+                              style={{ opacity: isSubmitting ? 0.6 : 1, pointerEvents: isSubmitting ? 'none' : 'auto' }}
                             >
                               <img src={SendArrow} alt="Send" className="send-arrow-icon" />
                             </button>
@@ -1463,7 +1714,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                 />
                 <span className="author-name">{post.author.full_name}</span>
                 <span className="post-time">
-                  {new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {formatRelativeTime(post.created_at)}
                 </span>
               </div>
               <div className="post-content-section" ref={postContentRef}>
@@ -1498,6 +1749,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     onLike={handleCommentLike}
                     onAddReply={handleAddReply}
                     onDelete={handleDeleteComment}
+                    onReplyClick={handleReplyClick}
+                    replyingToComment={replyingToComment}
                     userCommentsThisSession={userCommentsThisSession}
                   />
                 </div>

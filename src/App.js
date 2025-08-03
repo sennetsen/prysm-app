@@ -938,7 +938,7 @@ function BoardView() {
       {isQuestionPopupOpen && (
         <div className="help-popup">
           <h2>Thanks for using us!</h2>
-          <p>Prysm is still in private beta.</p>
+          <p>Prysm is still in beta.</p>
           <p>Waitlist at <a href="https://prysmapp.com">prysmapp.com</a> </p>
           <p>or contact us at</p>
           <p><a href="mailto:getprysm@gmail.com">getprysm@gmail.com</a>!</p>

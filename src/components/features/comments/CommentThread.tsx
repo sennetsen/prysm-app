@@ -12,6 +12,8 @@ interface CommentThreadProps {
   onLike: (commentId: number) => void;
   onAddReply?: (parentId: number, reply: Comment) => void;
   onDelete?: (commentId: number) => void;
+  onReplyClick?: (commentId: string) => void; // New prop for unified reply system
+  replyingToComment?: string | null; // ID of comment being replied to
   userCommentsThisSession?: Set<number>;
 }
 
@@ -37,13 +39,15 @@ interface Comment {
   is_deleted?: boolean;
 }
 
-export function CommentThread({
+export const CommentThread = React.memo(function CommentThread({
   postId,
   currentUser,
   comments,
   onLike,
   onAddReply,
   onDelete,
+  onReplyClick,
+  replyingToComment,
   userCommentsThisSession = new Set()
 }: CommentThreadProps) {
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
@@ -61,10 +65,19 @@ export function CommentThread({
     setLocalComments(comments);
   }, [comments]);
 
+  // Check if we're on mobile
+  const isMobile = window.innerWidth <= 768;
+
   const handleReplyClick = (commentId: number) => {
-    setReplyingToId(commentId);
-    setReplyText('');
-    setReplyAttachments([]);
+    if (isMobile && onReplyClick) {
+      // Use unified mobile input system
+      onReplyClick(commentId.toString());
+    } else {
+      // Use desktop inline reply system
+      setReplyingToId(commentId);
+      setReplyText('');
+      setReplyAttachments([]);
+    }
   };
 
   const handleReplyAttachment = () => {
@@ -162,17 +175,17 @@ export function CommentThread({
         if (comment.replies && comment.replies.some(reply => reply.id === commentId)) {
           return {
             ...comment,
-            replies: comment.replies.map(reply => 
-              reply.id === commentId 
+            replies: comment.replies.map(reply =>
+              reply.id === commentId
                 ? {
-                    ...reply,
-                    is_deleted: true,
-                    author: { name: 'Deleted comment', avatar: '' },
-                    content: '',
-                    likes: 0,
-                    liked: false,
-                    attachments: []
-                  }
+                  ...reply,
+                  is_deleted: true,
+                  author: { name: 'Deleted comment', avatar: '' },
+                  content: '',
+                  likes: 0,
+                  liked: false,
+                  attachments: []
+                }
                 : reply
             )
           };
@@ -313,7 +326,7 @@ export function CommentThread({
     const isMinimized = minimizedComments.includes(comment.id);
 
     return (
-      <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''} ${isDeleted ? 'deleted-comment' : ''}`}>
+      <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''} ${isDeleted ? 'deleted-comment' : ''} ${replyingToComment === comment.id.toString() ? 'replying-to' : ''}`}>
         <div className="comment-avatar">
           <Avatar src={comment.author.avatar} size={isDeleted ? 26 : 36} />
         </div>
@@ -329,14 +342,14 @@ export function CommentThread({
                   <em>This comment has been deleted.</em>
                 </p>
               ) : (
-              <p className="comment-text">
-                {comment.content.startsWith('@') ? (
-                  <>
-                    <span className="mention">@Everyone</span>
-                    {comment.content.substring(9)}
-                  </>
-                ) : comment.content}
-              </p>
+                <p className="comment-text">
+                  {comment.content.startsWith('@') ? (
+                    <>
+                      <span className="mention">@Everyone</span>
+                      {comment.content.substring(9)}
+                    </>
+                  ) : comment.content}
+                </p>
               )}
 
               {/* Display file previews if attachments exist */}
@@ -410,55 +423,55 @@ export function CommentThread({
               )}
 
               {!isDeleted && (
-              <div className="actions-wrapper">
-                <div className="comment-actions">
+                <div className="actions-wrapper">
+                  <div className="comment-actions">
                     {!isDeleted && (
-                  <Button
-                    className={`heart-button ${comment.liked ? 'liked' : ''}`}
-                    icon={comment.liked ? <HeartFilled /> : <HeartOutlined />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onLike(comment.id);
-                    }}
-                  >
-                    {comment.likes}
-                  </Button>
+                      <Button
+                        className={`heart-button ${comment.liked ? 'liked' : ''}`}
+                        icon={comment.liked ? <HeartFilled /> : <HeartOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLike(comment.id);
+                        }}
+                      >
+                        {comment.likes}
+                      </Button>
                     )}
                     {!isReply && !isDeleted && (
-                    <Button
-                      className="reply-button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleReplyClick(comment.id);
-                      }}
-                    >
-                      <MessageOutlined /> Reply
-                    </Button>
-                  )}
-                    {isCurrentUserAuthor && !isDeleted && (
-                    <Popconfirm
-                      title="Delete this comment?"
-                      description="This action cannot be undone."
-                      okText="Delete"
-                      cancelText="Cancel"
-                      okButtonProps={{ danger: true }}
-                      onConfirm={() => handleDeleteComment(comment.id)}
-                      onCancel={(e) => e?.stopPropagation()}
-                    >
                       <Button
-                        className="delete-button"
-                        icon={<DeleteOutlined />}
-                        onClick={(e) => e.stopPropagation()}
+                        className="reply-button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReplyClick(comment.id);
+                        }}
                       >
-                        Delete
+                        <MessageOutlined /> Reply
                       </Button>
-                    </Popconfirm>
-                  )}
+                    )}
+                    {isCurrentUserAuthor && !isDeleted && (
+                      <Popconfirm
+                        title="Delete this comment?"
+                        description="This action cannot be undone."
+                        okText="Delete"
+                        cancelText="Cancel"
+                        okButtonProps={{ danger: true }}
+                        onConfirm={() => handleDeleteComment(comment.id)}
+                        onCancel={(e) => e?.stopPropagation()}
+                      >
+                        <Button
+                          className="delete-button"
+                          icon={<DeleteOutlined />}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Delete
+                        </Button>
+                      </Popconfirm>
+                    )}
+                  </div>
                 </div>
-              </div>
               )}
 
-              {!isReply && !isDeleted && replyingToId === comment.id && (
+              {!isReply && !isDeleted && replyingToId === comment.id && !isMobile && (
                 <div className="reply-input-container" onClick={(e) => e.stopPropagation()}>
                   <div className="reply-input-row">
                     <div className="reply-input-wrapper">
@@ -618,4 +631,4 @@ export function CommentThread({
       </div>
     </>
   );
-}
+});
