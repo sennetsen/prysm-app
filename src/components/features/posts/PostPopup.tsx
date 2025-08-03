@@ -49,6 +49,7 @@ interface PostPopupProps {
   currentUser: any;
   onPostLikeChange: (postId: string) => void;
   boardCreatorId?: string;
+  isBoardOwner?: boolean;
 }
 
 interface Attachment {
@@ -119,7 +120,7 @@ async function uploadCommentAttachment(file: File, commentId: string, authorId: 
   return storage_path;
 }
 
-export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange, boardCreatorId }: PostPopupProps) {
+export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange, boardCreatorId, isBoardOwner }: PostPopupProps) {
   const [liked, setLiked] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
   const [commentText, setCommentText] = useState('');
@@ -1017,10 +1018,12 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     />
                     <span className="author-name">{post.author.full_name}</span>
                   </div>
-                  <div className="author-email" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <img src={MailIcon} alt="mail" className="mail-icon" />
-                    <span>{post.author.email}</span>
-                  </div>
+                  {isBoardOwner && (
+                    <div className="author-email" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <img src={MailIcon} alt="mail" className="mail-icon" />
+                      <span>{post.author.email}</span>
+                    </div>
+                  )}
                   <div className="post-date">
                     <CalendarIcon />
                     <div className="date-time">
@@ -1264,10 +1267,12 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
               />
               <span className="author-name">{post.author.full_name}</span>
             </div>
-            <div className="author-email" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <img src={MailIcon} alt="mail" className="mail-icon" />
-              <span>{post.author.email}</span>
-            </div>
+            {isBoardOwner && (
+              <div className="author-email" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <img src={MailIcon} alt="mail" className="mail-icon" />
+                <span>{post.author.email}</span>
+              </div>
+            )}
             <div className="post-date">
               <CalendarIcon />
               <div className="date-time">

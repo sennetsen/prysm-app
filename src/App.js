@@ -965,7 +965,8 @@ function BoardView() {
           isOpen={!!selectedPost}
           onClose={() => setSelectedPost(null)}
           currentUser={user}
-          onLikeUpdate={handlePostLikeUpdate}
+          onPostLikeChange={handlePostLikeUpdate}
+          isBoardOwner={isBoardOwner}
         />
       )}
 
