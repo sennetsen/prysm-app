@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../supabaseClient';
 import { Avatar, Button, Popconfirm, Tooltip } from 'antd';
-import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined, EllipsisOutlined, FileOutlined, PaperClipOutlined } from '@ant-design/icons';
+import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined, EllipsisOutlined, PaperClipOutlined } from '@ant-design/icons';
+import { getFileIcon } from '../../../utils/fileIconUtils';
 import './CommentThread.css';
 
 interface CommentThreadProps {
@@ -361,10 +362,12 @@ export function CommentThread({
                             {nonImages.map((attachment) => (
                               <div key={attachment.id} className="comment-attachment-preview">
                                 <div className="comment-attachment-file-preview">
-                                  <FileOutlined />
-                                  <span className="attachment-file-name" title={attachment.file_name}>
-                                    {attachment.file_name}
-                                  </span>
+                                  <>
+                                    {getFileIcon(attachment.file_type, attachment.file_name)}
+                                    <span className="attachment-file-name" title={attachment.file_name}>
+                                      {attachment.file_name}
+                                    </span>
+                                  </>
                                 </div>
                               </div>
                             ))}
@@ -453,8 +456,10 @@ export function CommentThread({
                     <div className="reply-attachments-preview">
                       {replyAttachments.map((file, index) => (
                         <div key={index} className="reply-attachment-item">
-                          <FileOutlined />
-                          <span className="reply-attachment-name">{file.name}</span>
+                          <>
+                            {getFileIcon(file.type, file.name)}
+                            <span className="reply-attachment-name">{file.name}</span>
+                          </>
                           <Button
                             size="small"
                             type="text"

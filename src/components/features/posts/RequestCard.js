@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import "./RequestCard.css";
 import { bigNumberFormatter, formatNumberWithCommas } from '../../../utils/bigNumberFormatter';
-import { HeartFilled, HeartOutlined, FileOutlined, MessageOutlined } from "@ant-design/icons";
+import { HeartFilled, HeartOutlined, MessageOutlined } from "@ant-design/icons";
 import { Button, Tooltip } from "antd";
 import fallbackImg from '../../../img/fallback.png';
+import { getFileIcon } from '../../../utils/fileIconUtils';
 
 export default React.memo(
   function RequestCard({
@@ -165,7 +166,7 @@ export default React.memo(
               <div className="remaining-attachments">
                 {remainingAttachments.map((attachment) => (
                   <div key={attachment.id} className="attachment-filename">
-                              <FileOutlined />
+                              {getFileIcon(attachment.file_type, attachment.file_name)}
                     <span className="filename-text">{attachment.file_name}</span>
                           </div>
                         ))}

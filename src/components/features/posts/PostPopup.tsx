@@ -10,9 +10,9 @@ import {
   PaperClipOutlined,
   LeftOutlined,
   InfoCircleOutlined,
-  CloseOutlined,
-  FileOutlined
+  CloseOutlined
 } from '@ant-design/icons';
+import { getFileIcon } from '../../../utils/fileIconUtils';
 import { ReactComponent as CalendarIcon } from '../../../img/calendar.svg';
 import './PostPopup.css';
 import { supabase } from '../../../supabaseClient';
@@ -899,10 +899,12 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                                         style={{ cursor: 'pointer' }}
                                         title={`Click to open ${attachment.file_name}`}
                                       >
-                                        <FileOutlined />
-                                        <span className="attachment-file-name" title={attachment.file_name}>
-                                          {attachment.file_name}
-                                        </span>
+                                        <>
+                                          {getFileIcon(attachment.file_type, attachment.file_name)}
+                                          <span className="attachment-file-name" title={attachment.file_name}>
+                                            {attachment.file_name}
+                                          </span>
+                                        </>
                                       </div>
                                     </div>
                                   ))}
@@ -957,8 +959,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                           {fileList.map((file, index) => (
                             <div key={index} className="comment-file-preview-wrapper">
                               <div className="file-preview-item">
-                                <FileOutlined />
-                                <span className="file-name">{file.name}</span>
+                                <>
+                                  {getFileIcon(file.type, file.name)}
+                                  <span className="file-name">{file.name}</span>
+                                </>
                                 <button
                                   className="remove-file"
                                   onClick={() => removeFile(file)}
@@ -1157,10 +1161,12 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                                       style={{ cursor: 'pointer' }}
                                       title={`Click to open ${attachment.file_name}`}
                                     >
-                                      <FileOutlined />
-                                      <span className="attachment-file-name" title={attachment.file_name}>
-                                        {attachment.file_name}
-                                      </span>
+                                      <>
+                                        {getFileIcon(attachment.file_type, attachment.file_name)}
+                                        <span className="attachment-file-name" title={attachment.file_name}>
+                                          {attachment.file_name}
+                                        </span>
+                                      </>
                                     </div>
                                   </div>
                                 ))}
@@ -1209,8 +1215,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     {fileList.map((file, index) => (
                       <div key={index} className="comment-file-preview-wrapper">
                         <div className="file-preview-item">
-                          <FileOutlined />
-                          <span className="file-name">{file.name}</span>
+                          <>
+                            {getFileIcon(file.type, file.name)}
+                            <span className="file-name">{file.name}</span>
+                          </>
                           <button
                             className="remove-file"
                             onClick={() => removeFile(file)}

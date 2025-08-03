@@ -19,7 +19,8 @@ import fallbackImg from './img/fallback.png';
 import mailicon from './img/mail.svg';
 import { PostPopup } from './components/features/posts/PostPopup';
 import './components/features/posts/PostPopup.css';
-import { PaperClipOutlined, CloseOutlined, FileOutlined } from '@ant-design/icons';
+import { PaperClipOutlined, CloseOutlined } from '@ant-design/icons';
+import { getFileIcon } from './utils/fileIconUtils';
 
 // Add this function after the imports and before the BoardView component
 async function uploadPostAttachment(file, postId, authorId) {
@@ -820,13 +821,13 @@ function BoardView() {
                           </button>
                         </div>
                         <div className="post-image-filename">
-                          <FileOutlined />
+                          {getFileIcon(file.type, file.name)}
                           <span className="filename-text">{file.name}</span>
                         </div>
                       </div>
                     ) : (
                       <div className="post-file-preview-item">
-                        <FileOutlined />
+                        {getFileIcon(file.type, file.name)}
                         <span className="file-name">{file.name}</span>
                         <button
                           className="remove-file"
