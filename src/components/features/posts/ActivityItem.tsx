@@ -1,5 +1,6 @@
 import React from 'react';
 import { Avatar } from 'antd';
+import { useNavigate, useParams } from 'react-router-dom';
 
 export type ActivityType = 'post' | 'comment' | 'reply' | 'reaction' | 'comment_reaction';
 
@@ -141,16 +142,17 @@ const getActivityText = (activity: Activity, onLinkClick: (id: string) => void) 
 };
 
 const ActivityItem: React.FC<ActivityItemProps> = ({ activity, currentUserId, boardCreatorId }) => {
+  const navigate = useNavigate();
+  const { boardPath } = useParams();
+  
   // Determine highlight: if the activity is by the current user or board creator
   const isOwn = currentUserId && activity.user?.id && currentUserId === activity.user.id;
   const isCreator = boardCreatorId && activity.user?.id && boardCreatorId === activity.user.id;
   const highlight = isOwn || isCreator;
 
-  // Placeholder for link click (could scroll or open post)
+  // Navigate to the specific post when link is clicked
   const handleLinkClick = (id: string) => {
-    // TODO: Implement navigation or scroll to post
-    // For now, just log
-    console.log('Clicked post/comment id:', id);
+    navigate(`/${boardPath}/posts/${id}`);
   };
 
   return (
