@@ -129,6 +129,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [comments, setComments] = useState<Comment[]>([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
+  const [isCommentSubmitting, setIsCommentSubmitting] = useState(false);
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
   const mobileCommentInputRef = useRef<HTMLTextAreaElement>(null);
   const [showStickyHeader, setShowStickyHeader] = useState(false);
@@ -506,69 +507,132 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   }, []);
 
   const handleCommentSubmit = async () => {
-    if (commentText.trim() || fileList.length > 0) {
+    // Prevent empty submissions
+    if (!commentText.trim() && fileList.length === 0) {
+      message.info('Please write a comment or attach a file');
+      return;
+    }
+
+    // Prevent multiple submissions
+    if (isCommentSubmitting) {
+      console.log('Comment submission already in progress');
+      return;
+    }
+
+    // Check user authentication
+    if (!currentUser) {
+      message.error('Please sign in to comment');
+      return;
+    }
+
+    console.log('Starting comment submission process...', {
+      commentText: commentText.trim(),
+      fileCount: fileList.length,
+      userId: currentUser.id,
+      postId: post.id
+    });
+
+    setIsCommentSubmitting(true);
+
+    try {
       // 1. Insert comment into Supabase
+      console.log('Inserting comment into database...');
       const { data, error } = await supabase
         .from('comments')
         .insert([{
           post_id: post.id,
           author_id: currentUser.id,
-          content: commentText,
-          is_anonymous: false, // or true if you support anonymous
+          content: commentText.trim(),
+          is_anonymous: false,
           created_at: new Date().toISOString(),
         }])
         .select();
 
       if (error) {
-        message.error('Failed to post comment');
+        console.error('Database insert error:', error);
+        message.error(`Failed to post comment: ${error.message || 'Database error'}`);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        console.error('No data returned from comment insert');
+        message.error('Failed to post comment: No response from server');
         return;
       }
 
       const commentId = data[0].id;
+      console.log('Comment inserted successfully with ID:', commentId);
 
-      // 2. Upload each attachment with the correct commentId and collect attachment data
+      // 2. Upload attachments if any
       const uploadedAttachments: Attachment[] = [];
-      try {
-        for (const file of fileList) {
-          const storage_path = await uploadCommentAttachment(file, commentId, currentUser.id);
-          // Create attachment object to include in the local comment
-          uploadedAttachments.push({
-            id: `temp-${Date.now()}-${Math.random()}`, // Temporary ID for display
-            storage_path,
-            file_name: file.name,
-            file_type: file.type,
-            file_size: file.size,
-          });
+      if (fileList.length > 0) {
+        console.log(`Uploading ${fileList.length} attachments...`);
+        try {
+          for (const file of fileList) {
+            console.log(`Uploading file: ${file.name}`);
+            const storage_path = await uploadCommentAttachment(file, commentId, currentUser.id);
+            uploadedAttachments.push({
+              id: `temp-${Date.now()}-${Math.random()}`,
+              storage_path,
+              file_name: file.name,
+              file_type: file.type,
+              file_size: file.size,
+            });
+          }
+          console.log('All attachments uploaded successfully');
+        } catch (uploadError) {
+          console.error('Attachment upload error:', uploadError);
+          const errorMessage = uploadError instanceof Error ? uploadError.message : 'Upload error';
+          message.error(`Failed to upload attachments: ${errorMessage}`);
+          // Don't return here - comment was posted, just attachments failed
         }
-      } catch (err) {
-        console.error('Attachment upload error:', err);
-        message.error('Failed to upload one or more attachments');
       }
 
-      // 3. Optionally, fetch the new comment from data[0] and add to state
-      setComments([{
+      // 3. Add comment to local state
+      const newComment = {
         id: commentId,
         author: {
           name: currentUser?.user_metadata?.full_name || 'Current User',
           avatar: currentUser?.user_metadata?.avatar_url || 'https://i.pravatar.cc/150?img=1',
         },
-        content: commentText,
+        content: commentText.trim(),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         likes: 0,
         liked: false,
-        attachments: uploadedAttachments, // Include the uploaded attachments
-      }, ...comments]);
+        attachments: uploadedAttachments,
+      };
 
+      setComments(prevComments => [newComment, ...prevComments]);
+      setCommentCount(prevCount => prevCount + 1);
+
+      // 4. Clear form only on success
       setCommentText('');
       setFileList([]);
-      setCommentCount(commentCount + 1);
 
-      // Reset textarea heights after submission
+      // Reset textarea heights
       if (isMobile && mobileCommentInputRef.current) {
         mobileCommentInputRef.current.style.height = 'auto';
       } else if (!isMobile && commentInputRef.current) {
         commentInputRef.current.style.height = 'auto';
       }
+
+      console.log('Comment submission completed successfully');
+      message.success('Comment posted successfully!');
+
+    } catch (error) {
+      console.error('Unexpected error during comment submission:', error);
+      
+      // Handle different types of errors
+      const errorObj = error instanceof Error ? error : new Error('Unknown error');
+      if (errorObj.name === 'NetworkError' || errorObj.message?.includes('fetch')) {
+        message.error('Network error. Please check your connection and try again.');
+      } else if (errorObj.message?.includes('JWT') || errorObj.message?.includes('auth')) {
+        message.error('Authentication error. Please sign in again and try again.');
+      } else {
+        message.error(`Failed to post comment: ${errorObj.message || 'Unknown error occurred'}`);
+      }
+    } finally {
+      setIsCommentSubmitting(false);
     }
   };
 
@@ -955,7 +1019,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                         value={commentText}
                         onChange={handleCommentChange}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
+                          if (e.key === 'Enter' && !e.shiftKey && !isCommentSubmitting) {
                             e.preventDefault();
                             handleCommentSubmit();
                           }
@@ -993,11 +1057,16 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                             <PaperClipOutlined />
                           </button>
                           <button
-                            className="comment-action-button send"
+                            className={`comment-action-button send ${isCommentSubmitting ? 'loading' : ''}`}
                             onClick={handleCommentSubmit}
-                            title="Send comment"
+                            disabled={isCommentSubmitting || (!commentText.trim() && fileList.length === 0)}
+                            title={isCommentSubmitting ? "Posting comment..." : "Send comment"}
                           >
-                            <img src={SendArrow} alt="Send" className="send-arrow-icon" />
+                            {isCommentSubmitting ? (
+                              <div className="loading-spinner" />
+                            ) : (
+                              <img src={SendArrow} alt="Send" className="send-arrow-icon" />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -1254,7 +1323,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                   value={commentText}
                   onChange={handleCommentChange}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
+                    if (e.key === 'Enter' && !e.shiftKey && !isCommentSubmitting) {
                       e.preventDefault();
                       handleCommentSubmit();
                     }
@@ -1262,12 +1331,24 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                   rows={1}
                 />
                 <button
-                  className="comment-action-button send"
+                  className={`comment-action-button send ${isCommentSubmitting ? 'loading' : ''}`}
                   onClick={handleCommentSubmit}
-                  title="Send comment"
+                  onTouchEnd={(e) => {
+                    // Prevent double-tap issues on mobile
+                    e.preventDefault();
+                    if (!isCommentSubmitting) {
+                      handleCommentSubmit();
+                    }
+                  }}
+                  disabled={isCommentSubmitting || (!commentText.trim() && fileList.length === 0)}
+                  title={isCommentSubmitting ? "Posting comment..." : "Send comment"}
                   type="button"
                 >
-                  <img src={SendArrow} alt="Send" className="send-arrow-icon" />
+                  {isCommentSubmitting ? (
+                    <div className="loading-spinner" />
+                  ) : (
+                    <img src={SendArrow} alt="Send" className="send-arrow-icon" />
+                  )}
                 </button>
               </div>
             </div>
