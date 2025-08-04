@@ -562,6 +562,13 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       setCommentText('');
       setFileList([]);
       setCommentCount(commentCount + 1);
+
+      // Reset textarea heights after submission
+      if (isMobile && mobileCommentInputRef.current) {
+        mobileCommentInputRef.current.style.height = 'auto';
+      } else if (!isMobile && commentInputRef.current) {
+        commentInputRef.current.style.height = 'auto';
+      }
     }
   };
 
@@ -1246,6 +1253,12 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                   className="comment-input"
                   value={commentText}
                   onChange={handleCommentChange}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleCommentSubmit();
+                    }
+                  }}
                   rows={1}
                 />
                 <button
