@@ -230,7 +230,6 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  margin-right: 8px;
   border: 1px solid #281010;
   object-fit: cover;
   z-index: 2;
@@ -339,8 +338,8 @@
 
 .ant-btn.create-post-it-button {
   position: fixed;
-  bottom: 80px;
-  right: 65px;
+  bottom: 5vh;
+  right: 5vw;
   z-index: 1000;
   transition: all 0.2s ease !important;
 }

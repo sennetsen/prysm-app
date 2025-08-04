@@ -18,7 +18,7 @@ export interface Env {
 function withCorsHeaders(resp: Response) {
 	const newHeaders = new Headers(resp.headers);
 	newHeaders.set("Access-Control-Allow-Origin", "*");
-	newHeaders.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+	newHeaders.set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
 	newHeaders.set("Access-Control-Allow-Headers", "Content-Type");
 	return new Response(resp.body, {
 		status: resp.status,
@@ -36,7 +36,7 @@ export default {
 			return new Response(null, {
 				headers: {
 					"Access-Control-Allow-Origin": "*",
-					"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+					"Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
 					"Access-Control-Allow-Headers": "Content-Type",
 				},
 			});
@@ -63,6 +63,24 @@ export default {
 			return withCorsHeaders(new Response(JSON.stringify({ storage_path: fileName }), {
 				headers: { "Content-Type": "application/json" }
 			}));
+		}
+
+		// Handle file deletion (DELETE /delete/<filename>)
+		if (request.method === "DELETE" && url.pathname.startsWith("/delete/")) {
+			const fileName = url.pathname.replace("/delete/", "");
+			
+			try {
+				await env.ATTACHMENTS_BUCKET.delete(fileName);
+				return withCorsHeaders(new Response(JSON.stringify({ success: true }), {
+					headers: { "Content-Type": "application/json" }
+				}));
+			} catch (error) {
+				console.error('Error deleting file:', error);
+				return withCorsHeaders(new Response(JSON.stringify({ error: "Failed to delete file" }), {
+					status: 500,
+					headers: { "Content-Type": "application/json" }
+				}));
+			}
 		}
 
 		// Handle file download (GET /file/<filename>)

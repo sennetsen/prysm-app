@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useParams, Navigate, useNavigate } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import HomePage from './CompanySite/HomePage';
@@ -63,8 +63,15 @@ async function uploadPostAttachment(file, postId, authorId) {
   return storage_path;
 }
 
-function BoardView() {
+// Component to handle redirects for invalid board paths
+function BoardRedirect() {
   const { boardPath } = useParams();
+  return <Navigate to={`/${boardPath}`} replace />;
+}
+
+function BoardView() {
+  const { boardPath, postId } = useParams();
+  const navigate = useNavigate();
   const [boardData, setBoardData] = useState(null);
   const [boardNotFound, setBoardNotFound] = useState(false);
   const [user, setUser] = useState(null);
@@ -89,6 +96,26 @@ function BoardView() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
   const [postFileList, setPostFileList] = useState([]);
+  const [sortType, setSortType] = useState('new'); // Add sort state
+  const [isLoadingDirectPost, setIsLoadingDirectPost] = useState(false);
+
+  // Sort handler function
+  const handleSortChange = (newSortType) => {
+    setSortType(newSortType);
+  };
+
+  // Helper function to sort cards
+  const sortCards = (cards, sortType) => {
+    return [...cards].sort((a, b) => {
+      if (sortType === 'top') {
+        // Sort by likes count (descending)
+        return b.likesCount - a.likesCount;
+      } else {
+        // Sort by created_at (newest first)
+        return new Date(b.created_at) - new Date(a.created_at);
+      }
+    });
+  };
 
   const defaultColors = useMemo(() => [
     "#FEEAA4",
@@ -100,7 +127,7 @@ function BoardView() {
     const fetchBoardData = async () => {
       const { data, error } = await supabase
         .from('boards')
-        .select('*, owner:users(avatar_url)')
+        .select('*, owner:users(avatar_url, id)')
         .eq('url_path', boardPath)
         .maybeSingle();
 
@@ -110,6 +137,7 @@ function BoardView() {
         return;
       }
 
+      console.log('Board data fetched:', data);
       setBoardData(data);
       setNavbarColor(data.color);
       setIsBoardOwner(user?.email === data.email);
@@ -236,16 +264,53 @@ function BoardView() {
       };
     });
 
-    const sortedPosts = postsWithLikes.sort((a, b) => b.likesCount - a.likesCount);
+    // Sort posts using helper function
+    const sortedPosts = sortCards(postsWithLikes, sortType);
     setCards(sortedPosts);
     setTotalPosts(sortedPosts.length);
-  }, [boardData]);
+
+    // Check if there's a direct post URL and open it
+    if (postId) {
+      const directPost = sortedPosts.find(post => post.id === postId);
+      if (directPost) {
+        setSelectedPost({
+          ...directPost,
+          board_id: boardData?.id
+        });
+      } else {
+        // Invalid post ID - redirect to board URL
+        navigate(`/${boardPath}`);
+      }
+    }
+  }, [boardData, sortType, postId]);
 
   useEffect(() => {
     if (boardData) {
       fetchPosts();
     }
   }, [boardData, fetchPosts]);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      // Check if there's a post in the URL path
+      const currentPath = window.location.pathname;
+      const isPostPath = currentPath.includes('/posts/');
+
+      if (!isPostPath) {
+        // No post in URL, close the popup
+        setSelectedPost(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Re-sort cards when sort type changes
+  useEffect(() => {
+    setCards(prev => sortCards(prev, sortType));
+  }, [sortType]);
 
   useEffect(() => {
     if (!boardData?.id) return;
@@ -271,15 +336,16 @@ function BoardView() {
           .single();
 
         if (newPost) {
-          setCards(prev => [
-            ...prev,
-            {
+          setCards(prev => {
+            const newCardData = {
               ...newPost,
               board_id: boardData?.id, // Ensure board_id is included
               likesCount: newPost.reactions.filter(r => r.reaction_type === 'like').length,
               isNew: true
-            }
-          ]);
+            };
+            const updatedCards = [...prev, newCardData];
+            return sortCards(updatedCards, sortType);
+          });
           setTotalPosts(prev => prev + 1);
         }
       })
@@ -652,6 +718,9 @@ function BoardView() {
       ...post,
       board_id: boardData?.id
     });
+
+    // Navigate to the post URL using React Router
+    navigate(`/${boardPath}/posts/${post.id}`);
   };
 
   // Added function to update likes in the board view from a post popup
@@ -702,6 +771,7 @@ function BoardView() {
         color={navbarColor}
         onJoinClick={handleJoinClick}
         onShare={handleShareClick}
+        onSortChange={handleSortChange}
       />
       <div className={`main-content${isSidebarHidden ? ' sidebar-hidden' : ' sidebar-open'}`}>
         <Sidebar
@@ -715,6 +785,10 @@ function BoardView() {
           color={boardData?.color}
           isHidden={isSidebarHidden}
           toggleSidebar={toggleSidebar}
+          boardId={boardData?.id}
+          currentUserId={user?.id}
+          boardCreatorId={boardData?.owner_id}
+
         />
         <div className={`board${isSidebarHidden ? ' sidebar-hidden' : ' sidebar-open'}`}>
           {cards.length === 0 && (
@@ -884,7 +958,7 @@ function BoardView() {
       {isQuestionPopupOpen && (
         <div className="help-popup">
           <h2>Thanks for using us!</h2>
-          <p>Prysm is still in private beta.</p>
+          <p>Prysm is still in beta.</p>
           <p>Waitlist at <a href="https://prysmapp.com">prysmapp.com</a> </p>
           <p>or contact us at</p>
           <p><a href="mailto:getprysm@gmail.com">getprysm@gmail.com</a>!</p>
@@ -961,14 +1035,28 @@ function BoardView() {
       )}
 
       {selectedPost && (
-        <PostPopup
-          post={selectedPost}
-          isOpen={!!selectedPost}
-          onClose={() => setSelectedPost(null)}
-          currentUser={user}
-          onPostLikeChange={handlePostLikeUpdate}
-          isBoardOwner={isBoardOwner}
-        />
+        <>
+          {console.log('PostPopup props:', {
+            boardData: boardData,
+            boardCreatorId: boardData?.owner_id,
+            userEmail: user?.email,
+            boardEmail: boardData?.email
+          })}
+          <PostPopup
+            post={selectedPost}
+            isOpen={!!selectedPost}
+            onClose={() => {
+              setSelectedPost(null);
+              // Navigate back to the board
+              navigate(`/${boardPath}`);
+            }}
+            currentUser={user}
+            onPostLikeChange={handlePostLikeUpdate}
+            isBoardOwner={isBoardOwner}
+            boardCreatorId={boardData?.owner_id}
+            boardEmail={boardData?.email}
+          />
+        </>
       )}
 
     </div>
@@ -983,8 +1071,11 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/:boardPath" element={<BoardView />} />
           <Route path="/mention-test" element={<MentionTest />} />
+          <Route path="/posts/*" element={<Navigate to="/" />} />
+          <Route path="/:boardPath/posts/:postId" element={<BoardView />} />
+          <Route path="/:boardPath/*" element={<BoardRedirect />} />
+          <Route path="/:boardPath" element={<BoardView />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
         <Analytics />

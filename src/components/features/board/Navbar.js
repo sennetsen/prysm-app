@@ -6,11 +6,20 @@ import icon from '../../../img/Icon.svg';
 import fallbackImg from '../../../img/fallback.png';
 import { supabase } from "../../../supabaseClient";
 
-function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, onShare, profileRef }) {
+function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, onShare, profileRef, onSortChange }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [user, setUser] = useState(null);
+  const [sortType, setSortType] = useState('new'); // Add state for sort type
+
   const handleLinkClick = () => {
     window.location.href = '/';
+  };
+
+  const handleSortChange = (type) => {
+    setSortType(type);
+    if (onSortChange) {
+      onSortChange(type);
+    }
   };
 
   const navbarStyle = {
@@ -64,7 +73,7 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
         )}
         {user && (
           <div style={{ position: 'relative' }} ref={profileRef}>
-            <button className="profile-icon" onClick={onProfileClick} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+            <button className="profile-icon" onClick={onProfileClick} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               {user?.user_metadata?.picture ? (
                 <img
                   src={user.user_metadata.picture}
@@ -107,11 +116,26 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
             </button>
           </div>
         )}
+        <div className={`sort-toggle ${sortType === 'top' ? 'toggled' : ''}`}>
+          <div className="toggle-slider" style={{ backgroundColor: color || "#b43144" }}></div>
+          <button
+            className="toggle-option"
+            onClick={() => handleSortChange('new')}
+          >
+            New
+          </button>
+          <button
+            className="toggle-option"
+            onClick={() => handleSortChange('top')}
+          >
+            Top
+          </button>
+        </div>
 
         <div className="divider"></div>
         <button className="share-button" onClick={onShare}>
           <img src={icon} alt="Share" />
-          Share
+          <span className="share-text">Share</span>
         </button>
       </div>
     </nav>

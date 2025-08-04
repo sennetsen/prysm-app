@@ -90,6 +90,9 @@ function Board({ boardId }) {
         creatorName={boardData?.creator_name}
         creatorAvatar={boardData?.creator_avatar}
         avatarUrl={boardData?.owner?.avatar_url}
+        boardId={boardId}
+        currentUserId={currentUser.id}
+        boardCreatorId={boardData.owner_id}
       />
       {posts.map((post) => (
         <RequestCard

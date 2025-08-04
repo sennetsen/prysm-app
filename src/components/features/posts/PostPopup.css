@@ -1,3 +1,37 @@
+/* === Subscribe and Export Buttons === */
+.subscribe-export-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  min-height: 40px;
+}
+
+.export-csv-button {
+  background-color: #f0f0f0;
+  border: 1px solid #d9d9d9;
+  color: #666;
+  font-size: 12px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.export-csv-button:hover {
+  background-color: #e6e6e6;
+  border-color: #bfbfbf;
+  color: #333;
+}
+
+.export-csv-button .anticon {
+  font-size: 14px;
+}
+
 /* === Base styles for PostPopup modal === */
 .post-popup {
   top: 70px;
@@ -127,9 +161,10 @@
   font-family: 'Lexend Deca', sans-serif;
 }
 
-/* === Like/Comment Buttons === */
+/* === Like/Comment/Share Buttons === */
 .custom-like-button,
-.custom-comment-button {
+.custom-comment-button,
+.custom-share-button {
   display: flex !important;
   align-items: center !important;
   gap: 5px !important;
@@ -141,12 +176,14 @@
 }
 
 .custom-like-button:active,
-.custom-comment-button:active {
+.custom-comment-button:active,
+.custom-share-button:active {
   transform: scale(0.85);
 }
 
 .custom-like-button .anticon,
-.custom-comment-button .anticon {
+.custom-comment-button .anticon,
+.custom-share-button .anticon {
   font-size: 14px;
   color: #281010 !important;
 }
@@ -158,6 +195,10 @@
 .custom-like-button.liked .anticon,
 .custom-like-button.liked .like-count {
   color: white !important;
+}
+
+.custom-share-button:hover {
+  background: rgba(40, 16, 16, 0.05) !important;
 }
 
 .like-count,
@@ -408,7 +449,7 @@
 
 .unsubscribe-button,
 .subscribe-button {
-  height: 36px;
+  height: 32px;
   padding: 0 16px;
   border-radius: 8px;
   font-size: 14px;
@@ -520,18 +561,21 @@
 
   .mobile-navbar {
     display: flex;
-    position: fixed;
+    position: fixed !important;
     top: 0;
     left: 0;
     right: 0;
     height: 60px;
     background-color: #e6756e;
     color: white;
-    z-index: 10001 !important;
+    z-index: 100000 !important;
+    /* Highest z-index to ensure it's above everything */
     align-items: center;
     padding: 0 16px;
     /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); */
     box-shadow: 0 2px 8px #e6756e99;
+    /* Force viewport positioning */
+    transform-style: flat;
   }
 
   .mobile-navbar-title {
@@ -552,15 +596,14 @@
   }
 
   .mobile-navbar-info {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    background-color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #e6756e;
-    font-size: 16px;
+    color: white;
+    font-size: 24px;
     cursor: pointer;
   }
 
@@ -655,28 +698,273 @@
   }
 
   .mobile-comment-bar {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: #FDFCFC;
-    padding: 12px 18px 12px 18px;
-    z-index: 2000;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
-    border-top: 1px solid #ececec;
+    position: fixed !important;
+    bottom: env(keyboard-inset-height, 0) !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+    padding: 12px 16px;
+    z-index: 99998 !important;
+    /* Below sticky header */
+    transition: all 0.3s ease;
+    width: 100vw !important;
+    box-sizing: border-box;
+    /* Force viewport positioning */
+    transform: translateZ(0);
+    /* Create new stacking context */
   }
 
-  .mobile-comment-bar .mobile-input-row {
-    margin-top: 16px;
+  /* Ensure proper viewport behavior */
+  @supports (bottom: env(keyboard-inset-height)) {
+    .mobile-comment-bar {
+      bottom: env(keyboard-inset-height, 0);
+    }
+  }
+
+  /* Fallback for older browsers */
+  @supports not (bottom: env(keyboard-inset-height)) {
+    .mobile-comment-bar {
+      bottom: 0;
+    }
+  }
+
+  /* Reddit-style mobile comment bar states */
+  .mobile-comment-bar.collapsed {
+    padding: 8px 16px;
+  }
+
+  .mobile-comment-bar.expanded {
+    padding: 12px 16px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .mobile-input-main-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .mobile-comment-input {
+    flex: 1;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 16px;
+    line-height: 20px;
+    /* Fixed line height for consistent calculation */
+    resize: none;
+    outline: none;
+
+    /* Professional auto-sizing approach - CSS handles everything */
+    min-height: 36px;
+    /* Single line height */
+    max-height: 120px;
+    /* ~6 lines (20px * 6) */
+    height: auto;
+    overflow-y: auto;
+    /* Show scrollbar when needed */
+
+    /* Modern CSS auto-sizing (supported in newer browsers) */
+    field-sizing: content;
+
+    /* Ensure proper text flow */
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    box-sizing: border-box;
+
+    /* Mobile optimizations */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: text;
+    user-select: text;
+    font-family: inherit;
+
+    /* Smooth transitions */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  /* Handle text overflow when collapsed */
+  .mobile-comment-bar.collapsed .mobile-comment-input {
+    /* Truncate text with ellipses in collapsed state */
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-height: 36px;
+    height: 36px;
+  }
+
+  .mobile-comment-bar.expanded .mobile-comment-input {
+    overflow-y: auto;
+  }
+
+  .mobile-comment-input:focus {
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+  }
+
+  .mobile-input-divider {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 12px 0 8px 0;
+  }
+
+  .mobile-action-buttons-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mobile-action-buttons-row .comment-action-button {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-action-buttons-row .comment-action-button:hover {
+    background: #f0f0f0;
+  }
+
+  .mobile-action-buttons-row .comment-action-button.send {
+    background: #007AFF;
+    color: white;
+  }
+
+  .mobile-action-buttons-row .comment-action-button.send:hover {
+    background: #0056CC;
+  }
+
+  /* File preview adjustments for mobile */
+  .comment-file-preview-container.mobile-preview {
+    margin-bottom: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
   }
 
 
   .post-popup-container.mobile-layout {
     padding-bottom: 80px !important;
   }
+
+  /* Simple mobile comment bar - based on working test input */
+  .simple-mobile-comment-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+    z-index: 99998 !important;
+    width: 100vw !important;
+    box-sizing: border-box;
+    transform: translateZ(0);
+    padding: 16px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .simple-file-preview-section {
+    margin-bottom: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .simple-file-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(40, 16, 16, 0.05);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  .simple-file-name {
+    color: #281010;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+
+  .simple-remove-file {
+    cursor: pointer;
+    color: #666;
+    background: transparent;
+    border: none;
+    padding: 2px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+
+  .simple-remove-file:hover {
+    background: rgba(40, 16, 16, 0.1);
+    color: #281010;
+  }
+
+  .simple-input-container {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  .simple-comment-input {
+    width: 100% !important;
+    font-family: inherit;
+    line-height: 1.4;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .simple-comment-input:focus {
+    border-color: #007AFF !important;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1) !important;
+  }
+
+  .simple-divider {
+    height: 1px;
+    background: #e0e0e0;
+    margin-bottom: 12px;
+  }
+
+  .simple-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .simple-action-btn {
+    background: none;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .simple-action-btn:hover {
+    background: #f0f0f0;
+  }
+
+  .simple-send-btn {
+    background: #007AFF !important;
+    color: white !important;
+  }
+
+  .simple-send-btn:hover {
+    background: #0056CC !important;
+  }
+
+  .simple-send-btn img {
+    width: 16px;
+    height: 16px;
+  }
 }
+
 
 .author-avatar {
   width: 24px;
@@ -722,11 +1010,13 @@
 }
 
 .mobile-sticky-header {
-  position: fixed;
+  position: fixed !important;
   top: 60px;
+  /* Position below mobile navbar */
   left: 0;
   right: 0;
-  z-index: 10000;
+  z-index: 99999 !important;
+  /* Just below mobile navbar */
   background: #fff;
   border-bottom: 1px solid #D9D9D9;
   padding: 10px 16px 8px 16px;
@@ -737,6 +1027,8 @@
   transform: translateY(-100%);
   opacity: 0;
   transition: transform 0.5s cubic-bezier(.4, 0, .2, 1), opacity 0.8s cubic-bezier(.4, 0, .2, 1);
+  /* Force viewport positioning */
+  transform-style: flat;
 }
 
 .mobile-sticky-header.sticky-visible {
@@ -764,13 +1056,15 @@
 }
 
 .mobile-info-panel {
-  position: fixed;
+  position: fixed !important;
   left: 0;
   right: 0;
   bottom: 0;
   /* top: 0; */
   background: #fff;
-  z-index: 20001;
+  z-index: 200001 !important;
+  /* Higher than mobile comment bar */
+  /* Higher than backdrop */
   border-top-left-radius: 18px;
   border-top-right-radius: 18px;
   box-shadow: 0 -2px 24px rgba(0, 0, 0, 0.12);
@@ -779,6 +1073,76 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  /* Force viewport positioning */
+  transform-style: flat;
+  max-height: 80vh;
+}
+
+.mobile-info-panel .about-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 6px;
+  margin-bottom: 16px;
+  color: #281010;
+}
+
+.mobile-info-panel .author-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.mobile-info-panel .author-name {
+  font-size: 14px;
+  color: #281010;
+}
+
+.mobile-info-panel .author-email {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.mobile-info-panel .post-date {
+  display: flex;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.mobile-info-panel .date-time {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-info-panel .post-time {
+  font-size: 12px;
+}
+
+.mobile-info-panel .subscribers-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #281010;
+}
+
+.mobile-info-panel .avatar-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-info-panel .avatar-group .ant-avatar-group {
+  display: flex;
+  align-items: center;
+}
+
+.mobile-info-panel .avatar-group .ant-avatar {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #fff;
 }
 
 @keyframes slideUpInfoPanel {
@@ -793,15 +1157,25 @@
 
 .mobile-info-close {
   position: absolute;
-  top: 14px;
-  right: 18px;
+  top: 16px;
+  right: 20px;
   background: none;
   border: none;
-  font-size: 20px;
-  font-weight: 1000;
+  font-size: 24px;
+  font-weight: 300;
   color: #281010;
   cursor: pointer;
   border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.mobile-info-close:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* Comment file attachment styles */
@@ -947,21 +1321,106 @@
   max-width: 200px;
 }
 
-/* Activity section improvements */
-.activity-section {
-  margin-top: 24px;
+/* Professional mobile popup transitions */
+@media (max-width: 768px) {
+  .post-popup.mobile {
+    top: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100vw !important;
+    width: 100vw !important;
+  }
+
+  .post-popup.mobile .ant-modal-content {
+    margin: 0;
+    border-radius: 0;
+    min-height: 100vh;
+    transform: translateX(100%);
+    animation: slideInFromRight 0.18s cubic-bezier(0.19, 0.32, 0.94, 0.45) forwards;
+    /* Don't create containing block for fixed elements */
+    transform-style: flat;
+    /* Use will-change to optimize animation and reduce containing block issues */
+    will-change: transform;
+    /* Add padding for mobile navbar */
+    padding-top: 60px;
+  }
+
+  .post-popup.mobile.ant-modal-wrap {
+    animation: backdropFadeIn 0.18s ease-out forwards;
+  }
+
+  /* .post-popup.mobile.closing .ant-modal-content {
+    animation: slideOutToRight 0.18s cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
+  }
+
+  .post-popup.mobile.closing.ant-modal-wrap {
+    animation: backdropFadeOut 0.18s ease-in forwards; */
+
+  /* Slide in from right animation (entering) */
+  @keyframes slideInFromRight {
+    0% {
+      transform: translateX(100%);
+      opacity: 0.9;
+    }
+
+    100% {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  /* Backdrop fade animation */
+  @keyframes backdropFadeIn {
+    0% {
+      background-color: rgba(0, 0, 0, 0);
+    }
+
+    100% {
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  /* Slide out to right animation (going back) */
+  .post-popup.mobile.closing .ant-modal-content {
+    animation: slideOutToRight 0.18s cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
+  }
+
+  .post-popup.mobile.closing.ant-modal-wrap {
+    animation: backdropFadeOut 0.18s ease-in forwards;
+  }
+
+  @keyframes slideOutToRight {
+    0% {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    100% {
+      transform: translateX(100%);
+      opacity: 0.9;
+    }
+  }
+
+  @keyframes backdropFadeOut {
+    0% {
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    100% {
+      background-color: rgba(0, 0, 0, 0);
+    }
+  }
 }
 
-.activity-section h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #281010;
-  margin-bottom: 12px;
-  font-family: 'Lexend Deca', sans-serif;
+/* Adjust padding when comment bar is expanded */
+.post-popup.mobile .mobile-comment-bar.expanded~.post-popup-container,
+.post-popup.mobile .mobile-comment-bar.expanded~* .post-popup-container {
+  padding-bottom: 120px;
+  /* More space when expanded */
 }
 
-/* Ensure the activity stream fits well in the right column */
-.post-activity-section .board-activity-stream {
-  max-height: 300px;
-  margin-top: 8px;
+.comment-action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
 }

@@ -13,6 +13,9 @@ interface CommentThreadProps {
   onLike: (commentId: number) => void;
   onAddReply?: (parentId: number, reply: Comment) => void;
   onDelete?: (commentId: number) => void;
+  onReplyClick?: (commentId: string) => void; // New prop for unified reply system
+  replyingToComment?: string | null; // ID of comment being replied to
+  userCommentsThisSession?: Set<number>;
 }
 
 interface Comment {
@@ -23,6 +26,7 @@ interface Comment {
   };
   content: string;
   timestamp: string;
+  created_at?: string; // Add optional created_at for sorting
   likes: number;
   liked: boolean;
   replies?: Comment[];
@@ -33,15 +37,19 @@ interface Comment {
     file_type: string;
     file_size: number;
   }[];
+  is_deleted?: boolean;
 }
 
-export function CommentThread({
+export const CommentThread = React.memo(function CommentThread({
   postId,
   currentUser,
   comments,
   onLike,
   onAddReply,
-  onDelete
+  onDelete,
+  onReplyClick,
+  replyingToComment,
+  userCommentsThisSession = new Set()
 }: CommentThreadProps) {
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState('');
@@ -51,16 +59,26 @@ export function CommentThread({
   const [expandedReplies, setExpandedReplies] = useState<number[]>([]);
   const [commentLikes, setCommentLikes] = useState(0);
   const replyFileInputRef = useRef<HTMLInputElement>(null);
+  const replyInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Update local comments when props change
   useEffect(() => {
     setLocalComments(comments);
   }, [comments]);
 
+  // Check if we're on mobile
+  const isMobile = window.innerWidth <= 768;
+
   const handleReplyClick = (commentId: number) => {
-    setReplyingToId(commentId);
-    setReplyText('');
-    setReplyAttachments([]);
+    if (isMobile && onReplyClick) {
+      // Use unified mobile input system
+      onReplyClick(commentId.toString());
+    } else {
+      // Use desktop inline reply system
+      setReplyingToId(commentId);
+      setReplyText('');
+      setReplyAttachments([]);
+    }
   };
 
   const handleReplyAttachment = () => {
@@ -76,6 +94,14 @@ export function CommentThread({
 
   const removeReplyAttachment = (fileToRemove: File) => {
     setReplyAttachments(prev => prev.filter(file => file !== fileToRemove));
+  };
+
+  const handleReplyInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setReplyText(e.target.value);
+    if (replyInputRef.current) {
+      replyInputRef.current.style.height = 'auto';
+      replyInputRef.current.style.height = replyInputRef.current.scrollHeight + 'px';
+    }
   };
 
   const handleSubmitReply = (parentId: number) => {
@@ -137,18 +163,32 @@ export function CommentThread({
           // Mark the top-level comment as deleted
           return {
             ...comment,
-            author: { name: 'Comment Deleted', avatar: '' }, // Change author
+            is_deleted: true,
+            author: { name: 'Deleted comment', avatar: '' }, // Change author
             content: '', // Clear content
             likes: 0, // Reset likes
             liked: false, // Reset liked status
+            attachments: [], // Clear attachments
             // Keep replies intact
           };
         }
-        // If it's a reply being deleted, keep the current logic
+        // If it's a reply being deleted, mark it as deleted
         if (comment.replies && comment.replies.some(reply => reply.id === commentId)) {
           return {
             ...comment,
-            replies: comment.replies.filter(reply => reply.id !== commentId)
+            replies: comment.replies.map(reply =>
+              reply.id === commentId
+                ? {
+                  ...reply,
+                  is_deleted: true,
+                  author: { name: 'Deleted comment', avatar: '' },
+                  content: '',
+                  likes: 0,
+                  liked: false,
+                  attachments: []
+                }
+                : reply
+            )
           };
         }
         return comment;
@@ -214,7 +254,7 @@ export function CommentThread({
         let hour24 = parseInt(hour);
         if (ampm === 'PM' && hour24 !== 12) hour24 += 12;
         if (ampm === 'AM' && hour24 === 12) hour24 = 0;
-        
+
         commentDate = new Date(parseInt(year), monthIndex, parseInt(day), hour24, parseInt(minute));
       }
     }
@@ -279,7 +319,7 @@ export function CommentThread({
   };
 
   const renderComment = (comment: Comment, isReply = false) => {
-    const isDeleted = comment.author.name === 'Comment Deleted';
+    const isDeleted = comment.is_deleted || comment.author.name === 'Deleted comment';
 
     const isCurrentUserAuthor =
       currentUser?.user_metadata?.full_name === comment.author.name;
@@ -287,7 +327,7 @@ export function CommentThread({
     const isMinimized = minimizedComments.includes(comment.id);
 
     return (
-      <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''} ${isDeleted ? 'deleted-comment' : ''}`}>
+      <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''} ${isDeleted ? 'deleted-comment' : ''} ${replyingToComment === comment.id.toString() ? 'replying-to' : ''}`}>
         <div className="comment-avatar">
           <Avatar src={comment.author.avatar} size={isDeleted ? 26 : 36} />
         </div>
@@ -296,19 +336,25 @@ export function CommentThread({
             <span className="comment-author">{comment.author.name}</span>
             <span className="comment-timestamp">{formatTimeDifference(comment.timestamp)}</span>
           </div>
-          {!isDeleted && !isMinimized && (
+          {!isMinimized && (
             <>
-              <p className="comment-text">
-                {comment.content.startsWith('@') ? (
-                  <>
-                    <span className="mention">@Everyone</span>
-                    {comment.content.substring(9)}
-                  </>
-                ) : comment.content}
-              </p>
-              
+              {isDeleted ? (
+                <p className="comment-text deleted-comment-text">
+                  <em>This comment has been deleted.</em>
+                </p>
+              ) : (
+                <p className="comment-text">
+                  {comment.content.startsWith('@') ? (
+                    <>
+                      <span className="mention">@Everyone</span>
+                      {comment.content.substring(9)}
+                    </>
+                  ) : comment.content}
+                </p>
+              )}
+
               {/* Display file previews if attachments exist */}
-              {comment.attachments && comment.attachments.length > 0 && (
+              {!isDeleted && comment.attachments && comment.attachments.length > 0 && (
                 <div className="comment-attachments">
                   {(() => {
                     // Separate attachments by type while maintaining original order within each group
@@ -322,21 +368,21 @@ export function CommentThread({
                     };
                     const images: AttachmentWithIndex[] = [];
                     const nonImages: AttachmentWithIndex[] = [];
-                    
+
                     comment.attachments.forEach((attachment, originalIndex) => {
                       // Check if it's an image file by extension and MIME type
-                      const isImage = attachment.file_type.startsWith('image/') || 
+                      const isImage = attachment.file_type.startsWith('image/') ||
                         /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(attachment.file_name);
-                      
+
                       const attachmentWithIndex: AttachmentWithIndex = { ...attachment, originalIndex };
-                      
+
                       if (isImage) {
                         images.push(attachmentWithIndex);
                       } else {
                         nonImages.push(attachmentWithIndex);
                       }
                     });
-                    
+
                     return (
                       <>
                         {/* Images container */}
@@ -355,7 +401,7 @@ export function CommentThread({
                             ))}
                           </div>
                         )}
-                        
+
                         {/* Non-image files container */}
                         {nonImages.length > 0 && (
                           <div className="comment-files-container">
@@ -378,64 +424,74 @@ export function CommentThread({
                   })()}
                 </div>
               )}
-              
-              <div className="actions-wrapper">
-                <div className="comment-actions">
-                  <Button
-                    className={`heart-button ${comment.liked ? 'liked' : ''}`}
-                    icon={comment.liked ? <HeartFilled /> : <HeartOutlined />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onLike(comment.id);
-                    }}
-                  >
-                    {comment.likes}
-                  </Button>
-                  {!isReply && (
-                    <Button
-                      className="reply-button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleReplyClick(comment.id);
-                      }}
-                    >
-                      <MessageOutlined /> Reply
-                    </Button>
-                  )}
-                  {isCurrentUserAuthor && (
-                    <Popconfirm
-                      title="Delete this comment?"
-                      description="This action cannot be undone."
-                      okText="Delete"
-                      cancelText="Cancel"
-                      okButtonProps={{ danger: true }}
-                      onConfirm={() => handleDeleteComment(comment.id)}
-                      onCancel={(e) => e?.stopPropagation()}
-                    >
-                      <Button
-                        className="delete-button"
-                        icon={<DeleteOutlined />}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Delete
-                      </Button>
-                    </Popconfirm>
-                  )}
-                </div>
-              </div>
 
-              {!isReply && replyingToId === comment.id && (
+              {!isDeleted && (
+                <div className="actions-wrapper">
+                  <div className="comment-actions">
+                    {!isDeleted && (
+                      <Button
+                        className={`heart-button ${comment.liked ? 'liked' : ''}`}
+                        icon={comment.liked ? <HeartFilled /> : <HeartOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLike(comment.id);
+                        }}
+                      >
+                        {comment.likes}
+                      </Button>
+                    )}
+                    {!isReply && !isDeleted && (
+                      <Button
+                        className="reply-button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReplyClick(comment.id);
+                        }}
+                      >
+                        <MessageOutlined /> Reply
+                      </Button>
+                    )}
+                    {isCurrentUserAuthor && !isDeleted && (
+                      <Popconfirm
+                        title="Delete this comment?"
+                        description="This action cannot be undone."
+                        okText="Delete"
+                        cancelText="Cancel"
+                        okButtonProps={{ danger: true }}
+                        onConfirm={() => handleDeleteComment(comment.id)}
+                        onCancel={(e) => e?.stopPropagation()}
+                      >
+                        <Button
+                          className="delete-button"
+                          icon={<DeleteOutlined />}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Delete
+                        </Button>
+                      </Popconfirm>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {!isReply && !isDeleted && replyingToId === comment.id && !isMobile && (
                 <div className="reply-input-container" onClick={(e) => e.stopPropagation()}>
                   <div className="reply-input-row">
                     <div className="reply-input-wrapper">
-                      <input
-                        type="text"
+                      <textarea
+                        ref={replyInputRef}
                         placeholder="Write a reply..."
                         value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSubmitReply(comment.id)}
+                        onChange={handleReplyInput}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSubmitReply(comment.id);
+                          }
+                        }}
                         className="reply-input"
                         autoFocus
+                        rows={1}
                       />
                       <Button
                         className="reply-attachment-button"
@@ -505,8 +561,12 @@ export function CommentThread({
               console.log('Reply IDs:', comment.replies.map(r => r.id));
             }
 
-            const hasAdditionalReplies = comment.replies && comment.replies.length > 1;
-            const additionalRepliesCount = hasAdditionalReplies ? comment.replies!.length - 1 : 0;
+            // Calculate hidden replies (excluding session replies which are always shown)
+            const sessionRepliesCount = comment.replies ? comment.replies.filter(reply => userCommentsThisSession.has(reply.id)).length : 0;
+            const nonSessionRepliesCount = comment.replies ? comment.replies.length - sessionRepliesCount : 0;
+            const hiddenNonSessionReplies = Math.max(0, nonSessionRepliesCount - 2);
+            const hasAdditionalReplies = hiddenNonSessionReplies > 0;
+            const additionalRepliesCount = hiddenNonSessionReplies;
             const isExpanded = expandedReplies.includes(comment.id);
             const mostRecentTimestamp = hasAdditionalReplies ? getMostRecentReplyTimestamp(comment.replies!) : '';
             const additionalUserAvatars = hasAdditionalReplies ? getAdditionalReplyAvatars(comment.replies!) : [];
@@ -519,22 +579,25 @@ export function CommentThread({
                   {!minimizedComments.includes(comment.id) && comment.replies && comment.replies.length > 0 && (
                     <div className="replies-container" style={{ position: 'relative' }}>
                       <div className="all-replies-wrapper">
-                        {/* Show only the first 2 replies by default, show all if expanded */}
-                        {(isExpanded ? comment.replies : comment.replies.slice(0, 2)).map((reply, idx) => renderComment(reply, true))}
-                      </div>
-                      <div className="reply-connector">
-                        {isExpanded && comment.replies.length > 2 && (
-                          <button
-                            className="collapse-replies-btn"
-                            onClick={() => toggleReplies(comment.id)}
-                            aria-label="Collapse replies"
-                          >
-                            <span>–</span>
-                          </button>
-                        )}
+                        {/* Show first 2 replies + session replies, or all if expanded */}
+                        {(isExpanded ? comment.replies : (() => {
+                          const sessionReplies = comment.replies.filter(reply => userCommentsThisSession.has(reply.id));
+                          const nonSessionReplies = comment.replies.filter(reply => !userCommentsThisSession.has(reply.id));
+                          const firstTwoNonSession = nonSessionReplies.slice(0, 2);
+
+                          // Combine and maintain chronological order (oldest first)
+                          const visibleReplies = [...firstTwoNonSession, ...sessionReplies]
+                            .sort((a, b) => {
+                              const aTime = (a as any).created_at || a.timestamp;
+                              const bTime = (b as any).created_at || b.timestamp;
+                              return new Date(aTime).getTime() - new Date(bTime).getTime();
+                            });
+
+                          return visibleReplies;
+                        })()).map((reply, idx) => renderComment(reply, true))}
                       </div>
                       {/* Show "X more replies" summary if there are more than 2 replies and not expanded */}
-                      {comment.replies.length > 2 && !isExpanded && (
+                      {hasAdditionalReplies && !isExpanded && (
                         <div className="more-replies" onClick={() => toggleReplies(comment.id)}>
                           <Avatar.Group className="avatars" maxCount={3}>
                             {additionalUserAvatars.map((user, index) => (
@@ -545,7 +608,7 @@ export function CommentThread({
                           </Avatar.Group>
                           <span className="more-replies-text">
                             <span style={{ fontWeight: 600 }}>
-                              {comment.replies.length - 2} more {comment.replies.length - 2 === 1 ? 'reply' : 'replies'}
+                              {additionalRepliesCount} more {additionalRepliesCount === 1 ? 'reply' : 'replies'}
                             </span>
                             <span style={{ fontWeight: 400 }}>
                               {' • '}{formatTimeDifference(mostRecentTimestamp)}
@@ -573,4 +636,4 @@ export function CommentThread({
       </div>
     </>
   );
-}
+});

@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import "./Sidebar.css";
 import fallbackImg from '../../../img/fallback.png';
 import verifiedIcon from '../../../img/verified.svg';
+import BoardActivityStream from './BoardActivityStream';
 
-function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, posts, color, isHidden, toggleSidebar }) {
+function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, posts, color, isHidden, toggleSidebar, boardId, currentUserId, boardCreatorId }) {
   const [showFullDescription, setShowFullDescription] = useState(false);
 
   const getAvatarUrl = () => {
@@ -13,17 +14,30 @@ function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, pos
     return fallbackImg;
   };
 
-  // Get the first 4 posts' profile pictures
-  const getPostAvatars = () => {
+  // Get the first 4 unique users' profile pictures
+  const getUniquePostAvatars = () => {
     if (!posts || posts.length === 0) return [];
-    return posts.slice(0, 4).map(post => ({
-      avatar: post.author?.avatar_url || fallbackImg,
-      isAnonymous: post.is_anonymous
-    }));
+    const seen = new Map();
+    posts.forEach(post => {
+      const key = post.is_anonymous ? 'anon-' + (post.author?.avatar_url || fallbackImg) : post.author?.id || post.author?.avatar_url || fallbackImg;
+      if (!seen.has(key)) {
+        seen.set(key, {
+          avatar: post.author?.avatar_url || fallbackImg,
+          isAnonymous: post.is_anonymous
+        });
+      }
+    });
+    return Array.from(seen.values());
   };
 
-  // Calculate the remaining posts count
-  const remainingPosts = Math.max(0, totalPosts - 4);
+  // Calculate the remaining unique users count
+  const uniqueAvatars = getUniquePostAvatars();
+  // Prioritize non-anonymous avatars first
+  uniqueAvatars.sort((a, b) => {
+    if (a.isAnonymous === b.isAnonymous) return 0;
+    return a.isAnonymous ? 1 : -1;
+  });
+  const remainingUnique = Math.max(0, uniqueAvatars.length - 4);
 
   return (
     <>
@@ -59,7 +73,7 @@ function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, pos
             <div className="requests-row">
               <span className="requests-title">{totalPosts} {totalPosts === 1 ? "Post" : "Posts"}</span>
               <div className="requests-avatars">
-                {getPostAvatars().map((post, index) => (
+                {uniqueAvatars.slice(0, 4).map((post, index) => (
                   <img
                     key={index}
                     src={post.isAnonymous ? fallbackImg : post.avatar}
@@ -70,8 +84,8 @@ function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, pos
                     }}
                   />
                 ))}
-                {remainingPosts > 0 && (
-                  <span className="avatar more-requests">+{remainingPosts}</span>
+                {remainingUnique > 0 && (
+                  <span className="avatar more-requests">+{remainingUnique}</span>
                 )}
               </div>
             </div>
@@ -93,17 +107,19 @@ function Sidebar({ description, bio, totalPosts, creatorName, creatorAvatar, pos
                 style={{
                   display: 'inline-block',
                   marginLeft: 4,
-                  transform: showFullDescription ? 'rotate(0deg)' : 'rotate(-90deg)'
+                  transform: showFullDescription ? 'rotate(-90deg)' : 'rotate(90deg)'
                 }}
               >
                 {'>'}
               </span>
             </button>
 
-            {/* Activity Section Placeholder */}
             <div className="sidebar-activity-section">
               <h3>Activity</h3>
-              {/* Activity content will go here */}
+              <BoardActivityStream
+                boardId={boardId}
+                currentUserId={currentUserId}
+                boardCreatorId={boardCreatorId} />
             </div>
           </div>
         )}
