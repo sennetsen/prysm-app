@@ -130,6 +130,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
+  const mobileCommentInputRef = useRef<HTMLTextAreaElement>(null);
   const [showStickyHeader, setShowStickyHeader] = useState(false);
   const postContentRef = useRef<HTMLDivElement>(null);
   const popupContainerRef = useRef<HTMLDivElement>(null);
@@ -1240,7 +1241,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                   <PaperClipOutlined />
                 </button>
                 <textarea
-                  ref={commentInputRef}
+                  ref={mobileCommentInputRef}
                   placeholder="Join the conversation"
                   className="comment-input"
                   value={commentText}
