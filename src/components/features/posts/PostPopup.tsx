@@ -194,6 +194,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
+  const commentTextRef = useRef<string>(''); // Track input value without re-renders
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [showStickyHeader, setShowStickyHeader] = useState(false);
   const postContentRef = useRef<HTMLDivElement>(null);
   const popupContainerRef = useRef<HTMLDivElement>(null);
@@ -208,6 +210,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [isExportingCSV, setIsExportingCSV] = useState(false);
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [isFileUploading, setIsFileUploading] = useState(false);
+  const [hasContent, setHasContent] = useState(false); // Track if user has typed content
 
   // Initialize likeCount from post.likes or post.likesCount
   const [likeCount, setLikeCount] = useState(post.reaction_counts?.like ?? 0);
@@ -354,10 +357,22 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     element.style.height = `${element.scrollHeight}px`;
   };
 
-  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setCommentText(e.target.value);
+  const handleCommentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    commentTextRef.current = value;
+    
+    // Clear existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // Debounce state update to minimize re-renders
+    debounceTimerRef.current = setTimeout(() => {
+      setCommentText(value);
+    }, 100);
+    
     adjustTextareaHeight(e.target);
-  };
+  }, []);
 
   // Keep likeCount and liked in sync with post prop and backend
   useEffect(() => {
@@ -747,7 +762,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   };
 
-  // Clean up object URLs on unmount
+  // Clean up object URLs and timers on unmount
   useEffect(() => {
     return () => {
       fileList.forEach(file => {
@@ -755,12 +770,25 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           URL.revokeObjectURL(file.preview);
         }
       });
+      
+      // Clear debounce timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
     };
   }, []);
+  
+  // Sync ref with state when state changes (for external updates)
+  useEffect(() => {
+    commentTextRef.current = commentText;
+  }, [commentText]);
 
-  const handleCommentSubmit = async (internal = false) => {
+  const handleCommentSubmit = useCallback(async (internal = false) => {
     if (!internal && isSubmitting) return; // Prevent double submission
-    if (!(commentText.trim() || fileList.length > 0)) return;
+    
+    // Use current text from ref if it's more recent than state
+    const currentText = commentTextRef.current || commentText;
+    if (!(currentText.trim() || fileList.length > 0)) return;
 
     if (!internal) setIsSubmitting(true);
 
@@ -771,7 +799,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         .insert([{
           post_id: post.id,
           author_id: currentUser.id,
-          content: commentText,
+          content: currentText,
           is_anonymous: false, // or true if you support anonymous
           created_at: new Date().toISOString(),
         }])
@@ -815,8 +843,16 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       // 4. Refresh comments to get proper sorting with updated session data
       fetchComments(updatedSessionSet);
 
+      // Clear both ref and state
+      commentTextRef.current = '';
       setCommentText('');
+      setHasContent(false);
       setFileList([]);
+      
+      // Clear the textarea value directly
+      if (commentInputRef.current) {
+        commentInputRef.current.value = '';
+      }
 
       // Collapse mobile input after posting
       if (isMobile) {
@@ -833,7 +869,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     } finally {
       if (!internal) setIsSubmitting(false);
     }
-  };
+  }, [isSubmitting, commentText, fileList, post.id, currentUser, userCommentsThisSession, isMobile]);
 
   const getOrdinalSuffix = (day: number): string => {
     if (day >= 11 && day <= 13) return 'th';
@@ -1385,50 +1421,45 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   }, [isMobileInputExpanded]);
 
-  const handleMobileCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleMobileCommentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
-
-    // Store focus state and cursor position before updating
-    const wasFocused = document.activeElement === commentInputRef.current;
-    const cursorPosition = wasFocused ? e.target.selectionStart : 0;
-
-    setCommentText(value);
-
-    // Auto-expand if text is long or files are attached
-    if (value.length > 30 || fileList.length > 0) {
+    const textarea = e.target;
+    
+    // Store the value in ref immediately (no re-render)
+    commentTextRef.current = value;
+    
+    // Update content availability immediately for button state
+    setHasContent(value.trim().length > 0);
+    
+    // Clear existing timers
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // Handle auto-expansion immediately (no state change needed for typing)
+    if (!isMobileInputExpanded && (value.length > 30 || fileList.length > 0)) {
       setIsMobileInputExpanded(true);
     }
-
-    // Simple line-based scroll management (when DOM measurements fail)
-    if (commentInputRef.current && value.length > 0) {
-      const textarea = commentInputRef.current;
-
-      // Count lines and estimate when scrolling is needed
+    
+    // Auto-resize textarea
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+    
+    // Handle scrolling for long content
+    if (value.length > 0) {
       const lines = value.split('\n').length;
       const estimatedLines = Math.max(lines, Math.ceil(value.length / 50));
-
-      // Auto-scroll when content likely exceeds 6 lines
+      
       if (estimatedLines > 6) {
-        setTimeout(() => {
-          if (textarea) {
-            textarea.scrollTop = 99999;
-            textarea.scrollIntoView({ behavior: 'smooth', block: 'end' });
-          }
-        }, 50);
+        textarea.scrollTop = textarea.scrollHeight;
       }
     }
-
-    // Restore focus and cursor position if it was lost due to re-render
-    if (wasFocused && commentInputRef.current) {
-      requestAnimationFrame(() => {
-        if (commentInputRef.current && document.activeElement !== commentInputRef.current) {
-          commentInputRef.current.focus();
-          // Restore cursor position
-          commentInputRef.current.setSelectionRange(cursorPosition, cursorPosition);
-        }
-      });
-    }
-  };
+    
+    // Debounce the state update to prevent unnecessary re-renders
+    debounceTimerRef.current = setTimeout(() => {
+      setCommentText(value);
+    }, 300); // Longer debounce for mobile to prevent keyboard dismissal
+  }, [isMobileInputExpanded, fileList.length]);
 
   // Handle clicking on the input container
   const handleInputContainerClick = () => {
@@ -1464,8 +1495,13 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   }, [isMobile]);
 
   // Collapse after comment submission
-  const handleMobileCommentSubmit = async () => {
+  const handleMobileCommentSubmit = useCallback(async () => {
     if (isSubmitting) return; // Prevent double submission
+    
+    // Get the actual current value from ref
+    const currentText = commentTextRef.current;
+    if (!(currentText.trim() || fileList.length > 0)) return;
+    
     setIsSubmitting(true);
 
     try {
@@ -1474,7 +1510,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
         // Submit as reply - use the existing handleAddReply function directly
         const replyData = {
-          content: commentText,
+          content: currentText,
           author: currentUser,
           id: Date.now(),
           likes: 0,
@@ -1492,10 +1528,17 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         await handleAddReply(replyingToComment, replyData);
 
         // Clear the input and reset state
+        commentTextRef.current = '';
         setCommentText('');
+        setHasContent(false);
         setReplyingToComment(null);
+        if (commentInputRef.current) {
+          commentInputRef.current.value = '';
+        }
       } else {
         console.log('💬 Submitting regular comment');
+        // Update state with current value before submitting
+        setCommentText(currentText);
         // Submit as regular comment
         await handleCommentSubmit(true);
       }
@@ -1509,7 +1552,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [isSubmitting, replyingToComment, fileList.length, currentUser, handleAddReply, handleCommentSubmit]);
 
   const MobileCommentBar = () => (
     <div className={`mobile-comment-bar ${isMobileInputExpanded ? 'expanded' : 'collapsed'}`}>
@@ -1594,7 +1637,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                 await handleMobileCommentSubmit();
               }}
               title="Send comment"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (!hasContent && fileList.length === 0)}
             >
               {isSubmitting ? <LoadingOutlined /> : <img src={SendArrow} alt="Send" className="send-arrow-icon" />}
             </button>
