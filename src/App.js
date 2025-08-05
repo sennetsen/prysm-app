@@ -725,7 +725,7 @@ function BoardView() {
   };
 
   // Added function to update likes in the board view from a post popup
-  const handlePostLikeUpdate = (postId, newLikeCount, isLiked) => {
+  const handlePostLikeUpdate = useCallback((postId, newLikeCount, isLiked) => {
     setCards(prevCards =>
       prevCards.map(card => {
         if (card.id === postId) {
@@ -745,17 +745,27 @@ function BoardView() {
     );
 
     // Also update the selected post so it stays in sync
-    if (selectedPost && selectedPost.id === postId) {
-      setSelectedPost({
-        ...selectedPost,
-        board_id: boardData?.id, // Ensure board_id is preserved
-        likesCount: newLikeCount,
-        reactions: isLiked
-          ? [...(selectedPost.reactions || []), { user_id: user?.id, reaction_type: 'like' }]
-          : (selectedPost.reactions || []).filter(r => !(r.user_id === user?.id && r.reaction_type === 'like'))
-      });
-    }
-  };
+    setSelectedPost(prevSelected => {
+      if (prevSelected && prevSelected.id === postId) {
+        return {
+          ...prevSelected,
+          board_id: boardData?.id, // Ensure board_id is preserved
+          likesCount: newLikeCount,
+          reactions: isLiked
+            ? [...(prevSelected.reactions || []), { user_id: user?.id, reaction_type: 'like' }]
+            : (prevSelected.reactions || []).filter(r => !(r.user_id === user?.id && r.reaction_type === 'like'))
+        };
+      }
+      return prevSelected;
+    });
+  }, [user?.id, boardData?.id]);
+
+  // Stable onClose function for PostPopup
+  const handlePostPopupClose = useCallback(() => {
+    setSelectedPost(null);
+    // Navigate back to the board
+    navigate(`/${boardPath}`);
+  }, [navigate, boardPath]);
 
   const toggleSidebar = () => setIsSidebarHidden((h) => !h);
 
@@ -1036,27 +1046,15 @@ function BoardView() {
       )}
 
       {selectedPost && (
-        <>
-          {console.log('PostPopup props:', {
-            boardData: boardData,
-            boardCreatorId: boardData?.owner_id,
-            userEmail: user?.email,
-            boardEmail: boardData?.email
-          })}
-          <PostPopup
-            post={selectedPost}
-            isOpen={!!selectedPost}
-            onClose={() => {
-              setSelectedPost(null);
-              // Navigate back to the board
-              navigate(`/${boardPath}`);
-            }}
-            currentUser={user}
-            onPostLikeChange={handlePostLikeUpdate}
-            boardCreatorId={boardData?.owner_id}
-            boardEmail={boardData?.email}
-          />
-        </>
+        <PostPopup
+          post={selectedPost}
+          isOpen={!!selectedPost}
+          onClose={handlePostPopupClose}
+          currentUser={user}
+          onPostLikeChange={handlePostLikeUpdate}
+          boardCreatorId={boardData?.owner_id}
+          boardEmail={boardData?.email}
+        />
       )}
 
     </div>

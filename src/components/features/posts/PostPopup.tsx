@@ -288,12 +288,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   }, [currentUser?.id, currentUser?.email, boardEmail, isOpen]);
 
-  // Update display text when comment text changes
-  useEffect(() => {
-    if (isMobile && commentInputRef.current) {
-      // Simplified logic - no more displayText
-    }
-  }, [commentText, isMobileInputExpanded, isMobile]);
+  // Removed useEffect that was running on every commentText change
 
   // Handle viewport changes for keyboard behavior (Reddit-style)
   useEffect(() => {
@@ -1339,35 +1334,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     return () => modalWrap.removeEventListener('scroll', handleScroll);
   }, [isMobile, isOpen]);
 
-  // Handle viewport changes to prevent keyboard dismissal
-  useEffect(() => {
-    const handleViewportChange = () => {
-      if (window.visualViewport) {
-        const currentHeight = window.visualViewport.height;
-        const windowHeight = window.innerHeight;
-
-        // If keyboard is appearing (viewport height decreases)
-        if (currentHeight < windowHeight) {
-          // Ensure input stays focused
-          if (commentInputRef.current && document.activeElement === commentInputRef.current) {
-            setTimeout(() => {
-              commentInputRef.current?.focus();
-            }, 100);
-          }
-        }
-      }
-    };
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleViewportChange);
-    }
-
-    return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleViewportChange);
-      }
-    };
-  }, []);
+  // Disabled viewport focus management to prevent conflicts with natural typing behavior
+  // The debounced input approach should handle focus retention naturally
 
   // Test component removed after debugging
 
