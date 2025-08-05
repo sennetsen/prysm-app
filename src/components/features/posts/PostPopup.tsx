@@ -1844,10 +1844,13 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                       />
                       <span className="author-name">{post.author.full_name}</span>
                     </div>
-                    <div className="author-email" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <img src={MailIcon} alt="mail" className="mail-icon" />
-                      <span>{post.author.email}</span>
-                    </div>
+                    {/* Only show email if current user is board owner */}
+                    {currentUser?.email === boardEmail && (
+                      <div className="author-email" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <img src={MailIcon} alt="mail" className="mail-icon" />
+                        <span>{post.author.email}</span>
+                      </div>
+                    )}
                     <div className="post-date">
                       <CalendarIcon />
                       <div className="date-time">
