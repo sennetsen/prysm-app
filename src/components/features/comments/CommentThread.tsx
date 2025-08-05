@@ -68,6 +68,13 @@ export const CommentThread = React.memo(function CommentThread({
   // Check if we're on mobile
   const isMobile = window.innerWidth <= 768;
 
+  // Handle comment attachment click to open in new tab
+  const handleCommentAttachmentClick = (attachment: any, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent any parent click handlers
+    const attachmentUrl = `https://prysm-r2-worker.prysmapp.workers.dev/file/${attachment.storage_path}`;
+    window.open(attachmentUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const handleReplyClick = (commentId: number) => {
     if (isMobile && onReplyClick) {
       // Use unified mobile input system
@@ -389,7 +396,12 @@ export const CommentThread = React.memo(function CommentThread({
                           <div className="comment-images-container">
                             {images.map((attachment) => (
                               <div key={attachment.id} className="comment-attachment-preview">
-                                <div className="comment-attachment-image-container">
+                                <div 
+                                  className="comment-attachment-image-container"
+                                  onClick={(e) => handleCommentAttachmentClick(attachment, e)}
+                                  style={{ cursor: 'pointer' }}
+                                  title={`Click to open ${attachment.file_name} in new tab`}
+                                >
                                   <img
                                     src={`https://prysm-r2-worker.prysmapp.workers.dev/file/${attachment.storage_path}`}
                                     alt={attachment.file_name}
@@ -406,7 +418,12 @@ export const CommentThread = React.memo(function CommentThread({
                           <div className="comment-files-container">
                             {nonImages.map((attachment) => (
                               <div key={attachment.id} className="comment-attachment-preview">
-                                <div className="comment-attachment-file-preview">
+                                <div 
+                                  className="comment-attachment-file-preview"
+                                  onClick={(e) => handleCommentAttachmentClick(attachment, e)}
+                                  style={{ cursor: 'pointer' }}
+                                  title={`Click to open ${attachment.file_name} in new tab`}
+                                >
                                   <FileOutlined />
                                   <span className="attachment-file-name" title={attachment.file_name}>
                                     {attachment.file_name}

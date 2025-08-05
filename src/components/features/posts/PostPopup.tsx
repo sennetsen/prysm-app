@@ -226,6 +226,13 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   };
 
+  // Handle attachment click to open in new tab
+  const handleAttachmentClick = (attachment: Attachment, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent any parent click handlers
+    const attachmentUrl = `https://prysm-r2-worker.prysmapp.workers.dev/file/${attachment.storage_path}`;
+    window.open(attachmentUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const handleShare = () => {
     // Extract board url_path from current URL
     const currentPath = window.location.pathname;
@@ -1692,7 +1699,12 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                                   <div className="post-images-container">
                                     {images.map((attachment) => (
                                       <div key={attachment.id} className="post-attachment-preview">
-                                        <div className="post-attachment-image-container">
+                                        <div 
+                                          className="post-attachment-image-container"
+                                          onClick={(e) => handleAttachmentClick(attachment, e)}
+                                          style={{ cursor: 'pointer' }}
+                                          title={`Click to open ${attachment.file_name} in new tab`}
+                                        >
                                           <img
                                             src={`https://prysm-r2-worker.prysmapp.workers.dev/file/${attachment.storage_path}`}
                                             alt={attachment.file_name}
@@ -1709,7 +1721,12 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                                   <div className="post-files-container">
                                     {nonImages.map((attachment) => (
                                       <div key={attachment.id} className="post-attachment-preview">
-                                        <div className="post-attachment-file-preview">
+                                        <div 
+                                          className="post-attachment-file-preview"
+                                          onClick={(e) => handleAttachmentClick(attachment, e)}
+                                          style={{ cursor: 'pointer' }}
+                                          title={`Click to open ${attachment.file_name} in new tab`}
+                                        >
                                           <FileOutlined />
                                           <span className="attachment-file-name" title={attachment.file_name}>
                                             {attachment.file_name}
