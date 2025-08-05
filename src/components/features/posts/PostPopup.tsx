@@ -193,7 +193,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [comments, setComments] = useState<Comment[]>([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSubscribeLoading, setIsSubscribeLoading] = useState(false);
-  const commentInputRef = useRef<HTMLTextAreaElement>(null);
+  const commentInputRef = useRef<HTMLTextAreaElement>(null); // Desktop comment input
+  const mobileCommentInputRef = useRef<HTMLTextAreaElement>(null); // Mobile comment input  
   const commentTextRef = useRef<string>(''); // Track input value without re-renders
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [showStickyHeader, setShowStickyHeader] = useState(false);
@@ -844,9 +845,12 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       setHasContent(false);
       setFileList([]);
       
-      // Clear the textarea value directly
+      // Clear the textarea value directly (desktop and mobile)
       if (commentInputRef.current) {
         commentInputRef.current.value = '';
+      }
+      if (mobileCommentInputRef.current) {
+        mobileCommentInputRef.current.value = '';
       }
 
       // Collapse mobile input after posting
@@ -1346,11 +1350,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
     // Ensure input stays focused after expansion and cursor goes to end
     setTimeout(() => {
-      if (commentInputRef.current) {
-        commentInputRef.current.focus();
+      if (mobileCommentInputRef.current) {
+        mobileCommentInputRef.current.focus();
         // Move cursor to end of text
-        const textLength = commentInputRef.current.value.length;
-        commentInputRef.current.setSelectionRange(textLength, textLength);
+        const textLength = mobileCommentInputRef.current.value.length;
+        mobileCommentInputRef.current.setSelectionRange(textLength, textLength);
       }
     }, 0);
   };
@@ -1371,8 +1375,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   // Add click-outside detection for more reliable collapsing
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (isMobileInputExpanded && commentInputRef.current) {
-        const commentBar = commentInputRef.current.closest('.mobile-comment-bar');
+      if (isMobileInputExpanded && mobileCommentInputRef.current) {
+        const commentBar = mobileCommentInputRef.current.closest('.mobile-comment-bar');
 
         // If click is outside the comment bar, collapse it
         if (commentBar && !commentBar.contains(event.target as Node)) {
@@ -1434,11 +1438,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     setIsMobileInputExpanded(true);
     // Focus the textarea after a brief delay to ensure state is updated
     requestAnimationFrame(() => {
-      if (commentInputRef.current) {
-        commentInputRef.current.focus();
+      if (mobileCommentInputRef.current) {
+        mobileCommentInputRef.current.focus();
         // Move cursor to end of text
-        const textLength = commentInputRef.current.value.length;
-        commentInputRef.current.setSelectionRange(textLength, textLength);
+        const textLength = mobileCommentInputRef.current.value.length;
+        mobileCommentInputRef.current.setSelectionRange(textLength, textLength);
       }
     });
   };
@@ -1452,11 +1456,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
       // Update placeholder and focus
       setTimeout(() => {
-        if (commentInputRef.current) {
-          commentInputRef.current.placeholder = "Write a reply...";
-          commentInputRef.current.focus();
-          const textLength = commentInputRef.current.value.length;
-          commentInputRef.current.setSelectionRange(textLength, textLength);
+        if (mobileCommentInputRef.current) {
+          mobileCommentInputRef.current.placeholder = "Write a reply...";
+          mobileCommentInputRef.current.focus();
+          const textLength = mobileCommentInputRef.current.value.length;
+          mobileCommentInputRef.current.setSelectionRange(textLength, textLength);
         }
       }, 0);
     }
@@ -1500,8 +1504,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         setCommentText('');
         setHasContent(false);
         setReplyingToComment(null);
-        if (commentInputRef.current) {
-          commentInputRef.current.value = '';
+        if (mobileCommentInputRef.current) {
+          mobileCommentInputRef.current.value = '';
         }
       } else {
         console.log('💬 Submitting regular comment');
@@ -1514,8 +1518,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       setIsMobileInputExpanded(false);
 
       // Reset placeholder
-      if (commentInputRef.current) {
-        commentInputRef.current.placeholder = "Join the conversation";
+      if (mobileCommentInputRef.current) {
+        mobileCommentInputRef.current.placeholder = "Join the conversation";
       }
     } finally {
       setIsSubmitting(false);
@@ -1551,7 +1555,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         onClick={handleInputContainerClick}
       >
         <textarea
-          ref={commentInputRef}
+          ref={mobileCommentInputRef}
           placeholder={replyingToComment ? "Write a reply..." : "Join the conversation"}
           className="comment-input mobile-comment-input"
           value={commentText}
