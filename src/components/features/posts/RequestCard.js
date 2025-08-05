@@ -94,6 +94,16 @@ export default React.memo(
       });
     };
 
+    // Debug logging for card rendering
+    console.log(`Rendering RequestCard:`, {
+      id,
+      title: title?.slice(0, 30),
+      index,
+      color,
+      isNew,
+      isDeleting
+    });
+
     return (
       <div
         className={`request-card ${isNew ? 'new-card' : ''} ${isDeleting ? 'deleting' : ''}`}
@@ -106,6 +116,8 @@ export default React.memo(
           created_at,
           attachments
         })}
+        data-card-id={id}
+        data-card-index={index}
       >
         {canDelete && (
           <Tooltip title="Delete Post" placement="top">
@@ -128,11 +140,11 @@ export default React.memo(
 
           {/* Display first image attachment after title */}
           {attachments && attachments.length > 0 && (() => {
-            const firstImage = attachments.find(attachment => 
+            const firstImage = attachments.find(attachment =>
               attachment.file_type.startsWith('image/') ||
               /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(attachment.file_name)
             );
-            
+
             return firstImage ? (
               <div className="first-image-container">
                 <img
@@ -152,7 +164,7 @@ export default React.memo(
 
           {/* Display remaining attachments as filenames */}
           {attachments && attachments.length > 0 && (() => {
-            const firstImageIndex = attachments.findIndex(attachment => 
+            const firstImageIndex = attachments.findIndex(attachment =>
               attachment.file_type.startsWith('image/') ||
               /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(attachment.file_name)
             );
@@ -165,13 +177,13 @@ export default React.memo(
               <div className="remaining-attachments">
                 {remainingAttachments.map((attachment) => (
                   <div key={attachment.id} className="attachment-filename">
-                              <FileOutlined />
+                    <FileOutlined />
                     <span className="filename-text">{attachment.file_name}</span>
-                          </div>
-                        ))}
-                          </div>
+                  </div>
+                ))}
+              </div>
             ) : null;
-              })()}
+          })()}
         </div>
 
         <span className="timestamp">{timestamp}</span>
@@ -255,7 +267,7 @@ export default React.memo(
                 </Button>
               )}
             </div>
-            
+
             <div className="comment-section">
               {commentCount >= 1000 ? (
                 <Tooltip title={`${formatNumberWithCommas(commentCount)} comments`} placement="bottom">

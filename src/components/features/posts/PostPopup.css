@@ -100,7 +100,7 @@
 .author-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   margin-bottom: 16px;
 }
 
@@ -967,8 +967,8 @@
 
 
 .author-avatar {
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   border: 2px solid #281010;
 }
 
