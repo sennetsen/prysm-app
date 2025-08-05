@@ -212,10 +212,13 @@ function BoardView() {
       return;
     }
 
-    // Fetch attachments for all posts
+    // Fetch attachments and comment counts for all posts
     let attachmentsData = [];
+    let commentCountsData = {};
     if (data && data.length > 0) {
       const postIds = data.map(post => post.id);
+      
+      // Fetch attachments
       const { data: attachments, error: attachmentsError } = await supabase
         .from('attachments')
         .select('*')
@@ -225,10 +228,25 @@ function BoardView() {
       if (!attachmentsError && attachments) {
         attachmentsData = attachments;
       }
+
+      // Fetch comment counts
+      const { data: comments, error: commentsError } = await supabase
+        .from('comments')
+        .select('post_id')
+        .in('post_id', postIds);
+
+      if (!commentsError && comments) {
+        // Count comments per post
+        commentCountsData = comments.reduce((acc, comment) => {
+          acc[comment.post_id] = (acc[comment.post_id] || 0) + 1;
+          return acc;
+        }, {});
+      }
     }
 
     const postsWithLikes = data.map(post => {
       const likesCount = post.reaction_counts?.like || 0;
+      const commentCount = commentCountsData[post.id] || 0;
       // Find attachments for this post
       const postAttachments = attachmentsData.filter(att => att.parent_id === post.id);
 
@@ -236,6 +254,7 @@ function BoardView() {
         ...post,
         board_id: boardData?.id, // Ensure board_id is included
         likesCount,
+        commentCount,
         attachments: postAttachments,
         author: post.author || {
           full_name: 'Anonymous',
@@ -797,6 +816,7 @@ function BoardView() {
               onContactCardToggle={() => handleContactCardToggle(card)}
               onPostClick={handlePostClick}
               attachments={card.attachments || []}
+              commentCount={card.commentCount || 0}
             />
           ))}
           <Tooltip title="Make a Request" placement="right">

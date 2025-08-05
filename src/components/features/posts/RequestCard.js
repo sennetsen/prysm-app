@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./RequestCard.css";
 import { bigNumberFormatter, formatNumberWithCommas } from '../../../utils/bigNumberFormatter';
-import { HeartFilled, HeartOutlined, FileOutlined } from "@ant-design/icons";
+import { HeartFilled, HeartOutlined, FileOutlined, MessageOutlined } from "@ant-design/icons";
 import { Button, Tooltip } from "antd";
 import fallbackImg from '../../../img/fallback.png';
 
@@ -24,7 +24,8 @@ export default React.memo(
     index,
     onContactCardToggle,
     onPostClick,
-    attachments = []
+    attachments = [],
+    commentCount = 0
   }) {
     const [timestamp, setTimestamp] = useState('');
     const [isNew, setIsNew] = useState(true);
@@ -224,9 +225,23 @@ export default React.memo(
         )}
 
         <div className="card-footer">
-          <div className="like-section">
-            {likesCount >= 1000 ? (
-              <Tooltip title={`${formatNumberWithCommas(likesCount)} likes`} placement="bottom">
+          <div className="action-buttons">
+            <div className="like-section">
+              {likesCount >= 1000 ? (
+                <Tooltip title={`${formatNumberWithCommas(likesCount)} likes`} placement="bottom">
+                  <Button
+                    type="text"
+                    icon={hasLiked ? <HeartFilled /> : <HeartOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Stop event propagation
+                      onLike(id, hasLiked);
+                    }}
+                    className={`custom-like-button ${hasLiked ? 'liked' : ''}`}
+                  >
+                    <span className="like-count">{bigNumberFormatter(likesCount)}</span>
+                  </Button>
+                </Tooltip>
+              ) : (
                 <Button
                   type="text"
                   icon={hasLiked ? <HeartFilled /> : <HeartOutlined />}
@@ -238,20 +253,38 @@ export default React.memo(
                 >
                   <span className="like-count">{bigNumberFormatter(likesCount)}</span>
                 </Button>
-              </Tooltip>
-            ) : (
-              <Button
-                type="text"
-                icon={hasLiked ? <HeartFilled /> : <HeartOutlined />}
-                onClick={(e) => {
-                  e.stopPropagation(); // Stop event propagation
-                  onLike(id, hasLiked);
-                }}
-                className={`custom-like-button ${hasLiked ? 'liked' : ''}`}
-              >
-                <span className="like-count">{bigNumberFormatter(likesCount)}</span>
-              </Button>
-            )}
+              )}
+            </div>
+            
+            <div className="comment-section">
+              {commentCount >= 1000 ? (
+                <Tooltip title={`${formatNumberWithCommas(commentCount)} comments`} placement="bottom">
+                  <Button
+                    type="text"
+                    icon={<MessageOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Stop event propagation
+                      // The card click will handle opening the post popup
+                    }}
+                    className="custom-comment-button"
+                  >
+                    <span className="comment-count">{bigNumberFormatter(commentCount)}</span>
+                  </Button>
+                </Tooltip>
+              ) : (
+                <Button
+                  type="text"
+                  icon={<MessageOutlined />}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Stop event propagation
+                    // The card click will handle opening the post popup
+                  }}
+                  className="custom-comment-button"
+                >
+                  <span className="comment-count">{bigNumberFormatter(commentCount)}</span>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
