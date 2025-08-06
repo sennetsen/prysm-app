@@ -15,6 +15,7 @@ interface CommentThreadProps {
   onReplyClick?: (commentId: string) => void; // New prop for unified reply system
   replyingToComment?: string | null; // ID of comment being replied to
   userCommentsThisSession?: Set<number>;
+  onRequireSignIn?: () => void;
 }
 
 interface Comment {
@@ -37,6 +38,7 @@ interface Comment {
     file_size: number;
   }[];
   is_deleted?: boolean;
+  isNew?: boolean; // Flag for new comments added via real-time updates
 }
 
 export const CommentThread = React.memo(function CommentThread({
@@ -48,7 +50,8 @@ export const CommentThread = React.memo(function CommentThread({
   onDelete,
   onReplyClick,
   replyingToComment,
-  userCommentsThisSession = new Set()
+  userCommentsThisSession = new Set(),
+  onRequireSignIn
 }: CommentThreadProps) {
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState('');
@@ -76,6 +79,10 @@ export const CommentThread = React.memo(function CommentThread({
   };
 
   const handleReplyClick = (commentId: number) => {
+    if (!currentUser && onRequireSignIn) {
+      onRequireSignIn();
+      return;
+    }
     if (isMobile && onReplyClick) {
       // Use unified mobile input system
       onReplyClick(commentId.toString());
@@ -333,7 +340,7 @@ export const CommentThread = React.memo(function CommentThread({
     const isMinimized = minimizedComments.includes(comment.id);
 
     return (
-      <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''} ${isDeleted ? 'deleted-comment' : ''} ${replyingToComment === comment.id.toString() ? 'replying-to' : ''}`}>
+      <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''} ${isDeleted ? 'deleted-comment' : ''} ${replyingToComment === comment.id.toString() ? 'replying-to' : ''} ${comment.isNew ? 'new-comment' : ''}`}>
         <div className="comment-avatar">
           <Avatar src={comment.author.avatar} size={isDeleted ? 26 : 36} />
         </div>
@@ -396,7 +403,7 @@ export const CommentThread = React.memo(function CommentThread({
                           <div className="comment-images-container">
                             {images.map((attachment) => (
                               <div key={attachment.id} className="comment-attachment-preview">
-                                <div 
+                                <div
                                   className="comment-attachment-image-container"
                                   onClick={(e) => handleCommentAttachmentClick(attachment, e)}
                                   style={{ cursor: 'pointer' }}
@@ -418,7 +425,7 @@ export const CommentThread = React.memo(function CommentThread({
                           <div className="comment-files-container">
                             {nonImages.map((attachment) => (
                               <div key={attachment.id} className="comment-attachment-preview">
-                                <div 
+                                <div
                                   className="comment-attachment-file-preview"
                                   onClick={(e) => handleCommentAttachmentClick(attachment, e)}
                                   style={{ cursor: 'pointer' }}

@@ -5,12 +5,51 @@
   padding: 0 10px 10px 10px;
 }
 
+/* Animation keyframes for smooth comment appearance */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes highlightNew {
+  0% {
+    background-color: rgba(239, 89, 89, 0.1);
+    border-left: 3px solid #EF5959;
+  }
+  50% {
+    background-color: rgba(239, 89, 89, 0.2);
+    border-left: 3px solid #EF5959;
+  }
+  100% {
+    background-color: transparent;
+    border-left: none;
+  }
+}
+
 .comment-with-replies {
   position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
   gap: 16px;
+  animation: fadeIn 0.3s ease-out;
 }
 
 .comment {
@@ -19,6 +58,13 @@
   align-items: flex-start;
   position: relative;
   cursor: pointer;
+  animation: fadeIn 0.3s ease-out;
+  transition: all 0.2s ease;
+}
+
+/* Special animation for new comments added via real-time updates */
+.comment.new-comment {
+  animation: slideInFromTop 0.4s ease-out, highlightNew 2s ease-out;
 }
 
 .comment:hover {

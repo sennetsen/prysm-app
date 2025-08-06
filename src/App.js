@@ -217,7 +217,7 @@ function BoardView() {
     let commentCountsData = {};
     if (data && data.length > 0) {
       const postIds = data.map(post => post.id);
-      
+
       // Fetch attachments
       const { data: attachments, error: attachmentsError } = await supabase
         .from('attachments')
@@ -1054,6 +1054,7 @@ function BoardView() {
           onPostLikeChange={handlePostLikeUpdate}
           boardCreatorId={boardData?.owner_id}
           boardEmail={boardData?.email}
+          onRequireSignIn={() => setIsJoinPopupOpen(true)}
         />
       )}
 

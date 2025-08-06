@@ -68,9 +68,11 @@ export default {
 		// Handle file deletion (DELETE /delete/<filename>)
 		if (request.method === "DELETE" && url.pathname.startsWith("/delete/")) {
 			const fileName = url.pathname.replace("/delete/", "");
+			// Decode the URL to handle spaces and special characters
+			const decodedFileName = decodeURIComponent(fileName);
 			
 			try {
-				await env.ATTACHMENTS_BUCKET.delete(fileName);
+				await env.ATTACHMENTS_BUCKET.delete(decodedFileName);
 				return withCorsHeaders(new Response(JSON.stringify({ success: true }), {
 					headers: { "Content-Type": "application/json" }
 				}));
@@ -86,7 +88,9 @@ export default {
 		// Handle file download (GET /file/<filename>)
 		if (request.method === "GET" && url.pathname.startsWith("/file/")) {
 			const fileName = url.pathname.replace("/file/", "");
-			const object = await env.ATTACHMENTS_BUCKET.get(fileName);
+			// Decode the URL to handle spaces and special characters
+			const decodedFileName = decodeURIComponent(fileName);
+			const object = await env.ATTACHMENTS_BUCKET.get(decodedFileName);
 
 			if (!object) {
 				return withCorsHeaders(new Response("Not found", { status: 404 }));

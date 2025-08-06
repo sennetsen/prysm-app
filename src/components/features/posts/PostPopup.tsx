@@ -53,6 +53,7 @@ interface PostPopupProps {
   onPostLikeChange: (postId: string) => void;
   boardCreatorId?: string;
   boardEmail?: string;
+  onRequireSignIn: () => void;
 }
 
 interface Attachment {
@@ -72,11 +73,13 @@ interface Comment {
   };
   content: string;
   timestamp: string;
+  created_at?: string; // Add optional created_at for sorting
   likes: number;
   liked: boolean;
   replies?: Comment[];
   attachments?: Attachment[];
   is_deleted?: boolean;
+  isNew?: boolean; // Flag for new comments added via real-time updates
 }
 
 interface FilePreview extends File {
@@ -184,7 +187,7 @@ async function deleteCommentAttachments(commentId: string) {
   }
 }
 
-export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange, boardCreatorId, boardEmail }: PostPopupProps) {
+export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange, boardCreatorId, boardEmail, onRequireSignIn }: PostPopupProps) {
   const [liked, setLiked] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
   const [commentText, setCommentText] = useState('');
@@ -212,6 +215,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [isFileUploading, setIsFileUploading] = useState(false);
   const [hasContent, setHasContent] = useState(false); // Track if user has typed content
+  const [newCommentIds, setNewCommentIds] = useState<Set<number>>(new Set()); // Track new comments for animation
 
   // Initialize likeCount from post.likes or post.likesCount
   const [likeCount, setLikeCount] = useState(post.reaction_counts?.like ?? 0);
@@ -356,17 +360,17 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const handleCommentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     commentTextRef.current = value;
-    
+
     // Clear existing debounce timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-    
+
     // Debounce state update to minimize re-renders
     debounceTimerRef.current = setTimeout(() => {
       setCommentText(value);
     }, 100);
-    
+
     adjustTextareaHeight(e.target);
   }, []);
 
@@ -391,9 +395,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
-
     if (!currentUser) {
-      message.info('Please sign in to like posts');
+      onRequireSignIn();
       return;
     }
 
@@ -501,7 +504,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
   const handleCommentLike = useCallback(async (commentId: number) => {
     if (!currentUser) {
-      message.info('Please sign in to like comments');
+      onRequireSignIn();
       return;
     }
 
@@ -612,7 +615,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       );
       message.error('Failed to update like status');
     }
-  }, [currentUser, comments]);
+  }, [currentUser, comments, onRequireSignIn]);
 
   const handleDeleteComment = useCallback(async (commentId: number) => {
     try {
@@ -687,6 +690,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   }, []);
 
   const handleAddReply = useCallback(async (parentId: number | string, reply: Comment) => {
+    if (!currentUser) {
+      onRequireSignIn();
+      return;
+    }
     // Insert reply into Supabase with parent_comment_id
     const { data, error } = await supabase
       .from('comments')
@@ -716,9 +723,13 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       // Fallback if no data returned
       fetchComments();
     }
-  }, [post.id, userCommentsThisSession]);
+  }, [post.id, userCommentsThisSession, currentUser, onRequireSignIn]);
 
   const handleFileAttachment = () => {
+    if (!currentUser) {
+      onRequireSignIn();
+      return;
+    }
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.multiple = true;
@@ -766,22 +777,26 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           URL.revokeObjectURL(file.preview);
         }
       });
-      
+
       // Clear debounce timer
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
     };
   }, []);
-  
+
   // Sync ref with state when state changes (for external updates)
   useEffect(() => {
     commentTextRef.current = commentText;
   }, [commentText]);
 
   const handleCommentSubmit = useCallback(async (internal = false) => {
+    if (!currentUser) {
+      onRequireSignIn();
+      return;
+    }
     if (!internal && isSubmitting) return; // Prevent double submission
-    
+
     // Use current text from ref if it's more recent than state
     const currentText = commentTextRef.current || commentText;
     if (!(currentText.trim() || fileList.length > 0)) return;
@@ -844,7 +859,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       setCommentText('');
       setHasContent(false);
       setFileList([]);
-      
+
       // Clear the textarea value directly (desktop and mobile)
       if (commentInputRef.current) {
         commentInputRef.current.value = '';
@@ -868,7 +883,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     } finally {
       if (!internal) setIsSubmitting(false);
     }
-  }, [isSubmitting, commentText, fileList, post.id, currentUser, userCommentsThisSession, isMobile]);
+  }, [isSubmitting, commentText, fileList, post.id, currentUser, userCommentsThisSession, isMobile, onRequireSignIn]);
 
   const getOrdinalSuffix = (day: number): string => {
     if (day >= 11 && day <= 13) return 'th';
@@ -938,7 +953,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
   const handleSubscribe = async () => {
     if (!currentUser) {
-      message.info('Please sign in to subscribe to this post');
+      onRequireSignIn();
       return;
     }
 
@@ -969,7 +984,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
   const handleUnsubscribe = async () => {
     if (!currentUser) {
-      message.info('Please sign in to manage your subscriptions');
+      onRequireSignIn();
       return;
     }
 
@@ -1320,6 +1335,277 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   }, [isOpen, post.id]);
 
+  // Add real-time subscriptions for comments and comment reactions
+  useEffect(() => {
+    if (!isOpen || !post.id) return;
+
+    // Subscribe to new comments for this post
+    const commentChannel = supabase
+      .channel(`post-comments:${post.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'comments',
+        filter: `post_id=eq.${post.id}`
+      }, async (payload) => {
+        const { new: comment } = payload;
+
+        // Fetch author info and attachments
+        const [{ data: user }, { data: attachments }] = await Promise.all([
+          supabase
+            .from('users')
+            .select('full_name, avatar_url')
+            .eq('id', comment.author_id)
+            .single(),
+          supabase
+            .from('attachments')
+            .select('*')
+            .eq('parent_type', 'comment')
+            .eq('parent_id', comment.id)
+        ]);
+
+        // Format the new comment
+        const formatTimestamp = (created_at: string) => {
+          const date = new Date(created_at);
+          const day = date.getDate();
+          const month = date.toLocaleDateString('en-US', { month: 'long' });
+          const year = date.getFullYear();
+          const time = date.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+          return `${month} ${day}${getOrdinalSuffix(day)}, ${year} at ${time}`;
+        };
+
+        const newComment: Comment = {
+          id: comment.id,
+          author: {
+            name: comment.is_deleted ? 'Deleted comment' : (user?.full_name || 'Unknown'),
+            avatar: comment.is_deleted ? '' : (user?.avatar_url || ''),
+          },
+          content: comment.is_deleted ? '' : comment.content,
+          timestamp: formatTimestamp(comment.created_at),
+          created_at: comment.created_at,
+          likes: comment.is_deleted ? 0 : (comment.reaction_counts?.like || 0),
+          liked: false, // Will be updated when user reactions are fetched
+          replies: [],
+          attachments: comment.is_deleted ? [] : (attachments || []),
+          is_deleted: comment.is_deleted || false,
+          isNew: true, // Mark as new for animation
+        };
+
+        // Add to new comments set for animation
+        setNewCommentIds(prev => new Set([...prev, comment.id]));
+
+        // Add to session set if it's a new comment from current user
+        if (currentUser && user?.full_name === currentUser.user_metadata?.full_name) {
+          const updatedSessionSet = new Set([...userCommentsThisSession, comment.id]);
+          setUserCommentsThisSession(updatedSessionSet);
+        }
+
+        // Update comments state
+        setComments(prevComments => {
+          if (comment.parent_comment_id) {
+            // This is a reply - add it to the parent comment
+            return prevComments.map(c => {
+              if (c.id === comment.parent_comment_id) {
+                return {
+                  ...c,
+                  replies: [...(c.replies || []), newComment]
+                };
+              }
+              return c;
+            });
+          } else {
+            // This is a top-level comment - add it to the beginning
+            return [newComment, ...prevComments];
+          }
+        });
+
+        // Update comment count
+        setCommentCount(prev => prev + 1);
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'comments',
+        filter: `post_id=eq.${post.id}`
+      }, async (payload) => {
+        const { new: comment, old: oldComment } = payload;
+
+        // Handle comment updates (like soft deletes, content changes, etc.)
+        setComments(prevComments => {
+          const updateCommentInList = (comments: Comment[]): Comment[] => {
+            return comments.map(c => {
+              if (c.id === comment.id) {
+                // Update the comment
+                return {
+                  ...c,
+                  content: comment.is_deleted ? '' : comment.content,
+                  author: comment.is_deleted ? { name: 'Deleted comment', avatar: '' } : c.author,
+                  likes: comment.is_deleted ? 0 : (comment.reaction_counts?.like || 0),
+                  liked: comment.is_deleted ? false : c.liked,
+                  attachments: comment.is_deleted ? [] : c.attachments,
+                  is_deleted: comment.is_deleted || false,
+                };
+              }
+              // Check in replies
+              if (c.replies) {
+                return {
+                  ...c,
+                  replies: c.replies.map(r => {
+                    if (r.id === comment.id) {
+                      return {
+                        ...r,
+                        content: comment.is_deleted ? '' : comment.content,
+                        author: comment.is_deleted ? { name: 'Deleted comment', avatar: '' } : r.author,
+                        likes: comment.is_deleted ? 0 : (comment.reaction_counts?.like || 0),
+                        liked: comment.is_deleted ? false : r.liked,
+                        attachments: comment.is_deleted ? [] : r.attachments,
+                        is_deleted: comment.is_deleted || false,
+                      };
+                    }
+                    return r;
+                  })
+                };
+              }
+              return c;
+            });
+          };
+
+          return updateCommentInList(prevComments);
+        });
+
+        // Update comment count when a comment is deleted or restored
+        if (comment.is_deleted && !oldComment.is_deleted) {
+          // Comment was deleted
+          setCommentCount(prev => Math.max(0, prev - 1));
+        } else if (!comment.is_deleted && oldComment.is_deleted) {
+          // Comment was restored (if this feature exists in the future)
+          setCommentCount(prev => prev + 1);
+        }
+      })
+      .subscribe();
+
+    // Subscribe to comment reactions for this post
+    const commentReactionChannel = supabase
+      .channel(`post-comment-reactions:${post.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'comment_reactions',
+        filter: `post_id=eq.${post.id}`
+      }, async (payload) => {
+        const { new: reaction } = payload;
+
+        // Update comment likes in real-time
+        setComments(prevComments => {
+          const updateCommentLikes = (comments: Comment[]): Comment[] => {
+            return comments.map(c => {
+              if (c.id === reaction.comment_id) {
+                return {
+                  ...c,
+                  likes: (c.likes || 0) + 1,
+                  liked: reaction.user_id === currentUser?.id ? true : c.liked
+                };
+              }
+              // Check in replies
+              if (c.replies) {
+                return {
+                  ...c,
+                  replies: c.replies.map(r => {
+                    if (r.id === reaction.comment_id) {
+                      return {
+                        ...r,
+                        likes: (r.likes || 0) + 1,
+                        liked: reaction.user_id === currentUser?.id ? true : r.liked
+                      };
+                    }
+                    return r;
+                  })
+                };
+              }
+              return c;
+            });
+          };
+
+          return updateCommentLikes(prevComments);
+        });
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'comment_reactions',
+        filter: `post_id=eq.${post.id}`
+      }, async (payload) => {
+        const { old: reaction } = payload;
+
+        // Update comment likes in real-time when reaction is removed
+        setComments(prevComments => {
+          const updateCommentLikes = (comments: Comment[]): Comment[] => {
+            return comments.map(c => {
+              if (c.id === reaction.comment_id) {
+                return {
+                  ...c,
+                  likes: Math.max(0, (c.likes || 0) - 1),
+                  liked: reaction.user_id === currentUser?.id ? false : c.liked
+                };
+              }
+              // Check in replies
+              if (c.replies) {
+                return {
+                  ...c,
+                  replies: c.replies.map(r => {
+                    if (r.id === reaction.comment_id) {
+                      return {
+                        ...r,
+                        likes: Math.max(0, (r.likes || 0) - 1),
+                        liked: reaction.user_id === currentUser?.id ? false : r.liked
+                      };
+                    }
+                    return r;
+                  })
+                };
+              }
+              return c;
+            });
+          };
+
+          return updateCommentLikes(prevComments);
+        });
+      })
+      .subscribe();
+
+    // Cleanup subscriptions when component unmounts or post changes
+    return () => {
+      supabase.removeChannel(commentChannel);
+      supabase.removeChannel(commentReactionChannel);
+    };
+  }, [isOpen, post.id, currentUser?.id, userCommentsThisSession]);
+
+  // Clean up new comment animations after they complete
+  useEffect(() => {
+    if (newCommentIds.size > 0) {
+      const timer = setTimeout(() => {
+        setNewCommentIds(new Set());
+        // Remove isNew flag from comments
+        setComments(prevComments =>
+          prevComments.map(comment => ({
+            ...comment,
+            isNew: false,
+            replies: comment.replies?.map(reply => ({
+              ...reply,
+              isNew: false
+            }))
+          }))
+        );
+      }, 2000); // Match the highlightNew animation duration
+
+      return () => clearTimeout(timer);
+    }
+  }, [newCommentIds]);
+
   useEffect(() => {
     if (!isMobile || !isOpen) return;
     const modalWrap = document.querySelector('.ant-modal-wrap');
@@ -1346,6 +1632,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   // Restored original mobile input handlers but with fixes
 
   const handleMobileInputFocus = () => {
+    if (!currentUser) {
+      onRequireSignIn();
+      return;
+    }
     setIsMobileInputExpanded(true);
 
     // Ensure input stays focused after expansion and cursor goes to end
@@ -1396,37 +1686,37 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const handleMobileCommentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     const textarea = e.target;
-    
+
     // Store the value in ref immediately (no re-render)
     commentTextRef.current = value;
-    
+
     // Update content availability immediately for button state
     setHasContent(value.trim().length > 0);
-    
+
     // Clear existing timers
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-    
+
     // Handle auto-expansion immediately (no state change needed for typing)
     if (!isMobileInputExpanded && (value.length > 30 || fileList.length > 0)) {
       setIsMobileInputExpanded(true);
     }
-    
+
     // Auto-resize textarea
     textarea.style.height = 'auto';
     textarea.style.height = `${textarea.scrollHeight}px`;
-    
+
     // Handle scrolling for long content
     if (value.length > 0) {
       const lines = value.split('\n').length;
       const estimatedLines = Math.max(lines, Math.ceil(value.length / 50));
-      
+
       if (estimatedLines > 6) {
         textarea.scrollTop = textarea.scrollHeight;
       }
     }
-    
+
     // Debounce the state update to prevent unnecessary re-renders
     debounceTimerRef.current = setTimeout(() => {
       setCommentText(value);
@@ -1435,6 +1725,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
   // Handle clicking on the input container
   const handleInputContainerClick = () => {
+    if (!currentUser) {
+      onRequireSignIn();
+      return;
+    }
     setIsMobileInputExpanded(true);
     // Focus the textarea after a brief delay to ensure state is updated
     requestAnimationFrame(() => {
@@ -1469,11 +1763,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   // Collapse after comment submission
   const handleMobileCommentSubmit = useCallback(async () => {
     if (isSubmitting) return; // Prevent double submission
-    
+
     // Get the actual current value from ref
     const currentText = commentTextRef.current;
     if (!(currentText.trim() || fileList.length > 0)) return;
-    
+
     setIsSubmitting(true);
 
     try {
@@ -1631,17 +1925,28 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   );
 
   // Mobile navbar component (rendered outside modal to ensure viewport positioning)
-  const MobileNavbar = () => (
-    <div className="mobile-navbar">
-      <div className="mobile-navbar-back" onClick={handleClose}>
-        <LeftOutlined />
+  const MobileNavbar = () => {
+    // Ensure we have a valid color, fallback to a neutral color
+    const navbarColor = post.color || '#e6756e';
+
+    return (
+      <div
+        className="mobile-navbar"
+        style={{
+          backgroundColor: navbarColor,
+          boxShadow: `0 2px 8px ${navbarColor}99`
+        }}
+      >
+        <div className="mobile-navbar-back" onClick={handleClose}>
+          <LeftOutlined />
+        </div>
+        <div className="mobile-navbar-title">Board Name</div>
+        <div className="mobile-navbar-info" onClick={() => setShowMobileInfo(true)}>
+          <InfoCircleOutlined />
+        </div>
       </div>
-      <div className="mobile-navbar-title">Board Name</div>
-      <div className="mobile-navbar-info" onClick={() => setShowMobileInfo(true)}>
-        <InfoCircleOutlined />
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <>
@@ -1714,7 +2019,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                                   <div className="post-images-container">
                                     {images.map((attachment) => (
                                       <div key={attachment.id} className="post-attachment-preview">
-                                        <div 
+                                        <div
                                           className="post-attachment-image-container"
                                           onClick={(e) => handleAttachmentClick(attachment, e)}
                                           style={{ cursor: 'pointer' }}
@@ -1736,7 +2041,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                                   <div className="post-files-container">
                                     {nonImages.map((attachment) => (
                                       <div key={attachment.id} className="post-attachment-preview">
-                                        <div 
+                                        <div
                                           className="post-attachment-file-preview"
                                           onClick={(e) => handleAttachmentClick(attachment, e)}
                                           style={{ cursor: 'pointer' }}
@@ -1794,6 +2099,12 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                           className="comment-input"
                           value={commentText}
                           onChange={handleCommentChange}
+                          onFocus={() => {
+                            if (!currentUser) {
+                              onRequireSignIn();
+                              return;
+                            }
+                          }}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                               e.preventDefault();
@@ -1857,6 +2168,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                       onAddReply={handleAddReply}
                       onDelete={handleDeleteComment}
                       userCommentsThisSession={userCommentsThisSession}
+                      onRequireSignIn={onRequireSignIn}
                     />
                   </div>
                 </div>
@@ -1988,6 +2300,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     onReplyClick={handleReplyClick}
                     replyingToComment={replyingToComment}
                     userCommentsThisSession={userCommentsThisSession}
+                    onRequireSignIn={onRequireSignIn}
                   />
                 </div>
               </div>
@@ -1997,7 +2310,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           )}
         </div>
       </Modal>
-      {isMobile && isOpen && <MobileNavbar />}
+      {isMobile && isOpen && post && post.color && <MobileNavbar />}
       {isMobile && isOpen && <MobileCommentBar />}
       {isMobile && isOpen && <MobileStickyHeader />}
 
