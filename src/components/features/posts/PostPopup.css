@@ -12,14 +12,17 @@
   background-color: #f0f0f0;
   border: 1px solid #d9d9d9;
   color: #666;
-  font-size: 12px;
+  font-size: 14px;
+  /* font-weight: 500; */
   height: 32px;
   padding: 0 12px;
   border-radius: 6px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   transition: all 0.2s ease;
+  font-family: 'Poppins', sans-serif;
+  margin-top: 14px;
 }
 
 .export-csv-button:hover {
@@ -388,7 +391,7 @@
 }
 
 .comment-action-button.send .anticon {
-  color: white;
+  color: #281010;
 }
 
 /* === Attached Files === */
@@ -843,12 +846,11 @@
   }
 
   .mobile-action-buttons-row .comment-action-button.send {
-    background: #007AFF;
     color: white;
   }
 
   .mobile-action-buttons-row .comment-action-button.send:hover {
-    background: #0056CC;
+    opacity: 0.8;
   }
 
   /* File preview adjustments for mobile */
@@ -964,12 +966,11 @@
   }
 
   .simple-send-btn {
-    background: #007AFF !important;
     color: white !important;
   }
 
   .simple-send-btn:hover {
-    background: #0056CC !important;
+    opacity: 0.8 !important;
   }
 
   .simple-send-btn img {
@@ -994,7 +995,7 @@
   width: 20px;
   height: 28px;
   display: block;
-  color: #101828;
+  color: #281010;
 }
 
 .mobile-input-row {

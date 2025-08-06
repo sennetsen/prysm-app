@@ -1145,12 +1145,12 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     return (
       <Button
         className="export-csv-button"
-        icon={<DownloadOutlined />}
+        icon={<DownloadOutlined style={{ fontWeight: 'bold' }} />}
         onClick={handleExportCSV}
         loading={isExportingCSV}
         title="Export subscribers as CSV"
       >
-        Export CSV
+        Export Contacts
       </Button>
     );
   };
@@ -1904,6 +1904,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
               }}
               title="Send comment"
               disabled={isSubmitting || (!hasContent && fileList.length === 0)}
+              style={{
+                backgroundColor: post.color || '#e6756e'
+              }}
             >
               {isSubmitting ? <LoadingOutlined /> : <img src={SendArrow} alt="Send" className="send-arrow-icon" />}
             </button>
@@ -1973,7 +1976,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           className={`post-popup-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
           style={{
             ...(isMobile ? { paddingBottom: 80 } : {}),
-            ...(post.color && !isMobile && {
+            ...(post.color && {
               '--post-color-rgb': (() => {
                 // Convert hex color to RGB
                 const hex = post.color.replace('#', '');
@@ -2170,7 +2173,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                               onClick={() => handleCommentSubmit()}
                               title="Send comment"
                               disabled={isSubmitting}
-                              style={{ opacity: isSubmitting ? 0.6 : 1, pointerEvents: isSubmitting ? 'none' : 'auto' }}
+                              style={{
+                                opacity: isSubmitting ? 0.6 : 1,
+                                pointerEvents: isSubmitting ? 'none' : 'auto',
+                                backgroundColor: post.color || '#e6756e'
+                              }}
                             >
                               {isSubmitting ? <LoadingOutlined /> : <img src={SendArrow} alt="Send" className="send-arrow-icon" />}
                             </button>
@@ -2256,9 +2263,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                       </Avatar.Group>
                       <div className="subscribe-export-buttons">
                         <SubscribeButton />
-                        <ExportCSVButton />
                       </div>
                     </div>
+                    <ExportCSVButton />
                   </div>
 
                   <div className="activity-section">
@@ -2406,9 +2413,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                 </Avatar.Group>
                 <div className="subscribe-export-buttons">
                   <SubscribeButton />
-                  <ExportCSVButton />
                 </div>
               </div>
+              <ExportCSVButton />
             </div>
           </div>
         </>
