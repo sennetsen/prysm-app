@@ -755,7 +755,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         });
 
         setFileList([...fileList, ...files]);
-        message.success(`${files.length} file(s) attached`);
+        message.success(`${files.length} file${files.length === 1 ? '' : 's'} attached`);
       }
     };
 
@@ -1103,7 +1103,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       link.click();
       document.body.removeChild(link);
 
-      message.success(`Exported ${subscribersData.length} subscribers to CSV`);
+      message.success(`Exported ${subscribersData.length} subscriber${subscribersData.length === 1 ? '' : 's'} to CSV`);
     } catch (error) {
       console.error('Error exporting CSV:', error);
       message.error('Failed to export CSV');

@@ -421,7 +421,7 @@ function BoardView() {
         });
 
         setPostFileList([...postFileList, ...files]);
-        message.success(`${files.length} file(s) attached`);
+        message.success(`${files.length} file${files.length === 1 ? '' : 's'} attached`);
       }
     };
 
