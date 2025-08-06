@@ -276,22 +276,13 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   }, [isOpen, currentUser?.id, post.id]);
 
-  // Fetch subscribers when component mounts (for board creators)
+  // Fetch subscribers when component mounts (for all users)
   useEffect(() => {
-    console.log('useEffect debug:', {
-      currentUserId: currentUser?.id,
-      currentUserEmail: currentUser?.email,
-      boardCreatorId: boardCreatorId,
-      boardEmail: boardEmail,
-      isOpen: isOpen,
-      shouldFetch: currentUser?.email === boardEmail && isOpen
-    });
-
-    if (currentUser?.email === boardEmail && isOpen) {
-      console.log('Fetching subscribers...');
+    if (isOpen && post.id) {
+      console.log('Fetching subscribers for post:', post.id);
       fetchSubscribers();
     }
-  }, [currentUser?.id, currentUser?.email, boardEmail, isOpen]);
+  }, [isOpen, post.id]);
 
   // Removed useEffect that was running on every commentText change
 
@@ -974,6 +965,25 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
       setIsSubscribed(true);
       message.success('Successfully subscribed to this post');
+
+      // Add current user to subscribers list if not already there
+      if (currentUser) {
+        setSubscribers(prev => {
+          const userExists = prev.some(sub => sub.user.id === currentUser.id);
+          if (!userExists) {
+            return [{
+              created_at: new Date().toISOString(),
+              user: {
+                id: currentUser.id,
+                full_name: currentUser.user_metadata?.full_name || currentUser.email,
+                email: currentUser.email,
+                avatar_url: currentUser.user_metadata?.avatar_url || ''
+              }
+            }, ...prev];
+          }
+          return prev;
+        });
+      }
     } catch (error) {
       console.error('Error subscribing:', error);
       message.error('Failed to subscribe to the post. Please try again.');
@@ -1014,6 +1024,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
           setIsSubscribed(false);
           message.success('Successfully unsubscribed from this post');
+
+          // Remove current user from subscribers list
+          if (currentUser) {
+            setSubscribers(prev => prev.filter(sub => sub.user.id !== currentUser.id));
+          }
         } catch (error) {
           console.error('Error unsubscribing:', error);
           message.error('Failed to unsubscribe from the post. Please try again.');
@@ -1024,7 +1039,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     });
   };
 
-  // Fetch subscribers for CSV export
+  // Fetch subscribers for display and CSV export
   const fetchSubscribers = async () => {
     console.log('fetchSubscribers called for post:', post.id);
     try {
@@ -1034,7 +1049,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           created_at,
           user:users(
             full_name,
-            email
+            email,
+            avatar_url
           )
         `)
         .eq('post_id', post.id)
@@ -1335,7 +1351,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   }, [isOpen, post.id]);
 
-  // Add real-time subscriptions for comments and comment reactions
+  // Add real-time subscriptions for comments, comment reactions, and post subscriptions
   useEffect(() => {
     if (!isOpen || !post.id) return;
 
@@ -1577,10 +1593,50 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       })
       .subscribe();
 
+    // Subscribe to post subscriptions for real-time updates
+    const subscriptionChannel = supabase
+      .channel(`post-subscriptions:${post.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'subscriptions',
+        filter: `post_id=eq.${post.id}`
+      }, async (payload) => {
+        const { new: subscription } = payload;
+
+        // Fetch user info for the new subscriber
+        const { data: user } = await supabase
+          .from('users')
+          .select('full_name, email, avatar_url')
+          .eq('id', subscription.user_id)
+          .single();
+
+        if (user) {
+          // Add new subscriber to the list
+          setSubscribers(prev => [{
+            created_at: subscription.created_at,
+            user: user
+          }, ...prev]);
+        }
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'subscriptions',
+        filter: `post_id=eq.${post.id}`
+      }, async (payload) => {
+        const { old: subscription } = payload;
+
+        // Remove subscriber from the list
+        setSubscribers(prev => prev.filter(sub => sub.user.id !== subscription.user_id));
+      })
+      .subscribe();
+
     // Cleanup subscriptions when component unmounts or post changes
     return () => {
       supabase.removeChannel(commentChannel);
       supabase.removeChannel(commentReactionChannel);
+      supabase.removeChannel(subscriptionChannel);
     };
   }, [isOpen, post.id, currentUser?.id, userCommentsThisSession]);
 
@@ -2255,11 +2311,13 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                           border: '2px solid #fff'
                         }}
                       >
-                        <Avatar src="https://i.pravatar.cc/150?img=1" />
-                        <Avatar src="https://i.pravatar.cc/150?img=2" />
-                        <Avatar src="https://i.pravatar.cc/150?img=3" />
-                        <Avatar src="https://i.pravatar.cc/150?img=4" />
-                        <Avatar src="https://i.pravatar.cc/150?img=5" />
+                        {subscribers.map((subscriber, index) => (
+                          <Avatar
+                            key={subscriber.user.id || index}
+                            src={subscriber.user.avatar_url}
+                            alt={subscriber.user.full_name}
+                          />
+                        ))}
                       </Avatar.Group>
                       <div className="subscribe-export-buttons">
                         <SubscribeButton />
@@ -2405,11 +2463,13 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     border: '2px solid #fff'
                   }}
                 >
-                  <Avatar src="https://i.pravatar.cc/150?img=1" />
-                  <Avatar src="https://i.pravatar.cc/150?img=2" />
-                  <Avatar src="https://i.pravatar.cc/150?img=3" />
-                  <Avatar src="https://i.pravatar.cc/150?img=4" />
-                  <Avatar src="https://i.pravatar.cc/150?img=5" />
+                  {subscribers.map((subscriber, index) => (
+                    <Avatar
+                      key={subscriber.user.id || index}
+                      src={subscriber.user.avatar_url}
+                      alt={subscriber.user.full_name}
+                    />
+                  ))}
                 </Avatar.Group>
                 <div className="subscribe-export-buttons">
                   <SubscribeButton />

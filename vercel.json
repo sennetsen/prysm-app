@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "https://home.prysmapp.com",
+      "permanent": false
+    }
+  ]
+}
