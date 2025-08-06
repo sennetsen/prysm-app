@@ -1934,7 +1934,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         className="mobile-navbar"
         style={{
           backgroundColor: navbarColor,
-          boxShadow: `0 2px 8px ${navbarColor}99`
+          boxShadow: `0 2px 8px ${navbarColor}`
         }}
       >
         <div className="mobile-navbar-back" onClick={handleClose}>
@@ -1971,10 +1971,29 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         <div
           ref={isMobile ? popupContainerRef : undefined}
           className={`post-popup-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
-          style={isMobile ? { paddingBottom: 80 } : {}} // add bottom padding for fixed bar
+          style={{
+            ...(isMobile ? { paddingBottom: 80 } : {}),
+            ...(post.color && !isMobile && {
+              '--post-color-rgb': (() => {
+                // Convert hex color to RGB
+                const hex = post.color.replace('#', '');
+                const r = parseInt(hex.substr(0, 2), 16);
+                const g = parseInt(hex.substr(2, 2), 16);
+                const b = parseInt(hex.substr(4, 2), 16);
+                return `${r}, ${g}, ${b}`;
+              })()
+            })
+          }}
         >
           {!isMobile ? (
             <>
+              {/* Desktop post popup stripe */}
+              {post.color && (
+                <div
+                  className="desktop-post-stripe"
+                  style={{ backgroundColor: post.color }}
+                />
+              )}
               <div className="left-column">
                 <div className="post-content-section">
                   <div className="post-header">
