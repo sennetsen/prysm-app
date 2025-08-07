@@ -2302,27 +2302,33 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
                   <div className="subscribers-section">
                     <h3>Subscribers</h3>
-                    <div className="avatar-group">
-                      <Avatar.Group
-                        maxCount={4}
-                        maxStyle={{
-                          color: '#281010',
-                          backgroundColor: '#f5f5f5',
-                          border: '2px solid #fff'
-                        }}
-                      >
-                        {subscribers.map((subscriber, index) => (
-                          <Avatar
-                            key={subscriber.user.id || index}
-                            src={subscriber.user.avatar_url}
-                            alt={subscriber.user.full_name}
-                          />
-                        ))}
-                      </Avatar.Group>
-                      <div className="subscribe-export-buttons">
+                    {subscribers.length > 0 ? (
+                      <div className="avatar-group">
+                        <Avatar.Group
+                          maxCount={4}
+                          maxStyle={{
+                            color: '#281010',
+                            backgroundColor: '#f5f5f5',
+                            border: '2px solid #fff'
+                          }}
+                        >
+                          {subscribers.map((subscriber, index) => (
+                            <Avatar
+                              key={subscriber.user.id || index}
+                              src={subscriber.user.avatar_url}
+                              alt={subscriber.user.full_name}
+                            />
+                          ))}
+                        </Avatar.Group>
+                        <div className="subscribe-export-buttons">
+                          <SubscribeButton />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="subscribe-export-buttons no-subscribers">
                         <SubscribeButton />
                       </div>
-                    </div>
+                    )}
                     <ExportCSVButton />
                   </div>
 
@@ -2454,27 +2460,33 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             </div>
             <div className="subscribers-section">
               <h3>Subscribers</h3>
-              <div className="avatar-group">
-                <Avatar.Group
-                  maxCount={4}
-                  maxStyle={{
-                    color: '#281010',
-                    backgroundColor: '#f5f5f5',
-                    border: '2px solid #fff'
-                  }}
-                >
-                  {subscribers.map((subscriber, index) => (
-                    <Avatar
-                      key={subscriber.user.id || index}
-                      src={subscriber.user.avatar_url}
-                      alt={subscriber.user.full_name}
-                    />
-                  ))}
-                </Avatar.Group>
-                <div className="subscribe-export-buttons">
+              {subscribers.length > 0 ? (
+                <div className="avatar-group">
+                  <Avatar.Group
+                    maxCount={4}
+                    maxStyle={{
+                      color: '#281010',
+                      backgroundColor: '#f5f5f5',
+                      border: '2px solid #fff'
+                    }}
+                  >
+                    {subscribers.map((subscriber, index) => (
+                      <Avatar
+                        key={subscriber.user.id || index}
+                        src={subscriber.user.avatar_url}
+                        alt={subscriber.user.full_name}
+                      />
+                    ))}
+                  </Avatar.Group>
+                  <div className="subscribe-export-buttons">
+                    <SubscribeButton />
+                  </div>
+                </div>
+              ) : (
+                <div className="subscribe-export-buttons no-subscribers">
                   <SubscribeButton />
                 </div>
-              </div>
+              )}
               <ExportCSVButton />
             </div>
           </div>

@@ -3,9 +3,14 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  margin-top: 8px;
+  margin-top: 0;
   flex-wrap: wrap;
   min-height: 40px;
+}
+
+.subscribe-export-buttons.no-subscribers {
+  justify-content: flex-start;
+  margin-top: 0;
 }
 
 .export-csv-button {
@@ -448,7 +453,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-top: -6px;
+  margin-top: 0;
 }
 
 .subscribers-section .ant-avatar-group {
