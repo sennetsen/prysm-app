@@ -4,11 +4,6 @@
       "source": "/",
       "destination": "https://home.prysmapp.com",
       "permanent": false
-    },
-    {
-      "source": "/:boardPath",
-      "destination": "https://prysmapp.com/:boardPath",
-      "permanent": false
     }
   ]
 }
