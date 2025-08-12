@@ -4,18 +4,11 @@
       "source": "/",
       "destination": "https://home.prysmapp.com",
       "permanent": false
-    }
-  ],
-  "domains": [
+    },
     {
-      "name": "home.prysmapp.com",
-      "redirects": [
-        {
-          "source": "/:boardPath",
-          "destination": "https://prysmapp.com/:boardPath",
-          "permanent": false
-        }
-      ]
+      "source": "/:boardPath",
+      "destination": "https://prysmapp.com/:boardPath",
+      "permanent": false
     }
   ]
 }
