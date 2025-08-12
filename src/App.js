@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { BrowserRouter as Router, Routes, Route, useParams, Navigate, useNavigate } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
-// HomePage import removed - no longer needed since root redirects to Framer site
+import HomePage from './CompanySite/HomePage';
 import { supabase } from "./supabaseClient";
 import Navbar from "./components/features/board/Navbar";
 import Sidebar from "./components/features/board/Sidebar";
