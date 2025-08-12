@@ -11,6 +11,7 @@
     opacity: 0;
     transform: translateY(-8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -22,6 +23,7 @@
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -33,10 +35,12 @@
     background-color: rgba(239, 89, 89, 0.1);
     border-left: 3px solid #EF5959;
   }
+
   50% {
     background-color: rgba(239, 89, 89, 0.2);
     border-left: 3px solid #EF5959;
   }
+
   100% {
     background-color: transparent;
     border-left: none;
@@ -349,6 +353,27 @@
 .reply-submit-button:disabled {
   background-color: #e0e0e0 !important;
   color: #a0a0a0 !important;
+}
+
+/* Loading states for reply inputs */
+.reply-input-container.submitting {
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.reply-input-container.submitting .reply-input {
+  background-color: #f5f5f5;
+}
+
+.reply-attachment-button:disabled {
+  color: #d0d0d0 !important;
+  cursor: not-allowed !important;
+}
+
+.reply-submit-button:disabled {
+  background-color: #e0e0e0 !important;
+  color: #a0a0a0 !important;
+  cursor: not-allowed !important;
 }
 
 .no-comments-placeholder {

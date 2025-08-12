@@ -78,6 +78,7 @@ interface Comment {
   liked: boolean;
   replies?: Comment[];
   attachments?: Attachment[];
+  files?: File[]; // Add optional files property for uploads
   is_deleted?: boolean;
   isNew?: boolean; // Flag for new comments added via real-time updates
 }
@@ -680,41 +681,150 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   }, []);
 
+  // Unified function to create comments (top-level or replies) with attachments
+  const createCommentWithAttachments = useCallback(async (
+    commentData: {
+      content: string;
+      parentCommentId?: string | number;
+      files: File[];
+    }
+  ) => {
+    if (!currentUser) {
+      onRequireSignIn();
+      return;
+    }
+
+    try {
+      // 1. Insert comment into Supabase
+      const { data, error } = await supabase
+        .from('comments')
+        .insert([{
+          post_id: post.id,
+          author_id: currentUser.id,
+          content: commentData.content,
+          is_anonymous: false,
+          created_at: new Date().toISOString(),
+          parent_comment_id: commentData.parentCommentId || null, // null for top-level, UUID for replies
+        }])
+        .select();
+
+      if (error) {
+        message.error('Failed to post comment');
+        return;
+      }
+
+      const commentId = data[0].id;
+
+      // 2. Upload each attachment with the correct commentId and collect attachment data
+      const uploadedAttachments: Attachment[] = [];
+      if (commentData.files.length > 0) {
+        setIsFileUploading(true);
+        try {
+          for (const file of commentData.files) {
+            const storage_path = await uploadCommentAttachment(file, commentId, currentUser.id);
+            // Create attachment object to include in the local comment
+            uploadedAttachments.push({
+              id: `temp-${Date.now()}-${Math.random()}`, // Temporary ID for display
+              storage_path,
+              file_name: file.name,
+              file_type: file.type,
+              file_size: file.size,
+            });
+          }
+        } catch (err) {
+          console.error('Attachment upload error:', err);
+          message.error('Failed to upload one or more attachments');
+        } finally {
+          setIsFileUploading(false);
+        }
+      }
+
+      // 3. Track this comment as created in this session
+      const updatedSessionSet = new Set([...userCommentsThisSession, commentId]);
+      setUserCommentsThisSession(updatedSessionSet);
+
+      // 4. Refresh comments to get proper sorting with updated session data
+      fetchComments(updatedSessionSet);
+
+      return { success: true, commentId, attachments: uploadedAttachments };
+    } catch (error) {
+      console.error('Error creating comment:', error);
+      message.error('Failed to post comment');
+      return { success: false, error };
+    }
+  }, [post.id, currentUser, userCommentsThisSession, onRequireSignIn]);
+
+  const handleCommentSubmit = useCallback(async (internal = false) => {
+    if (!currentUser) {
+      onRequireSignIn();
+      return;
+    }
+    if (!internal && isSubmitting) return; // Prevent double submission
+
+    // Use current text from ref if it's more recent than state
+    const currentText = commentTextRef.current || commentText;
+    if (!(currentText.trim() || fileList.length > 0)) return;
+
+    if (!internal) setIsSubmitting(true);
+
+    try {
+      const result = await createCommentWithAttachments({
+        content: currentText,
+        files: fileList
+      });
+
+      if (result?.success) {
+        // Clear both ref and state
+        commentTextRef.current = '';
+        setCommentText('');
+        setHasContent(false);
+        setFileList([]);
+
+        // Clear the textarea value directly (desktop and mobile)
+        if (commentInputRef.current) {
+          commentInputRef.current.value = '';
+        }
+        if (mobileCommentInputRef.current) {
+          mobileCommentInputRef.current.value = '';
+        }
+
+        // Collapse mobile input after posting
+        if (isMobile) {
+          setIsMobileInputExpanded(false);
+        }
+
+        // Show success notification
+        if (!internal) {
+          message.success('Comment submitted successfully!');
+        }
+      }
+    } finally {
+      if (!internal) setIsSubmitting(false);
+    }
+  }, [isSubmitting, commentText, fileList, createCommentWithAttachments, isMobile, onRequireSignIn]);
+
   const handleAddReply = useCallback(async (parentId: number | string, reply: Comment) => {
     if (!currentUser) {
       onRequireSignIn();
       return;
     }
-    // Insert reply into Supabase with parent_comment_id
-    const { data, error } = await supabase
-      .from('comments')
-      .insert([{
-        post_id: post.id,
-        author_id: currentUser.id,
+
+    try {
+      const result = await createCommentWithAttachments({
         content: reply.content,
-        is_anonymous: false, // or true if you support anonymous
-        created_at: new Date().toISOString(),
-        parent_comment_id: parentId, // Can be number or string (UUID)
-      }])
-      .select();
+        parentCommentId: parentId,
+        files: reply.files || []
+      });
 
-    if (error) {
+      if (result?.success) {
+        // Reply was created successfully, comments will be refreshed by createCommentWithAttachments
+        console.log('Reply created successfully with ID:', result.commentId);
+      }
+    } catch (error) {
+      console.error('Error creating reply:', error);
       message.error('Failed to post reply');
-      return;
     }
-
-    // Track this reply as created in this session
-    if (data && data[0]) {
-      const updatedSessionSet = new Set([...userCommentsThisSession, data[0].id]);
-      setUserCommentsThisSession(updatedSessionSet);
-
-      // Fetch comments again to refresh the thread with proper sorting
-      fetchComments(updatedSessionSet);
-    } else {
-      // Fallback if no data returned
-      fetchComments();
-    }
-  }, [post.id, userCommentsThisSession, currentUser, onRequireSignIn]);
+  }, [createCommentWithAttachments, currentUser, onRequireSignIn]);
 
   const handleFileAttachment = () => {
     if (!currentUser) {
@@ -780,101 +890,6 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   useEffect(() => {
     commentTextRef.current = commentText;
   }, [commentText]);
-
-  const handleCommentSubmit = useCallback(async (internal = false) => {
-    if (!currentUser) {
-      onRequireSignIn();
-      return;
-    }
-    if (!internal && isSubmitting) return; // Prevent double submission
-
-    // Use current text from ref if it's more recent than state
-    const currentText = commentTextRef.current || commentText;
-    if (!(currentText.trim() || fileList.length > 0)) return;
-
-    if (!internal) setIsSubmitting(true);
-
-    try {
-      // 1. Insert comment into Supabase
-      const { data, error } = await supabase
-        .from('comments')
-        .insert([{
-          post_id: post.id,
-          author_id: currentUser.id,
-          content: currentText,
-          is_anonymous: false, // or true if you support anonymous
-          created_at: new Date().toISOString(),
-        }])
-        .select();
-
-      if (error) {
-        message.error('Failed to post comment');
-        return;
-      }
-
-      const commentId = data[0].id;
-
-      // 2. Upload each attachment with the correct commentId and collect attachment data
-      const uploadedAttachments: Attachment[] = [];
-      if (fileList.length > 0) {
-        setIsFileUploading(true);
-        try {
-          for (const file of fileList) {
-            const storage_path = await uploadCommentAttachment(file, commentId, currentUser.id);
-            // Create attachment object to include in the local comment
-            uploadedAttachments.push({
-              id: `temp-${Date.now()}-${Math.random()}`, // Temporary ID for display
-              storage_path,
-              file_name: file.name,
-              file_type: file.type,
-              file_size: file.size,
-            });
-          }
-        } catch (err) {
-          console.error('Attachment upload error:', err);
-          message.error('Failed to upload one or more attachments');
-        } finally {
-          setIsFileUploading(false);
-        }
-      }
-
-      // 3. Track this comment as created in this session
-      const updatedSessionSet = new Set([...userCommentsThisSession, commentId]);
-      setUserCommentsThisSession(updatedSessionSet);
-
-      // 4. Refresh comments to get proper sorting with updated session data
-      fetchComments(updatedSessionSet);
-
-      // Clear both ref and state
-      commentTextRef.current = '';
-      setCommentText('');
-      setHasContent(false);
-      setFileList([]);
-
-      // Clear the textarea value directly (desktop and mobile)
-      if (commentInputRef.current) {
-        commentInputRef.current.value = '';
-      }
-      if (mobileCommentInputRef.current) {
-        mobileCommentInputRef.current.value = '';
-      }
-
-      // Collapse mobile input after posting
-      if (isMobile) {
-        setIsMobileInputExpanded(false);
-      }
-
-      // Show success notification
-      if (!internal) {
-        message.success('Comment submitted successfully!');
-      }
-    } catch (error) {
-      console.error('Error submitting comment:', error);
-      message.error('Failed to post comment');
-    } finally {
-      if (!internal) setIsSubmitting(false);
-    }
-  }, [isSubmitting, commentText, fileList, post.id, currentUser, userCommentsThisSession, isMobile, onRequireSignIn]);
 
   const getOrdinalSuffix = (day: number): string => {
     if (day >= 11 && day <= 13) return 'th';
@@ -1830,39 +1845,39 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       if (replyingToComment) {
         console.log('🔄 Submitting reply to comment ID:', replyingToComment);
 
-        // Submit as reply - use the existing handleAddReply function directly
-        const replyData = {
+        // Submit as reply using the unified function
+        const result = await createCommentWithAttachments({
           content: currentText,
-          author: currentUser,
-          id: Date.now(),
-          likes: 0,
-          liked: false,
-          timestamp: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          parent_comment_id: replyingToComment, // Keep as string UUID
-          attachments: []
-        };
+          parentCommentId: replyingToComment,
+          files: fileList
+        });
 
-        console.log('📝 Reply data:', replyData);
-        console.log('🔢 Parent ID (raw):', replyingToComment, typeof replyingToComment);
-
-        // Pass the parent ID directly (can be string UUID or number)
-        await handleAddReply(replyingToComment, replyData);
-
-        // Clear the input and reset state
-        commentTextRef.current = '';
-        setCommentText('');
-        setHasContent(false);
-        setReplyingToComment(null);
-        if (mobileCommentInputRef.current) {
-          mobileCommentInputRef.current.value = '';
+        if (result?.success) {
+          // Clear the input and reset state
+          commentTextRef.current = '';
+          setCommentText('');
+          setHasContent(false);
+          setFileList([]); // Clear attachments after successful reply
+          setReplyingToComment(null);
+          if (mobileCommentInputRef.current) {
+            mobileCommentInputRef.current.value = '';
+          }
         }
       } else {
         console.log('💬 Submitting regular comment');
-        // Update state with current value before submitting
-        setCommentText(currentText);
-        // Submit as regular comment
-        await handleCommentSubmit(true);
+        // Submit as regular comment using the unified function
+        const result = await createCommentWithAttachments({
+          content: currentText,
+          files: fileList
+        });
+
+        if (result?.success) {
+          // Clear the input and reset state
+          commentTextRef.current = '';
+          setCommentText('');
+          setHasContent(false);
+          setFileList([]);
+        }
       }
 
       setIsMobileInputExpanded(false);
@@ -1874,7 +1889,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, replyingToComment, fileList.length, currentUser, handleAddReply, handleCommentSubmit]);
+  }, [isSubmitting, replyingToComment, fileList.length, currentUser, createCommentWithAttachments]);
 
   const MobileCommentBar = () => (
     <div className={`mobile-comment-bar ${isMobileInputExpanded ? 'expanded' : 'collapsed'}`}>
@@ -2251,6 +2266,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                       onDelete={handleDeleteComment}
                       userCommentsThisSession={userCommentsThisSession}
                       onRequireSignIn={onRequireSignIn}
+                      isSubmitting={isSubmitting}
+                      isFileUploading={isFileUploading}
                     />
                   </div>
                 </div>
@@ -2391,6 +2408,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     replyingToComment={replyingToComment}
                     userCommentsThisSession={userCommentsThisSession}
                     onRequireSignIn={onRequireSignIn}
+                    isSubmitting={isSubmitting}
+                    isFileUploading={isFileUploading}
                   />
                 </div>
               </div>

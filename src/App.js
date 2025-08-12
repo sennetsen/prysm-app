@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { BrowserRouter as Router, Routes, Route, useParams, Navigate, useNavigate } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
-import HomePage from './CompanySite/HomePage';
+// HomePage import removed - no longer needed since root redirects to Framer site
 import { supabase } from "./supabaseClient";
 import Navbar from "./components/features/board/Navbar";
 import Sidebar from "./components/features/board/Sidebar";
@@ -1069,7 +1069,7 @@ function App() {
       <SpeedInsights />
       <Router>
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          {/* Root path removed - Vercel redirects / to home.prysmapp.com */}
           <Route path="/mention-test" element={<MentionTest />} />
           <Route path="/posts/*" element={<Navigate to="/" />} />
           <Route path="/:boardPath/posts/:postId" element={<BoardView />} />

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../supabaseClient';
 import { Avatar, Button, Popconfirm, Tooltip } from 'antd';
-import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined, EllipsisOutlined, FileOutlined, PaperClipOutlined } from '@ant-design/icons';
+import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined, EllipsisOutlined, FileOutlined, PaperClipOutlined, LoadingOutlined } from '@ant-design/icons';
 import './CommentThread.css';
 
 interface CommentThreadProps {
@@ -16,6 +16,8 @@ interface CommentThreadProps {
   replyingToComment?: string | null; // ID of comment being replied to
   userCommentsThisSession?: Set<number>;
   onRequireSignIn?: () => void;
+  isSubmitting?: boolean; // Add loading state prop
+  isFileUploading?: boolean; // Add file upload loading state prop
 }
 
 interface Comment {
@@ -37,6 +39,7 @@ interface Comment {
     file_type: string;
     file_size: number;
   }[];
+  files?: File[]; // Add optional files property for uploads
   is_deleted?: boolean;
   isNew?: boolean; // Flag for new comments added via real-time updates
 }
@@ -51,7 +54,9 @@ export const CommentThread = React.memo(function CommentThread({
   onReplyClick,
   replyingToComment,
   userCommentsThisSession = new Set(),
-  onRequireSignIn
+  onRequireSignIn,
+  isSubmitting, // Add loading state prop
+  isFileUploading // Add file upload loading state prop
 }: CommentThreadProps) {
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState('');
@@ -118,7 +123,7 @@ export const CommentThread = React.memo(function CommentThread({
   };
 
   const handleSubmitReply = (parentId: number) => {
-    if (!replyText.trim()) return;
+    if (!replyText.trim() && replyAttachments.length === 0) return;
 
     // Generate a unique ID for the new reply
     const maxId = Math.max(
@@ -138,7 +143,8 @@ export const CommentThread = React.memo(function CommentThread({
       content: replyText,
       timestamp: new Date().toISOString(),
       likes: 0,
-      liked: false
+      liked: false,
+      files: replyAttachments // Pass the actual File objects for upload
     };
 
     // Add the reply to the parent comment
@@ -158,13 +164,14 @@ export const CommentThread = React.memo(function CommentThread({
     // Update the local state
     setLocalComments(updatedComments);
 
-    // If parent component provided onAddReply callback, call it
+    // If parent component provided onAddReply callback, call it with attachments
     if (onAddReply) {
       onAddReply(parentId, newReply);
     }
 
     // Clear the reply input and close it
     setReplyText('');
+    setReplyAttachments([]);
     setReplyingToId(null);
   };
 
@@ -496,7 +503,7 @@ export const CommentThread = React.memo(function CommentThread({
               )}
 
               {!isReply && !isDeleted && replyingToId === comment.id && !isMobile && (
-                <div className="reply-input-container" onClick={(e) => e.stopPropagation()}>
+                <div className={`reply-input-container ${isSubmitting ? 'submitting' : ''}`} onClick={(e) => e.stopPropagation()}>
                   <div className="reply-input-row">
                     <div className="reply-input-wrapper">
                       <textarea
@@ -513,20 +520,34 @@ export const CommentThread = React.memo(function CommentThread({
                         className="reply-input"
                         autoFocus
                         rows={1}
+                        disabled={isSubmitting}
+                        style={{
+                          opacity: isSubmitting ? 0.6 : 1,
+                          pointerEvents: isSubmitting ? 'none' : 'auto'
+                        }}
                       />
                       <Button
                         className="reply-attachment-button"
                         icon={<PaperClipOutlined />}
                         onClick={handleReplyAttachment}
                         type="text"
+                        disabled={isSubmitting || isFileUploading}
+                        style={{
+                          opacity: (isSubmitting || isFileUploading) ? 0.5 : 1,
+                          pointerEvents: (isSubmitting || isFileUploading) ? 'none' : 'auto'
+                        }}
                       />
                     </div>
                     <Button
                       className="reply-submit-button"
                       onClick={() => handleSubmitReply(comment.id)}
-                      disabled={!replyText.trim() && replyAttachments.length === 0}
+                      disabled={(!replyText.trim() && replyAttachments.length === 0) || isSubmitting}
+                      style={{
+                        opacity: isSubmitting ? 0.6 : 1,
+                        pointerEvents: isSubmitting ? 'none' : 'auto'
+                      }}
                     >
-                      Reply
+                      {isSubmitting ? <LoadingOutlined /> : 'Reply'}
                     </Button>
                   </div>
                   {replyAttachments.length > 0 && (
