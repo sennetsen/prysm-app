@@ -62,46 +62,138 @@ async function uploadPostAttachment(file, postId, authorId) {
   return storage_path;
 }
 
-// Replace the existing deleteAllPostAttachments function with this fixed version
+// Replace the existing deleteAllPostAttachments function with this debug version
 async function deleteAllPostAttachments(postId) {
   try {
-    // 1. FIRST: Get all storage paths BEFORE deleting from DB
-    const { data: attachments, error: fetchError } = await supabase
-      .from('attachments')
-      .select('storage_path')
-      .or(`parent_id.eq.${postId},and(parent_type.eq.comment,parent_id.in.(select id from comments where post_id = ${postId}))`);
+    console.log(' Starting deleteAllPostAttachments for postId:', postId);
 
-    if (fetchError) {
-      console.error('Error fetching attachments:', fetchError);
-      throw fetchError;
+    // 1. FIRST: Get all attachments for this post (both post and comment attachments)
+    // Use separate queries instead of complex OR with subquery
+    const [postAttachments, commentAttachments] = await Promise.all([
+      // Get post attachments
+      supabase
+        .from('attachments')
+        .select('storage_path')
+        .eq('parent_type', 'post')
+        .eq('parent_id', postId),
+
+      // Get comment attachments by first getting comment IDs, then their attachments
+      supabase
+        .from('comments')
+        .select('id')
+        .eq('post_id', postId)
+        .then(async ({ data: commentIds, error: commentError }) => {
+          console.log('🔍 Found comment IDs:', commentIds);
+          if (commentError || !commentIds || commentIds.length === 0) {
+            console.log('ℹ️ No comments found for this post');
+            return { data: [], error: null };
+          }
+
+          const commentIdList = commentIds.map(c => c.id);
+          console.log(' Comment ID list:', commentIdList);
+
+          const result = await supabase
+            .from('attachments')
+            .select('storage_path')
+            .eq('parent_type', 'comment')
+            .in('parent_id', commentIdList);
+
+          console.log('📎 Comment attachments query result:', result);
+          return result;
+        })
+    ]);
+
+    console.log('📎 Post attachments result:', postAttachments);
+    console.log('📎 Comment attachments result:', commentAttachments);
+
+    if (postAttachments.error) {
+      console.error('Error fetching post attachments:', postAttachments.error);
+      throw postAttachments.error;
     }
 
+    if (commentAttachments.error) {
+      console.error('Error fetching comment attachments:', commentAttachments.error);
+      throw commentAttachments.error;
+    }
+
+    // Combine all attachments
+    const allAttachments = [
+      ...(postAttachments.data || []),
+      ...(commentAttachments.data || [])
+    ];
+
+    console.log('📎 Combined all attachments to delete:', allAttachments);
+
     // 2. SECOND: Delete all files from R2 first
-    if (attachments && attachments.length > 0) {
-      for (const attachment of attachments) {
+    if (allAttachments.length > 0) {
+      for (const attachment of allAttachments) {
         try {
+          console.log('🗑️ Attempting to delete from R2:', attachment.storage_path);
+
           const response = await fetch(`https://prysm-r2-worker.prysmapp.workers.dev/delete/${attachment.storage_path}`, {
             method: 'DELETE',
           });
+
+          console.log(' R2 delete response status:', response.status);
+
           if (!response.ok) {
-            console.error('Failed to delete file from R2:', attachment.storage_path);
+            const errorText = await response.text();
+            console.error('❌ Failed to delete file from R2:', attachment.storage_path, 'Status:', response.status, 'Error:', errorText);
+          } else {
+            console.log('✅ Successfully deleted from R2:', attachment.storage_path);
           }
         } catch (r2Error) {
-          console.error('Error deleting from R2:', r2Error);
+          console.error('💥 Error deleting from R2:', r2Error);
         }
       }
+    } else {
+      console.log('ℹ️ No attachments found to delete');
     }
 
     // 3. THIRD: Delete ALL attachments from database after R2 cleanup
-    const { error } = await supabase
+    console.log('🗄️ Deleting attachments from database...');
+
+    // Delete post attachments
+    const { error: postDeleteError } = await supabase
       .from('attachments')
       .delete()
-      .or(`parent_id.eq.${postId},and(parent_type.eq.comment,parent_id.in.(select id from comments where post_id = ${postId}))`);
+      .eq('parent_type', 'post')
+      .eq('parent_id', postId);
 
-    if (error) {
-      console.error('Error deleting attachments:', error);
-      throw error;
+    if (postDeleteError) {
+      console.error('Error deleting post attachments:', postDeleteError);
     }
+
+    // Fix the comment attachments deletion part
+    // Delete comment attachments
+    if (commentAttachments.data && commentAttachments.data.length > 0) {
+      // Get the comment IDs from the comments query, not from attachments
+      const { data: commentIds } = await supabase
+        .from('comments')
+        .select('id')
+        .eq('post_id', postId);
+
+      if (commentIds && commentIds.length > 0) {
+        const commentIdList = commentIds.map(c => c.id);
+        console.log('🗄️ Deleting comment attachments for comment IDs:', commentIdList);
+
+        const { error: commentDeleteError } = await supabase
+          .from('attachments')
+          .delete()
+          .eq('parent_type', 'comment')
+          .in('parent_id', commentIdList);
+
+        if (commentDeleteError) {
+          console.error('Error deleting comment attachments:', commentDeleteError);
+        } else {
+          console.log('✅ Successfully deleted comment attachments from database');
+        }
+      }
+    } else {
+      console.log('ℹ️ No comment attachments to delete from database');
+    }
+
+    console.log('✅ Successfully deleted all attachments for post:', postId);
   } catch (error) {
     console.error('Error in deleteAllPostAttachments:', error);
     throw error;
@@ -574,7 +666,10 @@ function BoardView() {
   // Update the handleDelete function to use the new simpler approach
   const handleDelete = async (id) => {
     try {
-      // 1. Delete post (this triggers CASCADE for comments, reactions, etc.)
+      // 1. FIRST: Get all attachments BEFORE deleting the post
+      await deleteAllPostAttachments(id);
+
+      // 2. SECOND: Delete post (this triggers CASCADE for comments, reactions, etc.)
       const { error } = await supabase
         .from('posts')
         .delete()
@@ -584,9 +679,6 @@ function BoardView() {
         console.error('Error deleting post:', error);
         return;
       }
-
-      // 2. Manually clean up ALL attachments in one go (since no CASCADE)
-      await deleteAllPostAttachments(id);
 
       // 3. Update local state only after successful deletion
       setCards(cards.filter(card => card.id !== id));
