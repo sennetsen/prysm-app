@@ -2304,6 +2304,12 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     <Button className="custom-comment-button" icon={<MessageOutlined />}>
                       <span className="comment-count">{commentCount}</span>
                     </Button>
+                    <Button
+                      className="custom-share-button"
+                      icon={<ShareAltOutlined />}
+                      onClick={handleShare}
+                      title="Share post"
+                    />
                   </div>
                   {/* Divider */}
                   <div className="post-comment-divider"></div>

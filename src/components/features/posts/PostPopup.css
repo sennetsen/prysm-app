@@ -119,7 +119,7 @@
 .author-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   margin-bottom: 16px;
 }
 
@@ -986,9 +986,9 @@
 
 
 .author-avatar {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #281010;
+  width: 20px;
+  height: 20px;
+  /* border: 2px solid #281010; */
 }
 
 .vertical-divider {

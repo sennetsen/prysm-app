@@ -998,6 +998,9 @@ p {
   .share-button {
     padding: 8px 8px;
     font-size: 14px;
+    height: 36px;
+    width: 36px;
+    display: block;
   }
 
   .sign-in-button,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./RequestCard.css";
 import { bigNumberFormatter, formatNumberWithCommas } from '../../../utils/bigNumberFormatter';
 import { HeartFilled, HeartOutlined, FileOutlined, MessageOutlined } from "@ant-design/icons";
-import { Button, Tooltip } from "antd";
+import { Button, Tooltip, Popconfirm } from "antd";
 import fallbackImg from '../../../img/fallback.png';
 
 export default React.memo(
@@ -120,18 +120,30 @@ export default React.memo(
         data-card-index={index}
       >
         {canDelete && (
-          <Tooltip title="Delete Post" placement="top">
-            <button
-              className="thin-x-button"
-              onClick={(e) => {
-                e.stopPropagation(); // Stop event propagation
-                handleDelete();
-              }}
-              aria-label="Delete post"
-            >
-              ×
-            </button>
-          </Tooltip>
+          <Popconfirm
+            title="Delete this post?"
+            description="This action cannot be undone."
+            okText="Delete"
+            cancelText="Cancel"
+            okButtonProps={{ danger: true }}
+            onConfirm={(e) => {
+              e?.stopPropagation();
+              handleDelete();
+            }}
+            onCancel={(e) => e?.stopPropagation()}
+          >
+            <Tooltip title="Delete Post" placement="top">
+              <button
+                className="thin-x-button"
+                onClick={(e) => {
+                  e.stopPropagation(); // Stop event propagation
+                }}
+                aria-label="Delete post"
+              >
+                ×
+              </button>
+            </Tooltip>
+          </Popconfirm>
         )}
         <div className="card-content">
           <h3 className="card-title">

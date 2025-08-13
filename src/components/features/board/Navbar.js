@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import "./Navbar.css";
 import vector1 from '../../../img/Vector (1).svg';
 import vector from '../../../img/Vector.svg';
-import icon from '../../../img/Icon.svg';
 import fallbackImg from '../../../img/fallback.png';
 import { supabase } from "../../../supabaseClient";
+import { ShareAltOutlined } from '@ant-design/icons';
 
 function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, onShare, profileRef, onSortChange }) {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -134,7 +134,7 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
 
         <div className="divider"></div>
         <button className="share-button" onClick={onShare}>
-          <img src={icon} alt="Share" />
+          <ShareAltOutlined />
           <span className="share-text">Share</span>
         </button>
       </div>
