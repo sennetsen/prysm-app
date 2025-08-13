@@ -1836,6 +1836,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
     setIsSubmitting(true);
 
+    let submissionSucceeded = false;
     try {
       if (replyingToComment) {
         console.log('🔄 Submitting reply to comment ID:', replyingToComment);
@@ -1857,6 +1858,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           if (mobileCommentInputRef.current) {
             mobileCommentInputRef.current.value = '';
           }
+          submissionSucceeded = true;
         }
       } else {
         console.log('💬 Submitting regular comment');
@@ -1872,14 +1874,26 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           setCommentText('');
           setHasContent(false);
           setFileList([]);
+          submissionSucceeded = true;
         }
       }
 
-      setIsMobileInputExpanded(false);
+      if (submissionSucceeded) {
+        // Cancel any pending debounced updates to avoid stale repopulation
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+          debounceTimerRef.current = null;
+        }
 
-      // Reset placeholder
-      if (mobileCommentInputRef.current) {
-        mobileCommentInputRef.current.placeholder = "Join the conversation";
+        // Dismiss the mobile keyboard before collapsing
+        if (mobileCommentInputRef.current) {
+          mobileCommentInputRef.current.blur();
+          mobileCommentInputRef.current.value = '';
+          mobileCommentInputRef.current.placeholder = "Join the conversation";
+        }
+
+        // Collapse the composer
+        setIsMobileInputExpanded(false);
       }
     } finally {
       setIsSubmitting(false);
