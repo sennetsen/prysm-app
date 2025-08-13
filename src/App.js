@@ -62,6 +62,52 @@ async function uploadPostAttachment(file, postId, authorId) {
   return storage_path;
 }
 
+// Replace the existing deleteAllPostAttachments function with this fixed version
+async function deleteAllPostAttachments(postId) {
+  try {
+    // 1. FIRST: Get all storage paths BEFORE deleting from DB
+    const { data: attachments, error: fetchError } = await supabase
+      .from('attachments')
+      .select('storage_path')
+      .or(`parent_id.eq.${postId},and(parent_type.eq.comment,parent_id.in.(select id from comments where post_id = ${postId}))`);
+
+    if (fetchError) {
+      console.error('Error fetching attachments:', fetchError);
+      throw fetchError;
+    }
+
+    // 2. SECOND: Delete all files from R2 first
+    if (attachments && attachments.length > 0) {
+      for (const attachment of attachments) {
+        try {
+          const response = await fetch(`https://prysm-r2-worker.prysmapp.workers.dev/delete/${attachment.storage_path}`, {
+            method: 'DELETE',
+          });
+          if (!response.ok) {
+            console.error('Failed to delete file from R2:', attachment.storage_path);
+          }
+        } catch (r2Error) {
+          console.error('Error deleting from R2:', r2Error);
+        }
+      }
+    }
+
+    // 3. THIRD: Delete ALL attachments from database after R2 cleanup
+    const { error } = await supabase
+      .from('attachments')
+      .delete()
+      .or(`parent_id.eq.${postId},and(parent_type.eq.comment,parent_id.in.(select id from comments where post_id = ${postId}))`);
+
+    if (error) {
+      console.error('Error deleting attachments:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in deleteAllPostAttachments:', error);
+    throw error;
+  }
+}
+
 // Component to handle redirects for invalid board paths
 function BoardRedirect() {
   const { boardPath } = useParams();
@@ -525,8 +571,10 @@ function BoardView() {
     }
   };
 
+  // Update the handleDelete function to use the new simpler approach
   const handleDelete = async (id) => {
     try {
+      // 1. Delete post (this triggers CASCADE for comments, reactions, etc.)
       const { error } = await supabase
         .from('posts')
         .delete()
@@ -534,12 +582,16 @@ function BoardView() {
 
       if (error) {
         console.error('Error deleting post:', error);
-      } else {
-        // Update local state only after successful deletion
-        setCards(cards.filter(card => card.id !== id));
-        setTotalPosts(prev => prev - 1);
-        setTotalRequests(prev => prev - 1);
+        return;
       }
+
+      // 2. Manually clean up ALL attachments in one go (since no CASCADE)
+      await deleteAllPostAttachments(id);
+
+      // 3. Update local state only after successful deletion
+      setCards(cards.filter(card => card.id !== id));
+      setTotalPosts(prev => prev - 1);
+      setTotalRequests(prev => prev - 1);
     } catch (error) {
       console.error('Error deleting post:', error);
     }

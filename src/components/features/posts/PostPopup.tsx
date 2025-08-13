@@ -150,7 +150,7 @@ async function deleteAttachmentFromR2(storagePath: string) {
 
 async function deleteCommentAttachments(commentId: string) {
   try {
-    // Fetch all attachments for this comment
+    // 1. FIRST: Fetch all attachments for this comment (before deleting from DB)
     const { data: attachments, error } = await supabase
       .from('attachments')
       .select('*')
@@ -162,24 +162,27 @@ async function deleteCommentAttachments(commentId: string) {
       throw error;
     }
 
-    // Delete each attachment from R2 and database
+    // 2. SECOND: Delete each attachment from R2 first
     for (const attachment of attachments || []) {
       try {
-        // Delete from R2
+        // Delete from R2 BEFORE deleting from database
         await deleteAttachmentFromR2(attachment.storage_path);
-
-        // Delete from database
-        const { error: deleteError } = await supabase
-          .from('attachments')
-          .delete()
-          .eq('id', attachment.id);
-
-        if (deleteError) {
-          console.error('Error deleting attachment from database:', deleteError);
-        }
-      } catch (attachmentError) {
-        console.error('Error deleting attachment:', attachmentError);
+      } catch (r2Error) {
+        console.error('Error deleting from R2:', r2Error);
         // Continue with other attachments even if one fails
+      }
+    }
+
+    // 3. THIRD: Delete from database after R2 cleanup
+    if (attachments && attachments.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('attachments')
+        .delete()
+        .eq('parent_type', 'comment')
+        .eq('parent_id', commentId);
+
+      if (deleteError) {
+        console.error('Error deleting attachments from database:', deleteError);
       }
     }
   } catch (error) {
@@ -1900,7 +1903,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   }, [isSubmitting, replyingToComment, fileList.length, currentUser, createCommentWithAttachments]);
 
-  
+
 
   // Mobile sticky header component (rendered outside modal to ensure viewport positioning)
   const MobileStickyHeader = () => (
