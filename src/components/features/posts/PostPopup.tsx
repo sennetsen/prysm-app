@@ -1721,13 +1721,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   };
 
   const handleMobileInputBlur = () => {
-    // Always collapse on blur (unless clicking action buttons)
-    if (!isActionButtonClicked) {
-      setTimeout(() => {
-        setIsMobileInputExpanded(false);
-      }, 100);
-    }
-    // Reset action button state after a delay to avoid race conditions
+    // Do not collapse on blur. Mobile virtual keyboards can cause transient blurs
+    // which should not dismiss the composer while typing.
     setTimeout(() => {
       setIsActionButtonClicked(false);
     }, 200);
@@ -1735,11 +1730,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
   // Add click-outside detection for more reliable collapsing
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handlePointerOutside = (event: Event) => {
       if (isMobileInputExpanded && mobileCommentInputRef.current) {
         const commentBar = mobileCommentInputRef.current.closest('.mobile-comment-bar');
-
-        // If click is outside the comment bar, collapse it
         if (commentBar && !commentBar.contains(event.target as Node)) {
           setIsMobileInputExpanded(false);
         }
@@ -1747,9 +1740,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     };
 
     if (isMobileInputExpanded) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mousedown', handlePointerOutside);
+      document.addEventListener('touchstart', handlePointerOutside as EventListener, { passive: true });
       return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('mousedown', handlePointerOutside);
+        document.removeEventListener('touchstart', handlePointerOutside as EventListener);
       };
     }
   }, [isMobileInputExpanded]);
@@ -1891,101 +1886,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   }, [isSubmitting, replyingToComment, fileList.length, currentUser, createCommentWithAttachments]);
 
-  const MobileCommentBar = () => (
-    <div className={`mobile-comment-bar ${isMobileInputExpanded ? 'expanded' : 'collapsed'}`}>
-      {/* File previews */}
-      {fileList.length > 0 && (
-        <div className="comment-file-preview-container mobile-preview">
-          {fileList.map((file, index) => (
-            <div key={index} className="comment-file-preview-wrapper">
-              <div className="file-preview-item">
-                <FileOutlined />
-                <span className="file-name">{file.name}</span>
-                <button
-                  className="remove-file"
-                  onClick={() => removeFile(file)}
-                  title="Remove file"
-                >
-                  <CloseOutlined />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Main input row */}
-      <div
-        className="mobile-input-main-row"
-        onClick={handleInputContainerClick}
-      >
-        <textarea
-          ref={mobileCommentInputRef}
-          placeholder={replyingToComment ? "Write a reply..." : "Join the conversation"}
-          className="comment-input mobile-comment-input"
-          value={commentText}
-          onChange={handleMobileCommentChange}
-          onFocus={handleMobileInputFocus}
-          onBlur={handleMobileInputBlur}
-          onClick={handleInputContainerClick}
-          rows={1}
-          style={{
-            resize: 'none',
-            outline: 'none',
-            border: 'none',
-            background: 'transparent',
-            fontSize: '16px' // Prevent iOS zoom
-          }}
-          // Prevent iOS zoom and keyboard dismissal
-          inputMode="text"
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="sentences"
-          spellCheck="false"
-        />
-      </div>
-
-      {/* Action buttons - only show when expanded */}
-      {isMobileInputExpanded && (
-        <>
-          <div className="mobile-input-divider"></div>
-          <div className="mobile-action-buttons-row">
-            <button
-              className="comment-action-button"
-              onMouseDown={(e) => {
-                e.preventDefault(); // Prevent blur from textarea
-                setIsActionButtonClicked(true);
-                handleFileAttachment();
-              }}
-              title="Attach files"
-              disabled={isSubmitting || isFileUploading}
-              style={{
-                opacity: (isSubmitting || isFileUploading) ? 0.5 : 1,
-                pointerEvents: (isSubmitting || isFileUploading) ? 'none' : 'auto'
-              }}
-            >
-              <PaperClipOutlined />
-            </button>
-            <button
-              className="comment-action-button send"
-              onMouseDown={async (e) => {
-                e.preventDefault(); // Prevent blur from textarea
-                setIsActionButtonClicked(true);
-                await handleMobileCommentSubmit();
-              }}
-              title="Send comment"
-              disabled={isSubmitting || (!hasContent && fileList.length === 0)}
-              style={{
-                backgroundColor: post.color || '#e6756e'
-              }}
-            >
-              {isSubmitting ? <LoadingOutlined /> : <img src={SendArrow} alt="Send" className="send-arrow-icon" />}
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
+  
 
   // Mobile sticky header component (rendered outside modal to ensure viewport positioning)
   const MobileStickyHeader = () => (
@@ -2420,7 +2321,96 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         </div>
       </Modal>
       {isMobile && isOpen && post && post.color && <MobileNavbar />}
-      {isMobile && isOpen && <MobileCommentBar />}
+      {isMobile && isOpen && (
+        <div className={`mobile-comment-bar ${isMobileInputExpanded ? 'expanded' : 'collapsed'}`}>
+          {fileList.length > 0 && (
+            <div className="comment-file-preview-container mobile-preview">
+              {fileList.map((file, index) => (
+                <div key={index} className="comment-file-preview-wrapper">
+                  <div className="file-preview-item">
+                    <FileOutlined />
+                    <span className="file-name">{file.name}</span>
+                    <button
+                      className="remove-file"
+                      onClick={() => removeFile(file)}
+                      title="Remove file"
+                    >
+                      <CloseOutlined />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div
+            className="mobile-input-main-row"
+            onClick={handleInputContainerClick}
+          >
+            <textarea
+              ref={mobileCommentInputRef}
+              placeholder={replyingToComment ? "Write a reply..." : "Join the conversation"}
+              className="comment-input mobile-comment-input"
+              onChange={handleMobileCommentChange}
+              onFocus={handleMobileInputFocus}
+              onBlur={handleMobileInputBlur}
+              onClick={handleInputContainerClick}
+              rows={1}
+              style={{
+                resize: 'none',
+                outline: 'none',
+                border: 'none',
+                background: 'transparent',
+                fontSize: '16px'
+              }}
+              inputMode="text"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="sentences"
+              spellCheck="false"
+            />
+          </div>
+
+          {isMobileInputExpanded && (
+            <>
+              <div className="mobile-input-divider"></div>
+              <div className="mobile-action-buttons-row">
+                <button
+                  className="comment-action-button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setIsActionButtonClicked(true);
+                    handleFileAttachment();
+                  }}
+                  title="Attach files"
+                  disabled={isSubmitting || isFileUploading}
+                  style={{
+                    opacity: (isSubmitting || isFileUploading) ? 0.5 : 1,
+                    pointerEvents: (isSubmitting || isFileUploading) ? 'none' : 'auto'
+                  }}
+                >
+                  <PaperClipOutlined />
+                </button>
+                <button
+                  className="comment-action-button send"
+                  onMouseDown={async (e) => {
+                    e.preventDefault();
+                    setIsActionButtonClicked(true);
+                    await handleMobileCommentSubmit();
+                  }}
+                  title="Send comment"
+                  disabled={isSubmitting || (!hasContent && fileList.length === 0)}
+                  style={{
+                    backgroundColor: post.color || '#e6756e'
+                  }}
+                >
+                  {isSubmitting ? <LoadingOutlined /> : <img src={SendArrow} alt="Send" className="send-arrow-icon" />}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
       {isMobile && isOpen && <MobileStickyHeader />}
 
       {/* Mobile Info Panel */}
