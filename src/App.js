@@ -643,20 +643,33 @@ function BoardView() {
         // Auto-subscribe the author to their own post
         // This ensures authors get notified about comments and activity on their posts
         try {
-          const { error: subscribeError } = await supabase
+          // Check if user is already subscribed (though this shouldn't happen for new posts)
+          // But we'll keep the check for future-proofing and performance
+          const { data: existingSubscription } = await supabase
             .from('subscriptions')
-            .upsert([{
-              user_id: user.id,
-              post_id: postId
-            }], {
-              onConflict: 'user_id,post_id' // Use upsert to prevent duplicates
-            });
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('post_id', postId)
+            .single();
 
-          if (subscribeError) {
-            console.warn('Failed to auto-subscribe author to post:', subscribeError);
-            // Don't show error to user since this is automatic
+          if (existingSubscription) {
+            console.log('User already subscribed to post, skipping upsert');
           } else {
-            console.log('Author automatically subscribed to their post');
+            const { error: subscribeError } = await supabase
+              .from('subscriptions')
+              .upsert([{
+                user_id: user.id,
+                post_id: postId
+              }], {
+                onConflict: 'user_id,post_id' // Use upsert to prevent duplicates
+              });
+
+            if (subscribeError) {
+              console.warn('Failed to auto-subscribe author to post:', subscribeError);
+              // Don't show error to user since this is automatic
+            } else {
+              console.log('Author automatically subscribed to their post');
+            }
           }
         } catch (subscribeErr) {
           console.warn('Error auto-subscribing author to post:', subscribeErr);

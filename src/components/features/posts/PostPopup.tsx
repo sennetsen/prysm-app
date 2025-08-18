@@ -722,6 +722,40 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
       const commentId = data[0].id;
 
+      // Auto-subscribe the commenter to the post if they're not already subscribed
+      try {
+        // Check if user is already subscribed before attempting to subscribe
+        const wasAlreadySubscribed = isSubscribed;
+        
+        // Skip upsert if already subscribed (performance optimization)
+        if (wasAlreadySubscribed) {
+          console.log('User already subscribed, skipping upsert');
+        } else {
+          const { error: subscribeError } = await supabase
+            .from('subscriptions')
+            .upsert([{
+              user_id: currentUser.id,
+              post_id: post.id
+            }], {
+              onConflict: 'user_id,post_id' // Use upsert to prevent duplicates
+            });
+
+          if (subscribeError) {
+            console.warn('Failed to auto-subscribe commenter to post:', subscribeError);
+            // Don't show error to user since this is automatic
+          } else {
+            console.log('Commenter automatically subscribed to post');
+            message.success('Successfully subscribed to this post automatically');
+            // Update local subscription state immediately
+            setIsSubscribed(true);
+            // Note: Subscribers list will be updated automatically via real-time subscription
+          }
+        }
+      } catch (subscribeErr) {
+        console.warn('Error auto-subscribing commenter to post:', subscribeErr);
+        // Don't show error to user since this is automatic
+      }
+
       // 2. Upload each attachment with the correct commentId and collect attachment data
       const uploadedAttachments: Attachment[] = [];
       if (commentData.files.length > 0) {
@@ -759,7 +793,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       message.error('Failed to post comment');
       return { success: false, error };
     }
-  }, [post.id, currentUser, userCommentsThisSession, onRequireSignIn]);
+  }, [post.id, currentUser, userCommentsThisSession, onRequireSignIn, isSubscribed]);
 
   const handleCommentSubmit = useCallback(async (internal = false) => {
     if (!currentUser) {
