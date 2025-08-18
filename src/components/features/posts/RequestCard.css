@@ -187,13 +187,19 @@
 }
 
 .profile-pic {
-  width: 24px;
-  height: 24px;
+  width: 24px !important; /* Match the Avatar component size prop */
+  height: 24px !important;
   border-radius: 50%;
-  border: 1px solid #281010;
+  border: 1px solid #281010 !important; /* Restore the black 1px border */
   object-fit: cover;
   z-index: 2;
   transition: transform 0.2s ease;
+}
+
+/* Target the Avatar component specifically */
+.profile-pic.avatar-image {
+  background: transparent !important;
+  border: 1px solid #281010 !important; /* Ensure Avatar component also has the border */
 }
 
 .user-info:hover .profile-pic,

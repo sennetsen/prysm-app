@@ -674,3 +674,24 @@
   margin-left: -15px;
   border-radius: 8px;
 }
+
+/* Comment Avatar Styling */
+.comment-avatar .avatar-image {
+  border: 2px solid #281010 !important;
+}
+
+/* Custom Avatar Group */
+.custom-avatar-group {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.custom-avatar-group .ant-avatar {
+  transition: all 0.3s ease;
+}
+
+.custom-avatar-group .ant-avatar:hover {
+  transform: scale(1.1);
+  z-index: 10 !important;
+}

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Avatar } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Avatar } from '../../shared';
 
 export type ActivityType = 'post' | 'comment' | 'reply' | 'reaction' | 'comment_reaction';
 
@@ -10,6 +10,7 @@ export interface Activity {
   user: {
     full_name: string;
     avatar_url: string;
+    avatar_storage_path?: string;
     id?: string;
   };
   post?: any;
@@ -121,7 +122,7 @@ const getActivityText = (activity: Activity, onLinkClick: (id: string) => void) 
       return (
         <>
           <span className="activity-username">{activity.user?.full_name || 'Someone'}</span>
-          <span>liked ❤️ a comment on</span>
+          <span>liked 💬 on a comment in</span>
           {activity.post?.id ? (
             <span
               className="activity-link"
@@ -144,44 +145,47 @@ const getActivityText = (activity: Activity, onLinkClick: (id: string) => void) 
 const ActivityItem: React.FC<ActivityItemProps> = ({ activity, currentUserId, boardCreatorId }) => {
   const navigate = useNavigate();
   const { boardPath } = useParams();
-  
-  // Determine highlight: if the activity is by the current user or board creator
-  const isOwn = currentUserId && activity.user?.id && currentUserId === activity.user.id;
-  const isCreator = boardCreatorId && activity.user?.id && boardCreatorId === activity.user.id;
-  const highlight = isOwn || isCreator;
 
-  // Navigate to the specific post when link is clicked
-  const handleLinkClick = (id: string) => {
-    navigate(`/${boardPath}/posts/${id}`);
+  const handleLinkClick = (postId: string) => {
+    if (boardPath) {
+      navigate(`/${boardPath}/posts/${postId}`);
+    }
+  };
+
+  const formatTimestamp = (timestamp: string) => {
+    const now = new Date();
+    const activityDate = new Date(timestamp);
+    const diffMs = now.getTime() - activityDate.getTime();
+    const diffInSeconds = Math.floor(diffMs / 1000);
+
+    if (diffInSeconds < 60) {
+      return 'just now';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes}m ago`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours}h ago`;
+    } else if (diffInSeconds < 2592000) { // 30 days
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days}d ago`;
+    } else {
+      const months = Math.floor(diffInSeconds / 2592000);
+      return `${months}mo ago`;
+    }
   };
 
   return (
-    <div
-      className={`activity-item${highlight ? ' highlight' : ''}${isOwn ? ' own' : ''}${isCreator ? ' creator' : ''}`}
-      tabIndex={0}
-    >
-      <Avatar src={activity.user?.avatar_url} className="activity-avatar" size={24} />
+    <div className="activity-item">
+      <div className="activity-avatar">
+        <Avatar user={activity.user} size={24} />
+      </div>
       <div className="activity-content">
-        {getActivityText(activity, handleLinkClick)}
+        <div className="activity-text">
+          {getActivityText(activity, handleLinkClick)}
+        </div>
         <div className="activity-timestamp">
-          {(() => {
-            const date = new Date(activity.timestamp);
-            const now = new Date();
-            const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
-            if (diffInHours < 1) {
-              const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-              return `${diffInMinutes} minutes ago`;
-            } else if (diffInHours < 24) {
-              const hours = Math.floor(diffInHours);
-              return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-            } else if (diffInHours < 48) {
-              return '1 day ago';
-            } else {
-              const days = Math.floor(diffInHours / 24);
-              return `${days} days ago`;
-            }
-          })()}
+          {formatTimestamp(activity.timestamp)}
         </div>
       </div>
     </div>

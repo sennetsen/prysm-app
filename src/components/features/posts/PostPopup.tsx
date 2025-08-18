@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Modal, Button, Avatar, message } from 'antd';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Modal, Button, message } from 'antd';
+import { Avatar } from '../../shared';
 import { CommentThread } from '../comments/CommentThread';
 
 import {
@@ -69,7 +70,10 @@ interface Comment {
   id: number;
   author: {
     name: string;
-    avatar: string;
+    avatar_url?: string;
+    avatar_storage_path?: string;
+    full_name?: string;
+    id?: string;
   };
   content: string;
   timestamp: string;
@@ -643,16 +647,16 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       setComments(currentComments =>
         currentComments.map(comment => {
           if (comment.id === commentId) {
-            // Mark the top-level comment as deleted
-            return {
-              ...comment,
-              is_deleted: true,
-              content: '',
-              author: { name: 'Deleted comment', avatar: '' },
-              likes: 0,
-              liked: false,
-              attachments: []
-            };
+                      // Mark the top-level comment as deleted
+          return {
+            ...comment,
+            is_deleted: true,
+            content: '',
+            author: { name: 'Deleted comment', avatar_url: '', avatar_storage_path: '' },
+            likes: 0,
+            liked: false,
+            attachments: []
+          };
           }
           // If it's a reply being deleted, check in replies
           if (comment.replies && comment.replies.some(reply => reply.id === commentId)) {
@@ -664,7 +668,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     ...reply,
                     is_deleted: true,
                     content: '',
-                    author: { name: 'Deleted comment', avatar: '' },
+                    author: { name: 'Deleted comment', avatar_url: '', avatar_storage_path: '' },
                     likes: 0,
                     liked: false,
                     attachments: []
@@ -1196,7 +1200,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     // Fetch all comments for the post
     const { data: commentsData, error: commentsError } = await supabase
       .from('comments')
-      .select(`*, author:users(full_name, avatar_url), reaction_counts`)
+      .select(`*, author:users(full_name, avatar_url, avatar_storage_path), reaction_counts`)
       .eq('post_id', post.id)
       .order('created_at', { ascending: false });
 
@@ -1255,7 +1259,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           id: c.id,
           author: {
             name: c.is_deleted ? 'Deleted comment' : c.author.full_name,
-            avatar: c.is_deleted ? '' : c.author.avatar_url,
+            avatar_url: c.is_deleted ? '' : c.author.avatar_url,
+            avatar_storage_path: c.is_deleted ? '' : c.author.avatar_storage_path,
           },
           content: c.is_deleted ? '' : c.content,
           timestamp: formatTimestamp(c.created_at),
@@ -1278,7 +1283,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             id: c.id,
             author: {
               name: c.is_deleted ? 'Deleted comment' : c.author.full_name,
-              avatar: c.is_deleted ? '' : c.author.avatar_url,
+              avatar_url: c.is_deleted ? '' : c.author.avatar_url,
+              avatar_storage_path: c.is_deleted ? '' : c.author.avatar_storage_path,
             },
             content: c.is_deleted ? '' : c.content,
             timestamp: formatTimestamp(c.created_at),
@@ -1388,7 +1394,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         const [{ data: user }, { data: attachments }] = await Promise.all([
           supabase
             .from('users')
-            .select('full_name, avatar_url')
+            .select('full_name, avatar_url, avatar_storage_path')
             .eq('id', comment.author_id)
             .single(),
           supabase
@@ -1416,7 +1422,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           id: comment.id,
           author: {
             name: comment.is_deleted ? 'Deleted comment' : (user?.full_name || 'Unknown'),
-            avatar: comment.is_deleted ? '' : (user?.avatar_url || ''),
+            avatar_url: comment.is_deleted ? '' : (user?.avatar_url || ''),
+            avatar_storage_path: comment.is_deleted ? '' : (user?.avatar_storage_path || ''),
           },
           content: comment.is_deleted ? '' : comment.content,
           timestamp: formatTimestamp(comment.created_at),
@@ -1477,7 +1484,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                 return {
                   ...c,
                   content: comment.is_deleted ? '' : comment.content,
-                  author: comment.is_deleted ? { name: 'Deleted comment', avatar: '' } : c.author,
+                  author: comment.is_deleted ? { name: 'Deleted comment', avatar_url: '', avatar_storage_path: '' } : c.author,
                   likes: comment.is_deleted ? 0 : (comment.reaction_counts?.like || 0),
                   liked: comment.is_deleted ? false : c.liked,
                   attachments: comment.is_deleted ? [] : c.attachments,
@@ -1493,7 +1500,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                       return {
                         ...r,
                         content: comment.is_deleted ? '' : comment.content,
-                        author: comment.is_deleted ? { name: 'Deleted comment', avatar: '' } : r.author,
+                        author: comment.is_deleted ? { name: 'Deleted comment', avatar_url: '', avatar_storage_path: '' } : r.author,
                         likes: comment.is_deleted ? 0 : (comment.reaction_counts?.like || 0),
                         liked: comment.is_deleted ? false : r.liked,
                         attachments: comment.is_deleted ? [] : r.attachments,
@@ -1625,7 +1632,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         // Fetch user info for the new subscriber
         const { data: user } = await supabase
           .from('users')
-          .select('full_name, email, avatar_url')
+          .select('full_name, email, avatar_url, avatar_storage_path')
           .eq('id', subscription.user_id)
           .single();
 
@@ -2200,7 +2207,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     <h3>About</h3>
                     <div className="author-info">
                       <Avatar
-                        src={post.author.avatar_url}
+                        user={post.author}
+                        size={24}
                         className="author-avatar"
                       />
                       <span className="author-name">{post.author.full_name}</span>
@@ -2239,22 +2247,42 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     <h3>Subscribers</h3>
                     {subscribers.length > 0 ? (
                       <div className="avatar-group">
-                        <Avatar.Group
-                          maxCount={4}
-                          maxStyle={{
-                            color: '#281010',
-                            backgroundColor: '#f5f5f5',
-                            border: '2px solid #fff'
-                          }}
-                        >
-                          {subscribers.map((subscriber, index) => (
+                        <div className="custom-avatar-group">
+                          {subscribers.slice(0, 4).map((subscriber, index) => (
                             <Avatar
                               key={subscriber.user.id || index}
-                              src={subscriber.user.avatar_url}
-                              alt={subscriber.user.full_name}
+                              user={subscriber.user}
+                              size={32}
+                              style={{
+                                marginLeft: index > 0 ? -8 : 0,
+                                border: '2px solid #fff',
+                                zIndex: 4 - index
+                              }}
                             />
                           ))}
-                        </Avatar.Group>
+                          {subscribers.length > 4 && (
+                            <div 
+                              className="avatar-more"
+                              style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: '50%',
+                                backgroundColor: '#f5f5f5',
+                                color: '#281010',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 12,
+                                fontWeight: 'bold',
+                                border: '2px solid #fff',
+                                marginLeft: -8,
+                                zIndex: 0
+                              }}
+                            >
+                              +{subscribers.length - 4}
+                            </div>
+                          )}
+                        </div>
                         <div className="subscribe-export-buttons">
                           <SubscribeButton />
                         </div>
@@ -2282,7 +2310,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             <>
               <div className="mobile-post-header">
                 <Avatar
-                  src={post.author.avatar_url}
+                  user={post.author}
+                  size={40}
                   className="author-avatar"
                 />
                 <span className="author-name">{post.author.full_name}</span>
@@ -2459,7 +2488,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
               <h3>About</h3>
               <div className="author-info">
                 <Avatar
-                  src={post.author.avatar_url}
+                  user={post.author}
+                  size={24}
                   className="author-avatar"
                 />
                 <span className="author-name">{post.author.full_name}</span>
@@ -2494,22 +2524,42 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
               <h3>Subscribers</h3>
               {subscribers.length > 0 ? (
                 <div className="avatar-group">
-                  <Avatar.Group
-                    maxCount={4}
-                    maxStyle={{
-                      color: '#281010',
-                      backgroundColor: '#f5f5f5',
-                      border: '2px solid #fff'
-                    }}
-                  >
-                    {subscribers.map((subscriber, index) => (
+                  <div className="custom-avatar-group">
+                    {subscribers.slice(0, 4).map((subscriber, index) => (
                       <Avatar
                         key={subscriber.user.id || index}
-                        src={subscriber.user.avatar_url}
-                        alt={subscriber.user.full_name}
+                        user={subscriber.user}
+                        size={32}
+                        style={{
+                          marginLeft: index > 0 ? -8 : 0,
+                          border: '2px solid #fff',
+                          zIndex: 4 - index
+                        }}
                       />
                     ))}
-                  </Avatar.Group>
+                    {subscribers.length > 4 && (
+                      <div 
+                        className="avatar-more"
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          backgroundColor: '#f5f5f5',
+                          color: '#281010',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 12,
+                          fontWeight: 'bold',
+                          border: '2px solid #fff',
+                          marginLeft: -8,
+                          zIndex: 0
+                        }}
+                      >
+                        +{subscribers.length - 4}
+                      </div>
+                    )}
+                  </div>
                   <div className="subscribe-export-buttons">
                     <SubscribeButton />
                   </div>

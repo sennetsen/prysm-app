@@ -41,7 +41,21 @@
 .activity-item .activity-avatar {
   flex-shrink: 0;
   margin-top: 2px;
-  border: 1.5px solid #281010
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid #281010;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.activity-item .activity-avatar .avatar-image {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  object-fit: cover;
 }
 
 .activity-content {

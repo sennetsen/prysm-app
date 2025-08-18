@@ -9,9 +9,11 @@ import Sidebar from "./components/features/board/Sidebar";
 import RequestCard from "./components/features/posts/RequestCard";
 import { MentionTest } from "./components/features/comments/MentionTest";
 import "./App.css";
-import { Button, Checkbox, Form, Tooltip, Modal, Avatar, message } from 'antd';
+import { Button, Checkbox, Form, Tooltip, Modal, message } from 'antd';
+import Avatar from './components/shared/Avatar';
 import { lightenColor } from './utils/colorUtils'; // Import the lightenColor function
 import { GoogleSignInButton } from './supabaseClient';
+import { syncUserAvatar } from './utils/avatarUtils';
 import postbutton from './img/postbutton.svg';
 import helpmascot from './img/helpmascot.jpg';
 import { handleSignOut } from './components/shared/UserProfile';
@@ -264,7 +266,7 @@ function BoardView() {
     const fetchBoardData = async () => {
       const { data, error } = await supabase
         .from('boards')
-        .select('*, owner:users(avatar_url, id)')
+        .select('*, owner:users(avatar_url, avatar_storage_path, id)')
         .eq('url_path', boardPath)
         .maybeSingle();
 
@@ -328,6 +330,9 @@ function BoardView() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
+      if (session?.user) {
+        syncUserAvatar(session.user);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -340,7 +345,7 @@ function BoardView() {
       .from('posts')
       .select(`
         *,
-        author:users(full_name, avatar_url, email, created_at),
+        author:users(full_name, avatar_url, avatar_storage_path, email, created_at),
         reactions(reaction_type, user_id)
       `)
       .eq('board_id', boardData.id);
@@ -468,7 +473,7 @@ function BoardView() {
           .from('posts')
           .select(`
             *,
-            author:users(full_name, avatar_url),
+            author:users(full_name, avatar_url, avatar_storage_path),
             reactions(reaction_type, user_id)
           `)
           .eq('id', payload.new.id)
@@ -1157,9 +1162,10 @@ function BoardView() {
           <div className="contact-card-popup">
             <button className="close-popup" onClick={handleContactCardClose}>&times;</button>
             <div className="profile-picture">
-              <img
-                src={contactCardData.is_anonymous && !isBoardOwner ? fallbackImg : contactCardData.author?.avatar_url || fallbackImg}
-                alt="Profile"
+              <Avatar
+                user={contactCardData.author}
+                size={80}
+                className="profile-pic"
               />
             </div>
             <div className="contact-info">

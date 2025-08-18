@@ -107,6 +107,23 @@
   z-index: 2;
 }
 
+/* Ensure Avatar component inside .avatar maintains styling */
+.avatar.avatar-image {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 50% !important;
+  border: 2px solid white !important;
+  margin-right: -10px !important;
+  position: relative !important;
+  z-index: 1 !important;
+  transition: transform 0.2s ease !important;
+}
+
+.avatar.avatar-image:hover {
+  transform: scale(1.1) !important;
+  z-index: 2 !important;
+}
+
 .more-requests {
   z-index: 1;
   font-size: 10px;
