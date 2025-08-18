@@ -278,7 +278,15 @@ export default React.memo(
                     icon={<MessageOutlined />}
                     onClick={(e) => {
                       e.stopPropagation(); // Stop event propagation
-                      // The card click will handle opening the post popup
+                      // Open the post popup when comment button is clicked
+                      onPostClick({
+                        id,
+                        title,
+                        content,
+                        author,
+                        created_at,
+                        attachments
+                      });
                     }}
                     className="custom-comment-button"
                   >
@@ -291,7 +299,15 @@ export default React.memo(
                   icon={<MessageOutlined />}
                   onClick={(e) => {
                     e.stopPropagation(); // Stop event propagation
-                    // The card click will handle opening the post popup
+                    // Open the post popup when comment button is clicked
+                    onPostClick({
+                      id,
+                      title,
+                      content,
+                      author,
+                      created_at,
+                      attachments
+                    });
                   }}
                   className="custom-comment-button"
                 >
