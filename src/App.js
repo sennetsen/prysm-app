@@ -217,10 +217,10 @@ function BoardView() {
   const [totalRequests, setTotalRequests] = useState(0);
   const [cards, setCards] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newPostContent, setNewPostContent] = useState("");
   const [newPostTitle, setNewPostTitle] = useState("");
+  const [newPostContent, setNewPostContent] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [modalColor, setModalColor] = useState("#fff");
+  const [modalColor, setModalColor] = useState("#FEEAA4");
   const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
   const [isQuestionPopupOpen, setIsQuestionPopupOpen] = useState(false);
   const [isBoardOwner, setIsBoardOwner] = useState(false);
@@ -237,6 +237,7 @@ function BoardView() {
   const [postFileList, setPostFileList] = useState([]);
   const [sortType, setSortType] = useState('new'); // Add sort state
   const [isLoadingDirectPost, setIsLoadingDirectPost] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Sort handler function
   const handleSortChange = (newSortType) => {
@@ -585,6 +586,7 @@ function BoardView() {
     setIsAnonymous(false);
     setPostFileList([]);
     setModalColor(postColors[Math.floor(Math.random() * postColors.length)]);
+    setIsSubmitting(false); // Reset loading state
 
     // Clean up file previews
     postFileList.forEach(file => {
@@ -596,6 +598,8 @@ function BoardView() {
 
   const handlePostSubmit = async () => {
     if (newPostContent.trim() && newPostTitle.trim()) {
+      setIsSubmitting(true); // Set loading state
+      
       const postData = {
         title: newPostTitle.trim(),
         content: newPostContent.trim(),
@@ -617,6 +621,7 @@ function BoardView() {
 
       if (error) {
         console.error('Error adding post:', error);
+        setIsSubmitting(false); // Clear loading state on error
         return;
       }
 
@@ -635,6 +640,29 @@ function BoardView() {
           }
         }
 
+        // Auto-subscribe the author to their own post
+        // This ensures authors get notified about comments and activity on their posts
+        try {
+          const { error: subscribeError } = await supabase
+            .from('subscriptions')
+            .upsert([{
+              user_id: user.id,
+              post_id: postId
+            }], {
+              onConflict: 'user_id,post_id' // Use upsert to prevent duplicates
+            });
+
+          if (subscribeError) {
+            console.warn('Failed to auto-subscribe author to post:', subscribeError);
+            // Don't show error to user since this is automatic
+          } else {
+            console.log('Author automatically subscribed to their post');
+          }
+        } catch (subscribeErr) {
+          console.warn('Error auto-subscribing author to post:', subscribeErr);
+          // Don't show error to user since this is automatic
+        }
+
         // Initialize reactions as an empty array
         const newPost = {
           ...data[0],
@@ -645,14 +673,20 @@ function BoardView() {
           },
           reactions: []
         };
-        setCards(prevCards => [...prevCards, newPost]);
+        setCards(prevCards => [newPost, ...prevCards]); // Add new post at the beginning
         setTotalPosts(prev => prev + 1);
         setTotalRequests(prev => prev + 1);
+        
+        // Show success notification
+        message.success('Post submitted!');
+        
         handleModalClose();
       } else {
         console.error('No data returned from insert operation');
       }
     }
+    
+    setIsSubmitting(false); // Clear loading state
   };
 
   const handleOutsideClick = (e) => {
@@ -1083,6 +1117,7 @@ function BoardView() {
                 onClick={handleFileAttachment}
                 title="Attach files"
                 type="button"
+                disabled={isSubmitting}
               >
                 <PaperClipOutlined />
               </button>
@@ -1091,9 +1126,9 @@ function BoardView() {
                 <button
                   className="post-button"
                   onClick={handlePostSubmit}
-                  disabled={!newPostContent.trim() || !newPostTitle.trim()}
+                  disabled={!newPostContent.trim() || !newPostTitle.trim() || isSubmitting}
                 >
-                  Request
+                  {isSubmitting ? 'Requesting...' : 'Request'}
                 </button>
               </div>
             </div>
