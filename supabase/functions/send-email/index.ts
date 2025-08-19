@@ -52,7 +52,16 @@ function generateEmailHTML(
   activityData: any,
   boardCreatorEmail?: string
 ): string {
-  const postUrl = `${Deno.env.get('SITE_URL') || 'https://prysmapp.com'}/${boardPath}/posts/${postId}`
+  // Generate slug from post title for better SEO
+  const slug = postTitle
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .substring(0, 60);
+  
+  const postUrl = `${Deno.env.get('SITE_URL') || 'https://prysmapp.com'}/${boardPath}/posts/${postId}${slug ? `/${slug}` : ''}`;
   
   let activityText = ''
   let highlightClass = ''

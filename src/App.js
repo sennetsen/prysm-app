@@ -23,6 +23,7 @@ import { PostPopup } from './components/features/posts/PostPopup';
 import { notifyPostLike } from './utils/notificationService';
 import './components/features/posts/PostPopup.css';
 import { PaperClipOutlined, CloseOutlined, FileOutlined } from '@ant-design/icons';
+import { generatePostUrl } from './utils/slugUtils';
 
 // Add this function after the imports and before the BoardView component
 async function uploadPostAttachment(file, postId, authorId) {
@@ -423,6 +424,15 @@ function BoardView() {
           ...directPost,
           board_id: boardData?.id
         });
+        
+        // Check if we need to redirect to include the slug for better SEO
+        const currentPath = window.location.pathname;
+        const expectedPath = generatePostUrl(boardPath, postId, directPost.title);
+        
+        if (currentPath !== expectedPath) {
+          // Redirect to the full URL with slug for better SEO
+          navigate(expectedPath, { replace: true });
+        }
       } else {
         // Invalid post ID - redirect to board URL
         navigate(`/${boardPath}`);
@@ -941,8 +951,9 @@ function BoardView() {
       board_id: boardData?.id
     });
 
-    // Navigate to the post URL using React Router
-    navigate(`/${boardPath}/posts/${post.id}`);
+    // Navigate to the post URL with slug using React Router
+    const postUrl = generatePostUrl(boardPath, post.id, post.title);
+    navigate(postUrl);
   };
 
   // Added function to update likes in the board view from a post popup
@@ -1295,7 +1306,7 @@ function App() {
           {/* Root path removed - Vercel redirects / to home.prysmapp.com */}
           <Route path="/mention-test" element={<MentionTest />} />
           <Route path="/posts/*" element={<Navigate to="/" />} />
-          <Route path="/:boardPath/posts/:postId" element={<BoardView />} />
+          <Route path="/:boardPath/posts/:postId/:slug?" element={<BoardView />} />
           <Route path="/:boardPath/*" element={<BoardRedirect />} />
           <Route path="/:boardPath" element={<BoardView />} />
           <Route path="*" element={<Navigate to="/" />} />

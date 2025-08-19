@@ -16,6 +16,25 @@ interface NotificationPayload {
   boardCreatorEmail?: string
 }
 
+// Generate slug from post title for better SEO
+function generateSlug(title: string): string {
+  if (!title) return '';
+  
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .substring(0, 60);
+}
+
+// Generate post URL with slug
+function generatePostUrl(boardPath: string, postId: string, title: string): string {
+  const slug = generateSlug(title);
+  return `/${boardPath}/posts/${postId}${slug ? `/${slug}` : ''}`;
+}
+
 // Send notification via Supabase Edge Function
 export async function sendNotification(payload: NotificationPayload): Promise<boolean> {
   try {
