@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, Button, message } from 'antd';
 import { Avatar } from '../../shared';
 import { CommentThread } from '../comments/CommentThread';
+import { notifyNewComment, notifyBoardCreatorActivity, NOTIFICATION_TYPES } from '../../../utils/notificationService';
 
 import {
   HeartOutlined,
@@ -563,6 +564,34 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             reaction_counts: { ...commentData.reaction_counts, like: newCount }
           })
           .eq('id', commentId);
+
+        // Send notification if board creator liked a comment
+        try {
+          const isBoardCreatorLike = currentUser.email === boardEmail;
+          if (isBoardCreatorLike && boardEmail) {
+            const currentPath = window.location.pathname;
+            const pathParts = currentPath.split('/');
+            const boardPath = pathParts[1];
+            
+            if (boardPath) {
+              await notifyBoardCreatorActivity(
+                post.id,
+                NOTIFICATION_TYPES.BOARD_CREATOR_LIKE,
+                {
+                  commentId: commentId,
+                  commentAuthorName: comment.author.name || comment.author.full_name || 'Unknown',
+                  board_creator_id: currentUser.id
+                },
+                boardPath,
+                post.title || 'Untitled Post',
+                boardEmail
+              );
+            }
+          }
+        } catch (notificationError) {
+          console.error('Error sending board creator like notification:', notificationError);
+          // Don't fail the like operation if notifications fail
+        }
       } else {
         // Add like
         await supabase
@@ -614,7 +643,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       );
       message.error('Failed to update like status');
     }
-  }, [currentUser, comments, onRequireSignIn]);
+  }, [currentUser, comments, onRequireSignIn, boardEmail]);
 
   const handleDeleteComment = useCallback(async (commentId: number) => {
     try {
@@ -786,6 +815,57 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
       // 4. Refresh comments to get proper sorting with updated session data
       fetchComments(updatedSessionSet);
+
+      // 5. Send email notifications to subscribers
+      try {
+        // Get board path for email links
+        const currentPath = window.location.pathname;
+        const pathParts = currentPath.split('/');
+        const boardPath = pathParts[1]; // Extract board path from URL
+        
+        // Ensure required values exist
+        if (!boardPath) {
+          console.warn('Could not extract board path for notifications');
+          return { success: true, commentId, attachments: uploadedAttachments };
+        }
+        
+        const postTitle = post.title || 'Untitled Post';
+        
+        // Check if this is a board creator comment
+        const isBoardCreatorComment = currentUser.email === boardEmail;
+        
+        if (isBoardCreatorComment && boardEmail) {
+          // Special notification for board creator comments
+          await notifyBoardCreatorActivity(
+            post.id,
+            NOTIFICATION_TYPES.BOARD_CREATOR_COMMENT,
+            {
+              id: commentId,
+              board_creator_id: currentUser.id,
+              content: commentData.content
+            },
+            boardPath,
+            postTitle,
+            boardEmail
+          );
+        } else {
+          // Regular comment notification
+          await notifyNewComment(
+            post.id,
+            {
+              id: commentId,
+              author_id: currentUser.id,
+              author_name: currentUser.user_metadata?.full_name || currentUser.email,
+              content: commentData.content
+            },
+            boardPath,
+            postTitle
+          );
+        }
+      } catch (notificationError) {
+        console.error('Error sending notifications:', notificationError);
+        // Don't fail the comment creation if notifications fail
+      }
 
       return { success: true, commentId, attachments: uploadedAttachments };
     } catch (error) {

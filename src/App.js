@@ -20,6 +20,7 @@ import { handleSignOut } from './components/shared/UserProfile';
 import fallbackImg from './img/fallback.png';
 import mailicon from './img/mail.svg';
 import { PostPopup } from './components/features/posts/PostPopup';
+import { notifyPostLike } from './utils/notificationService';
 import './components/features/posts/PostPopup.css';
 import { PaperClipOutlined, CloseOutlined, FileOutlined } from '@ant-design/icons';
 
@@ -810,6 +811,30 @@ function BoardView() {
             reaction_counts: { ...postData.reaction_counts, like: newCount }
           })
           .eq('id', postId);
+
+        // Send notification to post author about the new like
+        try {
+          const currentPath = window.location.pathname;
+          const boardPath = currentPath.split('/')[1]; // Extract board path from URL
+          
+          // Get post details for notification
+          const { data: postData } = await supabase
+            .from('posts')
+            .select('title, author_id')
+            .eq('id', postId)
+            .single();
+          
+          if (postData && postData.author_id !== user.id) { // Don't notify if user likes their own post
+            await notifyPostLike(
+              postId,
+              postData.title || 'Untitled Post',
+              boardPath
+            );
+          }
+        } catch (notificationError) {
+          console.error('Error sending like notification:', notificationError);
+          // Don't fail the like operation if notifications fail
+        }
       }
 
       // Update local state without sorting
