@@ -300,6 +300,8 @@ function BoardView() {
     }
   }, [boardData?.creator_name, boardData?.title]);
 
+
+
   useEffect(() => {
     // Update the meta theme color
     const metaThemeColor = document.querySelector("meta[name='theme-color']");
@@ -425,6 +427,11 @@ function BoardView() {
           board_id: boardData?.id
         });
         
+        // Update title for direct post URL
+        if (boardData?.creator_name && boardData?.title && directPost.title) {
+          document.title = `${directPost.title} | ${boardData.title} | ${boardData.creator_name} | Prysm`;
+        }
+        
         // Check if we need to redirect to include the slug for better SEO
         const currentPath = window.location.pathname;
         const expectedPath = generatePostUrl(boardPath, postId, directPost.title);
@@ -454,14 +461,17 @@ function BoardView() {
       const isPostPath = currentPath.includes('/posts/');
 
       if (!isPostPath) {
-        // No post in URL, close the popup
+        // No post in URL, close the popup and restore board title
         setSelectedPost(null);
+        if (boardData?.creator_name && boardData?.title) {
+          document.title = `${boardData.title} | ${boardData.creator_name} | Prysm`;
+        }
       }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [boardData?.creator_name, boardData?.title]);
 
   // Re-sort cards when sort type changes
   useEffect(() => {
@@ -995,9 +1005,15 @@ function BoardView() {
   // Stable onClose function for PostPopup
   const handlePostPopupClose = useCallback(() => {
     setSelectedPost(null);
+    
+    // Restore board title when post popup closes
+    if (boardData?.creator_name && boardData?.title) {
+      document.title = `${boardData.title} | ${boardData.creator_name} | Prysm`;
+    }
+    
     // Navigate back to the board
     navigate(`/${boardPath}`);
-  }, [navigate, boardPath]);
+  }, [navigate, boardPath, boardData?.creator_name, boardData?.title]);
 
   const toggleSidebar = () => setIsSidebarHidden((h) => !h);
 
