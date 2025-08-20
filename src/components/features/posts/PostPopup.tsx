@@ -68,7 +68,7 @@ interface Attachment {
 }
 
 interface Comment {
-  id: number;
+  id: string;
   author: {
     name: string;
     avatar_url?: string;
@@ -214,7 +214,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const popupContainerRef = useRef<HTMLDivElement>(null);
   const [showMobileInfo, setShowMobileInfo] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [userCommentsThisSession, setUserCommentsThisSession] = useState<Set<number>>(new Set());
+  const [userCommentsThisSession, setUserCommentsThisSession] = useState<Set<string>>(new Set());
   const [isMobileInputExpanded, setIsMobileInputExpanded] = useState(false);
   const [isActionButtonClicked, setIsActionButtonClicked] = useState(false);
   const [replyingToComment, setReplyingToComment] = useState<string | null>(null); // Track which comment we're replying to
@@ -224,7 +224,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [isFileUploading, setIsFileUploading] = useState(false);
   const [hasContent, setHasContent] = useState(false); // Track if user has typed content
-  const [newCommentIds, setNewCommentIds] = useState<Set<number>>(new Set()); // Track new comments for animation
+  const [newCommentIds, setNewCommentIds] = useState<Set<string>>(new Set()); // Track new comments for animation
 
   // Initialize likeCount from post.likes or post.likesCount
   const [likeCount, setLikeCount] = useState(post.reaction_counts?.like ?? 0);
@@ -502,19 +502,25 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   };
 
-  const handleCommentLike = useCallback(async (commentId: number) => {
+  const handleCommentLike = useCallback(async (commentId: string) => {
     if (!currentUser) {
       onRequireSignIn();
       return;
     }
 
+    console.log('🔄 handleCommentLike called for comment:', commentId, 'Current user:', currentUser.id);
+
     // Find the comment in state
     const comment = comments.find(c => c.id === commentId) ||
       comments.flatMap(c => c.replies || []).find(r => r.id === commentId);
 
-    if (!comment) return;
+    if (!comment) {
+      console.error('❌ Comment not found in state:', commentId);
+      return;
+    }
 
     const isLiked = comment.liked;
+    console.log('📊 Comment current state - liked:', isLiked, 'likes count:', comment.likes);
 
     // Optimistically update UI
     setComments(prevComments =>
@@ -538,8 +544,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
     try {
       if (isLiked) {
-        // Remove like
-        await supabase
+        console.log('🗑️ Removing like for comment:', commentId);
+        
+        // Remove like - delete from comment_reactions table
+        const { error: deleteError } = await supabase
           .from('comment_reactions')
           .delete()
           .eq('post_id', post.id)
@@ -547,23 +555,40 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           .eq('user_id', currentUser.id)
           .eq('reaction_type', 'like');
 
-        // Decrement like count in comments table
+        if (deleteError) {
+          console.error('❌ Error deleting comment reaction:', deleteError);
+          throw deleteError;
+        }
+        console.log('✅ Comment reaction deleted successfully');
+
+        // Update reaction_counts in comments table
         const { data: commentData, error: commentError } = await supabase
           .from('comments')
           .select('reaction_counts')
           .eq('id', commentId)
           .single();
 
-        if (commentError) throw commentError;
+        if (commentError) {
+          console.error('❌ Error fetching comment data:', commentError);
+          throw commentError;
+        }
+        
         const currentCount = commentData.reaction_counts?.like || 0;
         const newCount = Math.max(0, currentCount - 1);
+        console.log('📊 Updating comment reaction count from', currentCount, 'to', newCount);
 
-        await supabase
+        const { error: updateError } = await supabase
           .from('comments')
           .update({
             reaction_counts: { ...commentData.reaction_counts, like: newCount }
           })
           .eq('id', commentId);
+
+        if (updateError) {
+          console.error('❌ Error updating comment reaction counts:', updateError);
+          throw updateError;
+        }
+        console.log('✅ Comment reaction counts updated successfully');
 
         // Send notification if board creator liked a comment
         try {
@@ -593,8 +618,10 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           // Don't fail the like operation if notifications fail
         }
       } else {
-        // Add like
-        await supabase
+        console.log('❤️ Adding like for comment:', commentId);
+        
+        // Add like - insert into comment_reactions table
+        const { error: insertError } = await supabase
           .from('comment_reactions')
           .insert([{
             post_id: post.id,
@@ -603,25 +630,43 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             reaction_type: 'like'
           }]);
 
-        // Increment like count in comments table
+        if (insertError) {
+          console.error('❌ Error inserting comment reaction:', insertError);
+          throw insertError;
+        }
+        console.log('✅ Comment reaction inserted successfully');
+
+        // Update reaction_counts in comments table
         const { data: commentData, error: commentError } = await supabase
           .from('comments')
           .select('reaction_counts')
           .eq('id', commentId)
           .single();
 
-        if (commentError) throw commentError;
+        if (commentError) {
+          console.error('❌ Error fetching comment data:', commentError);
+          throw commentError;
+        }
+        
         const currentCount = commentData.reaction_counts?.like || 0;
         const newCount = currentCount + 1;
+        console.log('📊 Updating comment reaction count from', currentCount, 'to', newCount);
 
-        await supabase
+        const { error: updateError } = await supabase
           .from('comments')
           .update({
             reaction_counts: { ...commentData.reaction_counts, like: newCount }
           })
           .eq('id', commentId);
+
+        if (updateError) {
+          console.error('❌ Error updating comment reaction counts:', updateError);
+          throw updateError;
+        }
+        console.log('✅ Comment reaction counts updated successfully');
       }
     } catch (error) {
+      console.error('💥 Error handling comment like:', error);
       // Revert optimistic update on error
       setComments(prevComments =>
         prevComments.map(c => {
@@ -643,9 +688,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       );
       message.error('Failed to update like status');
     }
-  }, [currentUser, comments, onRequireSignIn, boardEmail]);
+  }, [currentUser, comments, onRequireSignIn, boardEmail, post.id]);
 
-  const handleDeleteComment = useCallback(async (commentId: number) => {
+  const handleDeleteComment = useCallback(async (commentId: string) => {
     try {
       // Soft delete the comment
       const { error: updateError } = await supabase
@@ -721,7 +766,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const createCommentWithAttachments = useCallback(async (
     commentData: {
       content: string;
-      parentCommentId?: string | number;
+      parentCommentId?: string;
       files: File[];
     }
   ) => {
@@ -924,7 +969,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
   }, [isSubmitting, commentText, fileList, createCommentWithAttachments, isMobile, onRequireSignIn]);
 
-  const handleAddReply = useCallback(async (parentId: number | string, reply: Comment) => {
+  const handleAddReply = useCallback(async (parentId: string, reply: Comment) => {
     if (!currentUser) {
       onRequireSignIn();
       return;
@@ -1308,15 +1353,22 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   };
 
   // Refactor fetchComments to nest replies
-  const fetchComments = async (updatedSessionSet?: Set<number>) => {
+  const fetchComments = async (updatedSessionSet?: Set<string>) => {
+    console.log('🔄 fetchComments called, updatedSessionSet:', updatedSessionSet);
+    
     // Use the updated session set if provided, otherwise use current state
     const currentSessionSet = updatedSessionSet || userCommentsThisSession;
+    console.log('📊 Using session set:', currentSessionSet);
+    
     // Fetch all comments for the post
     const { data: commentsData, error: commentsError } = await supabase
       .from('comments')
       .select(`*, author:users(full_name, avatar_url, avatar_storage_path), reaction_counts`)
       .eq('post_id', post.id)
       .order('created_at', { ascending: false });
+
+    console.log('📝 Fetched comments data:', commentsData);
+    console.log('❌ Comments error:', commentsError);
 
     // Fetch attachments for all comments
     let attachmentsData: any[] = [];
@@ -1342,12 +1394,15 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         .eq('post_id', post.id)
         .eq('user_id', currentUser.id);
       userReactions = reactionsData || [];
+      console.log('❤️ User reactions for this post:', userReactions);
     }
 
     if (!commentsError && commentsData) {
       // Separate top-level comments and replies (include deleted comments)
       const topLevel = commentsData.filter((c: any) => !c.parent_comment_id);
       const replies = commentsData.filter((c: any) => c.parent_comment_id);
+
+      console.log('📊 Top level comments:', topLevel.length, 'Replies:', replies.length);
 
       // Helper to format timestamp
       const formatTimestamp = (created_at: string) => {
@@ -1364,10 +1419,15 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       };
 
       // Build a map for quick lookup
-      const commentMap: { [key: number]: any } = {};
+      const commentMap: { [key: string]: any } = {};
       topLevel.forEach((c: any) => {
         // Find attachments for this comment
         const commentAttachments = attachmentsData.filter(att => att.parent_id === c.id);
+        
+        const reactionCount = c.reaction_counts?.like || 0;
+        const isLiked = !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like');
+        
+        console.log(`📝 Comment ${c.id}: reaction_count=${reactionCount}, isLiked=${isLiked}`);
 
         commentMap[c.id] = {
           id: c.id,
@@ -1379,8 +1439,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           content: c.is_deleted ? '' : c.content,
           timestamp: formatTimestamp(c.created_at),
           created_at: c.created_at, // Keep raw timestamp for sorting
-          likes: c.is_deleted ? 0 : (c.reaction_counts?.like || 0),
-          liked: c.is_deleted ? false : !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like'),
+          likes: c.is_deleted ? 0 : reactionCount,
+          liked: c.is_deleted ? false : isLiked,
           replies: [],
           attachments: c.is_deleted ? [] : commentAttachments,
           is_deleted: c.is_deleted || false,
@@ -1392,6 +1452,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         if (parent) {
           // Find attachments for this reply
           const replyAttachments = attachmentsData.filter(att => att.parent_id === c.id);
+          
+          const reactionCount = c.reaction_counts?.like || 0;
+          const isLiked = !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like');
+          
+          console.log(`💬 Reply ${c.id}: reaction_count=${reactionCount}, isLiked=${isLiked}`);
 
           parent.replies.push({
             id: c.id,
@@ -1403,8 +1468,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             content: c.is_deleted ? '' : c.content,
             timestamp: formatTimestamp(c.created_at),
             created_at: c.created_at, // Keep raw timestamp for sorting
-            likes: c.is_deleted ? 0 : (c.reaction_counts?.like || 0),
-            liked: c.is_deleted ? false : !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like'),
+            likes: c.is_deleted ? 0 : reactionCount,
+            liked: c.is_deleted ? false : isLiked,
             attachments: c.is_deleted ? [] : replyAttachments,
             is_deleted: c.is_deleted || false,
           });
@@ -1484,6 +1549,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
   useEffect(() => {
     if (isOpen) {
+      console.log('🚀 PostPopup opened, fetching comments for post:', post.id);
       fetchComments();
       fetchSubscriptionState(); // Fetch subscription state on open
     }
@@ -1555,8 +1621,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
         // Add to session set if it's a new comment from current user
         if (currentUser && user?.full_name === currentUser.user_metadata?.full_name) {
-          const updatedSessionSet = new Set([...userCommentsThisSession, comment.id]);
-          setUserCommentsThisSession(updatedSessionSet);
+          setUserCommentsThisSession(prev => new Set([...prev, comment.id]));
         }
 
         // Update comments state
@@ -2060,6 +2125,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       </div>
     );
   };
+
+
 
   return (
     <>

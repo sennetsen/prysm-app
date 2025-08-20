@@ -9,19 +9,19 @@ interface CommentThreadProps {
   postId: string;
   currentUser: any;
   comments: Comment[];
-  onLike: (commentId: number) => void;
-  onAddReply?: (parentId: number, reply: Comment) => void;
-  onDelete?: (commentId: number) => void;
+  onLike: (commentId: string) => void;
+  onAddReply?: (parentId: string, reply: Comment) => void;
+  onDelete?: (commentId: string) => void;
   onReplyClick?: (commentId: string) => void; // New prop for unified reply system
   replyingToComment?: string | null; // ID of comment being replied to
-  userCommentsThisSession?: Set<number>;
+  userCommentsThisSession?: Set<string>;
   onRequireSignIn?: () => void;
   isSubmitting?: boolean; // Add loading state prop
   isFileUploading?: boolean; // Add file upload loading state prop
 }
 
 interface Comment {
-  id: number;
+  id: string;
   author: {
     name: string;
     avatar_url?: string;
@@ -61,12 +61,19 @@ export const CommentThread = React.memo(function CommentThread({
   isSubmitting, // Add loading state prop
   isFileUploading // Add file upload loading state prop
 }: CommentThreadProps) {
-  const [replyingToId, setReplyingToId] = useState<number | null>(null);
+  console.log('🔄 CommentThread rendered with props:', {
+    postId,
+    currentUserId: currentUser?.id,
+    commentsCount: comments.length,
+    comments: comments.map(c => ({ id: c.id, likes: c.likes, liked: c.liked })),
+    userCommentsThisSession: Array.from(userCommentsThisSession)
+  });
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [replyAttachments, setReplyAttachments] = useState<File[]>([]);
   const [localComments, setLocalComments] = useState<Comment[]>(comments);
-  const [minimizedComments, setMinimizedComments] = useState<number[]>([]);
-  const [expandedReplies, setExpandedReplies] = useState<number[]>([]);
+  const [minimizedComments, setMinimizedComments] = useState<string[]>([]);
+  const [expandedReplies, setExpandedReplies] = useState<string[]>([]);
   const replyFileInputRef = useRef<HTMLInputElement>(null);
   const replyInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -85,14 +92,14 @@ export const CommentThread = React.memo(function CommentThread({
     window.open(attachmentUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const handleReplyClick = (commentId: number) => {
+  const handleReplyClick = (commentId: string) => {
     if (!currentUser && onRequireSignIn) {
       onRequireSignIn();
       return;
     }
     if (isMobile && onReplyClick) {
       // Use unified mobile input system
-      onReplyClick(commentId.toString());
+      onReplyClick(commentId);
     } else {
       // Use desktop inline reply system
       setReplyingToId(commentId);
@@ -124,16 +131,16 @@ export const CommentThread = React.memo(function CommentThread({
     }
   };
 
-  const handleSubmitReply = (parentId: number) => {
+  const handleSubmitReply = (parentId: string) => {
     if (!replyText.trim() && replyAttachments.length === 0) return;
 
     // Generate a unique ID for the new reply
     const maxId = Math.max(
-      ...localComments.map(c => c.id),
-      ...localComments.flatMap(c => c.replies?.map(r => r.id) || []),
+      ...localComments.map(c => parseInt(c.id) || 0),
+      ...localComments.flatMap(c => c.replies?.map(r => parseInt(r.id) || 0) || []),
       0
     );
-    const newReplyId = maxId + 1;
+    const newReplyId = (maxId + 1).toString();
 
     // Create the new reply
     const newReply: Comment = {
@@ -179,7 +186,7 @@ export const CommentThread = React.memo(function CommentThread({
     setReplyingToId(null);
   };
 
-  const handleDeleteComment = (commentId: number) => {
+  const handleDeleteComment = (commentId: string) => {
     // Update local state to mark as deleted instead of removing
     setLocalComments(prevComments =>
       prevComments.map(comment => {
@@ -225,7 +232,7 @@ export const CommentThread = React.memo(function CommentThread({
     }
   };
 
-  const toggleMinimize = (commentId: number) => {
+  const toggleMinimize = (commentId: string) => {
     setMinimizedComments(prevMinimized => {
       if (prevMinimized.includes(commentId)) {
         // If already minimized, remove from array (expand)
@@ -315,7 +322,7 @@ export const CommentThread = React.memo(function CommentThread({
     }
   };
 
-  const toggleReplies = (commentId: number) => {
+  const toggleReplies = (commentId: string) => {
     setExpandedReplies(prev =>
       prev.includes(commentId)
         ? prev.filter(id => id !== commentId)
@@ -350,8 +357,16 @@ export const CommentThread = React.memo(function CommentThread({
 
     const isMinimized = minimizedComments.includes(comment.id);
 
+    console.log(`🎨 Rendering comment ${comment.id}:`, {
+      isReply,
+      isDeleted,
+      likes: comment.likes,
+      liked: comment.liked,
+      author: comment.author.name
+    });
+
     return (
-      <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''} ${isDeleted ? 'deleted-comment' : ''} ${replyingToComment === comment.id.toString() ? 'replying-to' : ''} ${comment.isNew ? 'new-comment' : ''}`}>
+      <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''} ${isDeleted ? 'deleted-comment' : ''} ${replyingToComment === comment.id ? 'replying-to' : ''} ${comment.isNew ? 'new-comment' : ''}`}>
         <div className="comment-avatar">
           <Avatar user={comment.author} size={isDeleted ? 26 : 36} />
         </div>
