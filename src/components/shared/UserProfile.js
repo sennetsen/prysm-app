@@ -1,5 +1,6 @@
 import React from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
+import Avatar from './Avatar';
 
 export const handleSignOut = async (onSignOut, user) => {
   try {
@@ -33,9 +34,12 @@ export const handleSignOut = async (onSignOut, user) => {
 };
 
 function UserProfile({ user, onSignOut, totalUserRequests }) {
-  // Fallback to first letter of name if no avatar
-  const getInitial = () => {
-    return user.user_metadata.name ? user.user_metadata.name[0].toUpperCase() : '?';
+  // Create a user object for the Avatar component
+  const avatarUser = {
+    full_name: user.user_metadata.name,
+    avatar_url: user.user_metadata.picture,
+    avatar_storage_path: user.user_metadata.avatar_storage_path,
+    id: user.id
   };
 
   return (
@@ -44,34 +48,13 @@ function UserProfile({ user, onSignOut, totalUserRequests }) {
       alignItems: 'center',
       gap: '15px'
     }}>
-      {user.user_metadata.picture ? (
-        <img
-          src={user.user_metadata.picture}
-          alt="Profile"
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            border: '2px solid white'
-          }}
-        />
-      ) : (
-        <div style={{
-          width: '36px',
-          height: '36px',
-          borderRadius: '50%',
-          border: '2px solid white',
-          backgroundColor: '#ffffff33',
-          color: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '1.2rem',
-          fontWeight: '500'
-        }}>
-          {getInitial()}
-        </div>
-      )}
+      <Avatar
+        user={avatarUser}
+        size={36}
+        style={{
+          border: '2px solid white'
+        }}
+      />
       <span style={{
         color: 'white',
         fontSize: '1.1rem',

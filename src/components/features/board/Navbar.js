@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from "react";
 import "./Navbar.css";
-import logo from "../img/Vector (1).svg";
-import helpIcon from "../img/Vector.svg";
-import shareIcon from "../img/Icon.svg";
-import fallbackImg from '../img/fallback.png';
-import { supabase } from "../supabaseClient";
-import { Link } from "react-router-dom";
+import vector1 from '../../../img/Vector (1).svg';
+import vector from '../../../img/Vector.svg';
+import fallbackImg from '../../../img/fallback.png';
+import { supabase } from "../../../supabaseClient";
+import { ShareAltOutlined } from '@ant-design/icons';
 
-function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, onShare, profileRef }) {
+function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, onShare, profileRef, onSortChange }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [user, setUser] = useState(null);
+  const [sortType, setSortType] = useState('new'); // Add state for sort type
+
   const handleLinkClick = () => {
     window.location.href = '/';
+  };
+
+  const handleSortChange = (type) => {
+    setSortType(type);
+    if (onSortChange) {
+      onSortChange(type);
+    }
   };
 
   const navbarStyle = {
@@ -49,14 +57,14 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
   return (
     <nav style={navbarStyle} className={`navbar ${isScrolled ? "scrolled" : ""}`}>
       <a href="/" onClick={handleLinkClick}>
-        <img src={logo} alt="Logo" className="logo" />
+        <img src={vector1} alt="Logo" className="logo" />
       </a>
       <div className="navbar-title-container">
         <div className="navbar-title">{title || "Request Board"}</div>
       </div>
       <div className="navbar-icons">
         <button className="question-icon" onClick={onQuestionClick}>
-          <img src={helpIcon} alt="Help Icon" />
+          <img src={vector} alt="Help Icon" />
         </button>
         {!user && (
           <button className="join-button" onClick={onJoinClick}>
@@ -65,7 +73,7 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
         )}
         {user && (
           <div style={{ position: 'relative' }} ref={profileRef}>
-            <button className="profile-icon" onClick={onProfileClick} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+            <button className="profile-icon" onClick={onProfileClick} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               {user?.user_metadata?.picture ? (
                 <img
                   src={user.user_metadata.picture}
@@ -108,11 +116,26 @@ function Navbar({ onProfileClick, onQuestionClick, onJoinClick, title, color, on
             </button>
           </div>
         )}
+        <div className={`sort-toggle ${sortType === 'top' ? 'toggled' : ''}`}>
+          <div className="toggle-slider" style={{ backgroundColor: color || "#b43144" }}></div>
+          <button
+            className="toggle-option"
+            onClick={() => handleSortChange('new')}
+          >
+            New
+          </button>
+          <button
+            className="toggle-option"
+            onClick={() => handleSortChange('top')}
+          >
+            Top
+          </button>
+        </div>
 
         <div className="divider"></div>
         <button className="share-button" onClick={onShare}>
-          <img src={shareIcon} alt="Share" />
-          Share
+          <ShareAltOutlined />
+          <span className="share-text">Share</span>
         </button>
       </div>
     </nav>

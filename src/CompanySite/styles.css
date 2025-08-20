@@ -80,7 +80,7 @@ nav button {
   padding: 8px 16px;
   align-items: center;
   border: none;
-  min-height: 36px;
+  /* min-height: 36px; */
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.1s ease;
 }
@@ -422,11 +422,11 @@ nav li {
   position: relative;
 }
 
-.left-column {
+.ani-left-column {
   animation: scrollDown 20s linear infinite;
 }
 
-.right-column {
+.ani-right-column {
   animation: scrollUp 20s linear infinite;
 }
 
@@ -811,7 +811,7 @@ nav li {
   .description-text {
     white-space: normal;
     word-wrap: break-word;
-    padding-right: 20px;
+    /* padding-right: 20px; */
   }
 }
 

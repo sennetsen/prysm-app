@@ -1,0 +1,26 @@
+/* Avatar Component Styles */
+.avatar-image {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Custom avatar sizes if needed */
+.avatar-small {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.avatar-medium {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+.avatar-large {
+  width: 40px !important;
+  height: 40px !important;
+}
+
+.avatar-xlarge {
+  width: 80px !important;
+  height: 80px !important;
+}

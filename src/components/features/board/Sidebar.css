@@ -1,10 +1,11 @@
 .sidebar {
   position: fixed;
   left: 0;
-  top: calc(64px + (100vh - 64px) / 2);
-  transform: translateY(-50%);
+  top: 84px;
+  bottom: 32px;
   width: 320px;
-  max-height: 80vh;
+  height: auto;
+  max-height: unset;
   background-color: #FDFCFC;
   border-radius: 12px;
   box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.25);
@@ -18,7 +19,7 @@
 }
 
 .sidebar.hidden {
-  transform: translate(-100%, -50%);
+  transform: translateX(-100%);
 }
 
 .sidebar-content {
@@ -27,37 +28,14 @@
   align-items: flex-start;
 }
 
-/* Profile Picture */
-.profile-picture {
-  width: 130px;
-  height: 130px;
-  background-color: #f0f0f0;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  align-self: center;
-}
-
-.profile-img {
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  object-fit: cover;
-  image-rendering: -webkit-optimize-contrast;
-  /* For Chrome/Safari */
-  image-rendering: crisp-edges;
-  /* For Firefox */
-  align-self: center;
-
-}
+/* Profile Picture in App.css */
 
 /* Creator Info */
 .creator-name {
-  font-size: 2rem;
+  font-size: 28px;
   font-weight: bold;
   text-align: center;
-  margin-top: 25px;
+  margin-top: 15px;
   font-family: 'Lexend Deca', sans-serif;
   color: #281010;
   display: flex;
@@ -68,8 +46,8 @@
 }
 
 .verified-icon {
-  width: 25px;
-  height: 25px;
+  width: 18px;
+  height: 18px;
   vertical-align: middle;
 }
 
@@ -83,19 +61,34 @@
 
 
 /* Requests Section */
-.requests-title {
-  font-size: 1rem;
-  margin-top: 15px;
-  font-family: 'Lexend Deca', sans-serif;
-  color: #281010;
+.requests-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  justify-content: center;
+  width: 100%;
+
+
 }
 
+.requests-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #281010;
+  font-family: 'Poppins', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 .requests-avatars {
   display: flex;
   align-items: center;
-  margin-top: 10px;
-  margin-bottom: 20px;
+  gap: 0;
+  margin-left: 8px;
+  justify-content: center;
 }
 
 .avatar {
@@ -114,31 +107,79 @@
   z-index: 2;
 }
 
+/* Ensure Avatar component inside .avatar maintains styling */
+.avatar.avatar-image {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 50% !important;
+  border: 2px solid white !important;
+  margin-right: -10px !important;
+  position: relative !important;
+  z-index: 1 !important;
+  transition: transform 0.2s ease !important;
+}
+
+.avatar.avatar-image:hover {
+  transform: scale(1.1) !important;
+  z-index: 2 !important;
+}
+
 .more-requests {
-  margin-left: 15px;
   z-index: 1;
-  font-size: 0.83rem;
+  font-size: 10px;
   color: #281010;
+  font-family: 'Poppins', sans-serif;
+  border-radius: 50%;
+  background: #e5e5e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.show-more-link {
+  color: #3b5ccc;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  gap: 6px;
+}
+
+.show-more-arrow {
+  font-size: 1.2em;
+  margin-left: 2px;
+  transition: transform 0.2s;
+  display: inline-block;
 }
 
 /* Description Text */
 .description-text {
-  font-size: 1.1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
   color: #281010;
   margin-top: 0px;
-  margin-bottom: 20px;
+  margin-bottom: 4px;
   font-family: 'Poppins', sans-serif;
-  white-space: pre-wrap;
+  white-space: normal;
   line-height: 1.6;
-  overflow-y: auto;
-  max-height: 200px;
-  /* Adjust this value as needed */
-  padding-right: 10px;
-  scrollbar-width: thin;
+  max-height: 3.2em;
+  transition: max-height 0.2s;
 }
 
-.description-text::-webkit-scrollbar {
-  width: 6px;
+.description-text.expanded {
+  -webkit-line-clamp: unset;
+  max-height: 1000px;
+  overflow: visible;
 }
 
 .toggle-button {
@@ -170,4 +211,16 @@
 
 .toggle-button:hover {
   background-color: #f7f7f7;
+}
+
+.sidebar-activity-section {
+  margin-top: 28px;
+}
+
+.sidebar-activity-section h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #281010;
+  margin-bottom: 10px;
+  font-family: 'Lexend Deca', sans-serif;
 }

@@ -1,24 +1,218 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useParams, Navigate, useNavigate } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import HomePage from './CompanySite/HomePage';
 import { supabase } from "./supabaseClient";
-import Navbar from "./components/Navbar";
-import Sidebar from "./components/Sidebar";
-import RequestCard from "./components/RequestCard";
+import Navbar from "./components/features/board/Navbar";
+import Sidebar from "./components/features/board/Sidebar";
+import RequestCard from "./components/features/posts/RequestCard";
+import { MentionTest } from "./components/features/comments/MentionTest";
 import "./App.css";
-import { Button, Checkbox, Form, Tooltip } from 'antd';
+import { Button, Checkbox, Form, Tooltip, Modal, message } from 'antd';
+import Avatar from './components/shared/Avatar';
 import { lightenColor } from './utils/colorUtils'; // Import the lightenColor function
 import { GoogleSignInButton } from './supabaseClient';
+import { syncUserAvatar } from './utils/avatarUtils';
 import postbutton from './img/postbutton.svg';
 import helpmascot from './img/helpmascot.jpg';
-import { handleSignOut } from './components/UserProfile';
+import { handleSignOut } from './components/shared/UserProfile';
 import fallbackImg from './img/fallback.png';
 import mailicon from './img/mail.svg';
+import { PostPopup } from './components/features/posts/PostPopup';
+import { notifyPostLike } from './utils/notificationService';
+import './components/features/posts/PostPopup.css';
+import { PaperClipOutlined, CloseOutlined, FileOutlined } from '@ant-design/icons';
+import { generatePostUrl } from './utils/slugUtils';
+
+// Add this function after the imports and before the BoardView component
+async function uploadPostAttachment(file, postId, authorId) {
+  console.log('Uploading attachment for postId:', postId, 'Type:', typeof postId);
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("fileName", file.name);
+  formData.append("parentId", postId);
+  formData.append("parentType", "post");
+
+  const res = await fetch("https://prysm-r2-worker.prysmapp.workers.dev/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error('R2 upload failed:', text);
+    throw new Error("Failed to upload file to R2: " + text);
+  }
+
+  const { storage_path } = await res.json();
+
+  const { error } = await supabase.from('attachments').insert([{
+    storage_path,
+    file_name: file.name,
+    file_type: file.type,
+    file_size: file.size,
+    parent_type: 'post',
+    parent_id: postId,
+    author_id: authorId,
+  }]);
+
+  if (error) {
+    console.error('Supabase insert error:', error);
+    throw new Error("Failed to upload attachment into database: " + error.message);
+  }
+
+  return storage_path;
+}
+
+// Replace the existing deleteAllPostAttachments function with this debug version
+async function deleteAllPostAttachments(postId) {
+  try {
+    console.log(' Starting deleteAllPostAttachments for postId:', postId);
+
+    // 1. FIRST: Get all attachments for this post (both post and comment attachments)
+    // Use separate queries instead of complex OR with subquery
+    const [postAttachments, commentAttachments] = await Promise.all([
+      // Get post attachments
+      supabase
+        .from('attachments')
+        .select('storage_path')
+        .eq('parent_type', 'post')
+        .eq('parent_id', postId),
+
+      // Get comment attachments by first getting comment IDs, then their attachments
+      supabase
+        .from('comments')
+        .select('id')
+        .eq('post_id', postId)
+        .then(async ({ data: commentIds, error: commentError }) => {
+          console.log('🔍 Found comment IDs:', commentIds);
+          if (commentError || !commentIds || commentIds.length === 0) {
+            console.log('ℹ️ No comments found for this post');
+            return { data: [], error: null };
+          }
+
+          const commentIdList = commentIds.map(c => c.id);
+          console.log(' Comment ID list:', commentIdList);
+
+          const result = await supabase
+            .from('attachments')
+            .select('storage_path')
+            .eq('parent_type', 'comment')
+            .in('parent_id', commentIdList);
+
+          console.log('📎 Comment attachments query result:', result);
+          return result;
+        })
+    ]);
+
+    console.log('📎 Post attachments result:', postAttachments);
+    console.log('📎 Comment attachments result:', commentAttachments);
+
+    if (postAttachments.error) {
+      console.error('Error fetching post attachments:', postAttachments.error);
+      throw postAttachments.error;
+    }
+
+    if (commentAttachments.error) {
+      console.error('Error fetching comment attachments:', commentAttachments.error);
+      throw commentAttachments.error;
+    }
+
+    // Combine all attachments
+    const allAttachments = [
+      ...(postAttachments.data || []),
+      ...(commentAttachments.data || [])
+    ];
+
+    console.log('📎 Combined all attachments to delete:', allAttachments);
+
+    // 2. SECOND: Delete all files from R2 first
+    if (allAttachments.length > 0) {
+      for (const attachment of allAttachments) {
+        try {
+          console.log('🗑️ Attempting to delete from R2:', attachment.storage_path);
+
+          const response = await fetch(`https://prysm-r2-worker.prysmapp.workers.dev/delete/${attachment.storage_path}`, {
+            method: 'DELETE',
+          });
+
+          console.log(' R2 delete response status:', response.status);
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Failed to delete file from R2:', attachment.storage_path, 'Status:', response.status, 'Error:', errorText);
+          } else {
+            console.log('✅ Successfully deleted from R2:', attachment.storage_path);
+          }
+        } catch (r2Error) {
+          console.error('💥 Error deleting from R2:', r2Error);
+        }
+      }
+    } else {
+      console.log('ℹ️ No attachments found to delete');
+    }
+
+    // 3. THIRD: Delete ALL attachments from database after R2 cleanup
+    console.log('🗄️ Deleting attachments from database...');
+
+    // Delete post attachments
+    const { error: postDeleteError } = await supabase
+      .from('attachments')
+      .delete()
+      .eq('parent_type', 'post')
+      .eq('parent_id', postId);
+
+    if (postDeleteError) {
+      console.error('Error deleting post attachments:', postDeleteError);
+    }
+
+    // Fix the comment attachments deletion part
+    // Delete comment attachments
+    if (commentAttachments.data && commentAttachments.data.length > 0) {
+      // Get the comment IDs from the comments query, not from attachments
+      const { data: commentIds } = await supabase
+        .from('comments')
+        .select('id')
+        .eq('post_id', postId);
+
+      if (commentIds && commentIds.length > 0) {
+        const commentIdList = commentIds.map(c => c.id);
+        console.log('🗄️ Deleting comment attachments for comment IDs:', commentIdList);
+
+        const { error: commentDeleteError } = await supabase
+          .from('attachments')
+          .delete()
+          .eq('parent_type', 'comment')
+          .in('parent_id', commentIdList);
+
+        if (commentDeleteError) {
+          console.error('Error deleting comment attachments:', commentDeleteError);
+        } else {
+          console.log('✅ Successfully deleted comment attachments from database');
+        }
+      }
+    } else {
+      console.log('ℹ️ No comment attachments to delete from database');
+    }
+
+    console.log('✅ Successfully deleted all attachments for post:', postId);
+  } catch (error) {
+    console.error('Error in deleteAllPostAttachments:', error);
+    throw error;
+  }
+}
+
+// Component to handle redirects for invalid board paths
+function BoardRedirect() {
+  const { boardPath } = useParams();
+  return <Navigate to={`/${boardPath}`} replace />;
+}
 
 function BoardView() {
-  const { boardPath } = useParams();
+  const { boardPath, postId } = useParams();
+  const navigate = useNavigate();
   const [boardData, setBoardData] = useState(null);
   
   // Redirect logic for domain handling
@@ -45,10 +239,10 @@ function BoardView() {
   const [totalRequests, setTotalRequests] = useState(0);
   const [cards, setCards] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newPostContent, setNewPostContent] = useState("");
   const [newPostTitle, setNewPostTitle] = useState("");
+  const [newPostContent, setNewPostContent] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [modalColor, setModalColor] = useState("#fff");
+  const [modalColor, setModalColor] = useState("#FEEAA4");
   const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
   const [isQuestionPopupOpen, setIsQuestionPopupOpen] = useState(false);
   const [isBoardOwner, setIsBoardOwner] = useState(false);
@@ -60,6 +254,30 @@ function BoardView() {
   const [postColors, setPostColors] = useState([]);
   const [isContactCardOpen, setIsContactCardOpen] = useState(false);
   const [contactCardData, setContactCardData] = useState(null);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [isSidebarHidden, setIsSidebarHidden] = useState(false);
+  const [postFileList, setPostFileList] = useState([]);
+  const [sortType, setSortType] = useState('new'); // Add sort state
+  const [isLoadingDirectPost, setIsLoadingDirectPost] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Sort handler function
+  const handleSortChange = (newSortType) => {
+    setSortType(newSortType);
+  };
+
+  // Helper function to sort cards
+  const sortCards = (cards, sortType) => {
+    return [...cards].sort((a, b) => {
+      if (sortType === 'top') {
+        // Sort by likes count (descending)
+        return b.likesCount - a.likesCount;
+      } else {
+        // Sort by created_at (newest first)
+        return new Date(b.created_at) - new Date(a.created_at);
+      }
+    });
+  };
 
   const defaultColors = useMemo(() => [
     "#FEEAA4",
@@ -71,7 +289,7 @@ function BoardView() {
     const fetchBoardData = async () => {
       const { data, error } = await supabase
         .from('boards')
-        .select('*, owner:users(avatar_url)')
+        .select('*, owner:users(avatar_url, avatar_storage_path, id)')
         .eq('url_path', boardPath)
         .maybeSingle();
 
@@ -81,7 +299,7 @@ function BoardView() {
         return;
       }
 
-
+      console.log('Board data fetched:', data);
       setBoardData(data);
       setNavbarColor(data.color);
       setIsBoardOwner(user?.email === data.email);
@@ -92,7 +310,7 @@ function BoardView() {
     if (boardPath) {
       fetchBoardData();
     }
-  }, [boardPath, user?.id, defaultColors]);
+  }, [boardPath, user?.id, user?.email, defaultColors]);
 
   useEffect(() => {
     if (boardData?.creator_name && boardData?.title) {
@@ -100,7 +318,9 @@ function BoardView() {
     } else {
       document.title = "Prysm";
     }
-  }, [boardData?.creator_name]);
+  }, [boardData?.creator_name, boardData?.title]);
+
+
 
   useEffect(() => {
     // Update the meta theme color
@@ -135,6 +355,9 @@ function BoardView() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
+      if (session?.user) {
+        syncUserAvatar(session.user);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -147,39 +370,133 @@ function BoardView() {
       .from('posts')
       .select(`
         *,
-        author:users(full_name, avatar_url, email, created_at),
+        author:users(full_name, avatar_url, avatar_storage_path, email, created_at),
         reactions(reaction_type, user_id)
       `)
       .eq('board_id', boardData.id);
 
     if (error) {
       console.error('Error fetching posts:', error);
-    } else {
-      const postsWithLikes = data.map(post => {
-        const likesCount = post.reaction_counts?.like || 0;
-        return {
-          ...post,
-          likesCount,
-          author: post.author || {
-            full_name: 'Anonymous',
-            avatar_url: null,
-            email: null,
-            created_at: null
-          }
-        };
-      });
-
-      const sortedPosts = postsWithLikes.sort((a, b) => b.likesCount - a.likesCount);
-      setCards(sortedPosts);
-      setTotalPosts(sortedPosts.length);
+      return;
     }
-  }, [boardData]);
+
+    // Fetch attachments and comment counts for all posts
+    let attachmentsData = [];
+    let commentCountsData = {};
+    if (data && data.length > 0) {
+      const postIds = data.map(post => post.id);
+
+      // Fetch attachments
+      const { data: attachments, error: attachmentsError } = await supabase
+        .from('attachments')
+        .select('*')
+        .eq('parent_type', 'post')
+        .in('parent_id', postIds);
+
+      if (!attachmentsError && attachments) {
+        attachmentsData = attachments;
+      }
+
+      // Fetch comment counts
+      const { data: comments, error: commentsError } = await supabase
+        .from('comments')
+        .select('post_id')
+        .in('post_id', postIds);
+
+      if (!commentsError && comments) {
+        // Count comments per post
+        commentCountsData = comments.reduce((acc, comment) => {
+          acc[comment.post_id] = (acc[comment.post_id] || 0) + 1;
+          return acc;
+        }, {});
+      }
+    }
+
+    const postsWithLikes = data.map(post => {
+      const likesCount = post.reaction_counts?.like || 0;
+      const commentCount = commentCountsData[post.id] || 0;
+      // Find attachments for this post
+      const postAttachments = attachmentsData.filter(att => att.parent_id === post.id);
+
+      return {
+        ...post,
+        board_id: boardData?.id, // Ensure board_id is included
+        likesCount,
+        commentCount,
+        attachments: postAttachments,
+        author: post.author || {
+          full_name: 'Anonymous',
+          avatar_url: null,
+          email: null,
+          created_at: null
+        }
+      };
+    });
+
+    // Sort posts using helper function
+    const sortedPosts = sortCards(postsWithLikes, sortType);
+    setCards(sortedPosts);
+    setTotalPosts(sortedPosts.length);
+
+    // Check if there's a direct post URL and open it
+    if (postId) {
+      const directPost = sortedPosts.find(post => post.id === postId);
+      if (directPost) {
+        setSelectedPost({
+          ...directPost,
+          board_id: boardData?.id
+        });
+        
+        // Update title for direct post URL
+        if (boardData?.creator_name && boardData?.title && directPost.title) {
+          document.title = `${directPost.title} | ${boardData.title} | ${boardData.creator_name} | Prysm`;
+        }
+        
+        // Check if we need to redirect to include the slug for better SEO
+        const currentPath = window.location.pathname;
+        const expectedPath = generatePostUrl(boardPath, postId, directPost.title);
+        
+        if (currentPath !== expectedPath) {
+          // Redirect to the full URL with slug for better SEO
+          navigate(expectedPath, { replace: true });
+        }
+      } else {
+        // Invalid post ID - redirect to board URL
+        navigate(`/${boardPath}`);
+      }
+    }
+  }, [boardData, sortType, postId]);
 
   useEffect(() => {
     if (boardData) {
       fetchPosts();
     }
   }, [boardData, fetchPosts]);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      // Check if there's a post in the URL path
+      const currentPath = window.location.pathname;
+      const isPostPath = currentPath.includes('/posts/');
+
+      if (!isPostPath) {
+        // No post in URL, close the popup and restore board title
+        setSelectedPost(null);
+        if (boardData?.creator_name && boardData?.title) {
+          document.title = `${boardData.title} | ${boardData.creator_name} | Prysm`;
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [boardData?.creator_name, boardData?.title]);
+
+  // Re-sort cards when sort type changes
+  useEffect(() => {
+    setCards(prev => sortCards(prev, sortType));
+  }, [sortType]);
 
   useEffect(() => {
     if (!boardData?.id) return;
@@ -198,21 +515,23 @@ function BoardView() {
           .from('posts')
           .select(`
             *,
-            author:users(full_name, avatar_url),
+            author:users(full_name, avatar_url, avatar_storage_path),
             reactions(reaction_type, user_id)
           `)
           .eq('id', payload.new.id)
           .single();
 
         if (newPost) {
-          setCards(prev => [
-            ...prev,
-            {
+          setCards(prev => {
+            const newCardData = {
               ...newPost,
+              board_id: boardData?.id, // Ensure board_id is included
               likesCount: newPost.reactions.filter(r => r.reaction_type === 'like').length,
               isNew: true
-            }
-          ]);
+            };
+            const updatedCards = [...prev, newCardData];
+            return sortCards(updatedCards, sortType);
+          });
           setTotalPosts(prev => prev + 1);
         }
       })
@@ -261,21 +580,67 @@ function BoardView() {
     setIsModalOpen(true);
   };
 
-  const handleModalClose = () => {
-    const requestModal = document.querySelector('.post-it-modal');
-    requestModal.classList.add('scale-out');
+  const handleFileAttachment = () => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.multiple = true;
+    fileInput.accept = 'image/*,.pdf,.doc,.docx,.txt';
 
-    setTimeout(() => {
-      setIsModalOpen(false);
-      setNewPostContent("");
-      setNewPostTitle("");
-      setIsAnonymous(false);
-      requestModal.classList.remove('scale-out');
-    }, 200); // Match the animation duration
+    fileInput.onchange = (e) => {
+      const target = e.target;
+      if (target.files && target.files.length > 0) {
+        const files = Array.from(target.files);
+
+        // Check file size
+        const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+        if (totalSize > 50 * 1024 * 1024) {
+          message.error('Total file size should not exceed 50MB');
+          return;
+        }
+
+        // Create previews for images
+        files.forEach(file => {
+          if (file.type.startsWith('image/')) {
+            file.preview = URL.createObjectURL(file);
+          }
+        });
+
+        setPostFileList([...postFileList, ...files]);
+        message.success(`${files.length} file${files.length === 1 ? '' : 's'} attached`);
+      }
+    };
+
+    fileInput.click();
+  };
+
+  const removePostFile = (fileToRemove) => {
+    setPostFileList(postFileList.filter(file => file !== fileToRemove));
+    if (fileToRemove.preview) {
+      URL.revokeObjectURL(fileToRemove.preview);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setNewPostContent("");
+    setNewPostTitle("");
+    setIsAnonymous(false);
+    setPostFileList([]);
+    setModalColor(postColors[Math.floor(Math.random() * postColors.length)]);
+    setIsSubmitting(false); // Reset loading state
+
+    // Clean up file previews
+    postFileList.forEach(file => {
+      if (file.preview) {
+        URL.revokeObjectURL(file.preview);
+      }
+    });
   };
 
   const handlePostSubmit = async () => {
     if (newPostContent.trim() && newPostTitle.trim()) {
+      setIsSubmitting(true); // Set loading state
+      
       const postData = {
         title: newPostTitle.trim(),
         content: newPostContent.trim(),
@@ -297,24 +662,85 @@ function BoardView() {
 
       if (error) {
         console.error('Error adding post:', error);
-      } else if (data && data.length > 0) {
+        setIsSubmitting(false); // Clear loading state on error
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const postId = data[0].id;
+
+        // Upload attachments if any
+        if (postFileList.length > 0) {
+          try {
+            for (const file of postFileList) {
+              await uploadPostAttachment(file, postId, user.id);
+            }
+          } catch (err) {
+            console.error('Attachment upload error:', err);
+            message.error('Failed to upload one or more attachments');
+          }
+        }
+
+        // Auto-subscribe the author to their own post
+        // This ensures authors get notified about comments and activity on their posts
+        try {
+          // Check if user is already subscribed (though this shouldn't happen for new posts)
+          // But we'll keep the check for future-proofing and performance
+          const { data: existingSubscription } = await supabase
+            .from('subscriptions')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('post_id', postId)
+            .single();
+
+          if (existingSubscription) {
+            console.log('User already subscribed to post, skipping upsert');
+          } else {
+            const { error: subscribeError } = await supabase
+              .from('subscriptions')
+              .upsert([{
+                user_id: user.id,
+                post_id: postId
+              }], {
+                onConflict: 'user_id,post_id' // Use upsert to prevent duplicates
+              });
+
+            if (subscribeError) {
+              console.warn('Failed to auto-subscribe author to post:', subscribeError);
+              // Don't show error to user since this is automatic
+            } else {
+              console.log('Author automatically subscribed to their post');
+            }
+          }
+        } catch (subscribeErr) {
+          console.warn('Error auto-subscribing author to post:', subscribeErr);
+          // Don't show error to user since this is automatic
+        }
+
         // Initialize reactions as an empty array
         const newPost = {
           ...data[0],
+          board_id: boardData?.id, // Ensure board_id is included
           author: {
             full_name: user.user_metadata.full_name,
             avatar_url: user.user_metadata.avatar_url
           },
           reactions: []
         };
-        setCards(prevCards => [...prevCards, newPost]);
+        setCards(prevCards => [newPost, ...prevCards]); // Add new post at the beginning
         setTotalPosts(prev => prev + 1);
         setTotalRequests(prev => prev + 1);
+        
+        // Show success notification
+        message.success('Post submitted!');
+        
         handleModalClose();
       } else {
         console.error('No data returned from insert operation');
       }
     }
+    
+    setIsSubmitting(false); // Clear loading state
   };
 
   const handleOutsideClick = (e) => {
@@ -330,8 +756,13 @@ function BoardView() {
     }
   };
 
+  // Update the handleDelete function to use the new simpler approach
   const handleDelete = async (id) => {
     try {
+      // 1. FIRST: Get all attachments BEFORE deleting the post
+      await deleteAllPostAttachments(id);
+
+      // 2. SECOND: Delete post (this triggers CASCADE for comments, reactions, etc.)
       const { error } = await supabase
         .from('posts')
         .delete()
@@ -339,12 +770,13 @@ function BoardView() {
 
       if (error) {
         console.error('Error deleting post:', error);
-      } else {
-        // Update local state only after successful deletion
-        setCards(cards.filter(card => card.id !== id));
-        setTotalPosts(prev => prev - 1);
-        setTotalRequests(prev => prev - 1);
+        return;
       }
+
+      // 3. Update local state only after successful deletion
+      setCards(cards.filter(card => card.id !== id));
+      setTotalPosts(prev => prev - 1);
+      setTotalRequests(prev => prev - 1);
     } catch (error) {
       console.error('Error deleting post:', error);
     }
@@ -419,6 +851,30 @@ function BoardView() {
             reaction_counts: { ...postData.reaction_counts, like: newCount }
           })
           .eq('id', postId);
+
+        // Send notification to post author about the new like
+        try {
+          const currentPath = window.location.pathname;
+          const boardPath = currentPath.split('/')[1]; // Extract board path from URL
+          
+          // Get post details for notification
+          const { data: postData } = await supabase
+            .from('posts')
+            .select('title, author_id')
+            .eq('id', postId)
+            .single();
+          
+          if (postData && postData.author_id !== user.id) { // Don't notify if user likes their own post
+            await notifyPostLike(
+              postId,
+              postData.title || 'Untitled Post',
+              boardPath
+            );
+          }
+        } catch (notificationError) {
+          console.error('Error sending like notification:', notificationError);
+          // Don't fail the like operation if notifications fail
+        }
       }
 
       // Update local state without sorting
@@ -518,6 +974,73 @@ function BoardView() {
     }, 200); // Match the animation duration
   };
 
+  const handlePostClick = (post) => {
+    // Ensure the post has the board_id for the activity stream
+    setSelectedPost({
+      ...post,
+      board_id: boardData?.id
+    });
+
+    // Navigate to the post URL with slug using React Router
+    const postUrl = generatePostUrl(boardPath, post.id, post.title);
+    navigate(postUrl);
+  };
+
+  // Added function to update likes in the board view from a post popup
+  const handlePostLikeUpdate = useCallback((postId, newLikeCount, isLiked) => {
+    console.log('🔄 App: handlePostLikeUpdate called with:', { postId, newLikeCount, isLiked });
+    setCards(prevCards =>
+      prevCards.map(card => {
+        if (card.id === postId) {
+          // Update the card with new like count and reactions
+          const updatedReactions = isLiked
+            ? [...(card.reactions || []), { user_id: user?.id, reaction_type: 'like' }]
+            : (card.reactions || []).filter(r => !(r.user_id === user?.id && r.reaction_type === 'like'));
+
+          return {
+            ...card,
+            likesCount: newLikeCount,
+            reactions: updatedReactions
+          };
+        }
+        return card;
+      })
+    );
+
+    // Also update the selected post so it stays in sync
+    setSelectedPost(prevSelected => {
+      if (prevSelected && prevSelected.id === postId) {
+        const updatedPost = {
+          ...prevSelected,
+          board_id: boardData?.id, // Ensure board_id is preserved
+          likesCount: newLikeCount,
+          reaction_counts: { like: newLikeCount }, // Update reaction_counts to match PostPopup expectations
+          reactions: isLiked
+            ? [...(prevSelected.reactions || []), { user_id: user?.id, reaction_type: 'like' }]
+            : (prevSelected.reactions || []).filter(r => !(r.user_id === user?.id && r.reaction_type === 'like'))
+        };
+        console.log('🔄 App: Updated selectedPost with reaction_counts:', updatedPost.reaction_counts);
+        return updatedPost;
+      }
+      return prevSelected;
+    });
+  }, [user?.id, boardData?.id]);
+
+  // Stable onClose function for PostPopup
+  const handlePostPopupClose = useCallback(() => {
+    setSelectedPost(null);
+    
+    // Restore board title when post popup closes
+    if (boardData?.creator_name && boardData?.title) {
+      document.title = `${boardData.title} | ${boardData.creator_name} | Prysm`;
+    }
+    
+    // Navigate back to the board
+    navigate(`/${boardPath}`);
+  }, [navigate, boardPath, boardData?.creator_name, boardData?.title]);
+
+  const toggleSidebar = () => setIsSidebarHidden((h) => !h);
+
   if (boardNotFound) {
     return <Navigate to="/" />; // Redirect if board not found
   }
@@ -531,8 +1054,9 @@ function BoardView() {
         color={navbarColor}
         onJoinClick={handleJoinClick}
         onShare={handleShareClick}
+        onSortChange={handleSortChange}
       />
-      <div className="main-content">
+      <div className={`main-content${isSidebarHidden ? ' sidebar-hidden' : ' sidebar-open'}`}>
         <Sidebar
           description={boardData?.description}
           bio={boardData?.bio}
@@ -542,8 +1066,14 @@ function BoardView() {
           creatorAvatar={boardData?.creator_avatar}
           posts={cards}
           color={boardData?.color}
+          isHidden={isSidebarHidden}
+          toggleSidebar={toggleSidebar}
+          boardId={boardData?.id}
+          currentUserId={user?.id}
+          boardCreatorId={boardData?.owner_id}
+
         />
-        <div className="board">
+        <div className={`board${isSidebarHidden ? ' sidebar-hidden' : ' sidebar-open'}`}>
           {cards.length === 0 && (
             <p className="empty-board-message">No posts yet. Click the button to add one!</p>
           )}
@@ -555,17 +1085,20 @@ function BoardView() {
               content={card.content}
               isAnonymous={card.is_anonymous}
               color={card.color}
-              onDelete={handleDelete}
+              onDelete={() => handleDelete(card.id)}
               authorId={card.author_id}
               created_at={card.created_at}
               author={card.author}
               currentUserId={user?.id}
               isBoardOwner={isBoardOwner}
-              onLike={handleLike}
+              onLike={() => handleLike(card.id, card.reactions?.some(r => r.user_id === user?.id && r.reaction_type === 'like'))}
               likesCount={card.likesCount}
               reactions={card.reactions || []}
               index={index}
               onContactCardToggle={() => handleContactCardToggle(card)}
+              onPostClick={handlePostClick}
+              attachments={card.attachments || []}
+              commentCount={card.commentCount || 0}
             />
           ))}
           <Tooltip title="Make a Request" placement="right">
@@ -622,15 +1155,71 @@ function BoardView() {
                 <span className="hide-name-text">Hide my name</span>
               </Checkbox>
             </Form.Item>
+
+            {/* File attachment section */}
+            {postFileList.length > 0 && (
+              <div className="post-file-preview-container">
+                {postFileList.map((file, index) => (
+                  <div key={index} className="post-file-preview-wrapper">
+                    {file.type.startsWith('image/') ? (
+                      <div className="post-image-preview-with-name">
+                        <div className="post-image-preview">
+                          <img
+                            src={file.preview || URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="preview-image"
+                          />
+                          <button
+                            className="remove-image-button"
+                            onClick={() => removePostFile(file)}
+                            title="Remove image"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <div className="post-image-filename">
+                          <FileOutlined />
+                          <span className="filename-text">{file.name}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="post-file-preview-item">
+                        <FileOutlined />
+                        <span className="file-name">{file.name}</span>
+                        <button
+                          className="remove-file"
+                          onClick={() => removePostFile(file)}
+                          title="Remove file"
+                        >
+                          <CloseOutlined />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="modal-footer">
-              <span className="char-count">{`${newPostContent.length}/300`}</span>
               <button
-                className="post-button"
-                onClick={handlePostSubmit}
-                disabled={!newPostContent.trim() || !newPostTitle.trim()}
+                className="attach-button"
+                onClick={handleFileAttachment}
+                title="Attach files"
+                type="button"
+                disabled={isSubmitting}
               >
-                Request
+                <PaperClipOutlined />
               </button>
+              <div className="modal-footer-right">
+                <span className="char-count">{`${newPostContent.length}/300`}</span>
+                <button
+                  className="post-button"
+                  onClick={handlePostSubmit}
+                  disabled={!newPostContent.trim() || !newPostTitle.trim() || isSubmitting}
+                >
+                  {isSubmitting ? 'Requesting...' : 'Request'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -653,7 +1242,7 @@ function BoardView() {
       {isQuestionPopupOpen && (
         <div className="help-popup">
           <h2>Thanks for using us!</h2>
-          <p>Prysm is still in private beta.</p>
+          <p>Prysm is still in beta.</p>
           <p>Waitlist at <a href="https://prysmapp.com">prysmapp.com</a> </p>
           <p>or contact us at</p>
           <p><a href="mailto:getprysm@gmail.com">getprysm@gmail.com</a>!</p>
@@ -697,9 +1286,10 @@ function BoardView() {
           <div className="contact-card-popup">
             <button className="close-popup" onClick={handleContactCardClose}>&times;</button>
             <div className="profile-picture">
-              <img
-                src={contactCardData.is_anonymous && !isBoardOwner ? fallbackImg : contactCardData.author?.avatar_url || fallbackImg}
-                alt="Profile"
+              <Avatar
+                user={contactCardData.author}
+                size={80}
+                className="profile-pic"
               />
             </div>
             <div className="contact-info">
@@ -729,6 +1319,20 @@ function BoardView() {
         </div>
       )}
 
+      {selectedPost && (
+        <PostPopup
+          post={selectedPost}
+          isOpen={!!selectedPost}
+          onClose={handlePostPopupClose}
+          currentUser={user}
+          onPostLikeChange={handlePostLikeUpdate}
+          boardCreatorId={boardData?.owner_id}
+          boardEmail={boardData?.email}
+          boardName={boardData?.title}
+          onRequireSignIn={() => setIsJoinPopupOpen(true)}
+        />
+      )}
+
     </div>
   );
 }
@@ -740,7 +1344,11 @@ function App() {
       <SpeedInsights />
       <Router>
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          {/* Root path removed - Vercel redirects / to home.prysmapp.com */}
+          <Route path="/mention-test" element={<MentionTest />} />
+          <Route path="/posts/*" element={<Navigate to="/" />} />
+          <Route path="/:boardPath/posts/:postId/:slug?" element={<BoardView />} />
+          <Route path="/:boardPath/*" element={<BoardRedirect />} />
           <Route path="/:boardPath" element={<BoardView />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

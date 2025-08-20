@@ -5,14 +5,17 @@ import frame48 from "./img/Frame 48.svg";
 import frame49 from "./img/Frame 49.svg";
 import boardImage from "./img/Board.svg";
 import { GoogleSignInButton } from '../supabaseClient';
-import joinmascot from '../img/join-mascot.jpg';
 import frame1 from "./img/Frame 1 (1).svg";
 import frame2 from "./img/Frame 2.svg";
 import { supabase } from '../supabaseClient';
-import { handleSignOut } from '../components/UserProfile';
+import { handleSignOut } from '../components/shared/UserProfile';
+import { loadScreenScript, getCurrentScreenSize, SCREEN_SIZES } from '../utils/screenUtils';
+import { debounce } from '../utils/debounce';
 
 function HomePage() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [currentScreen, setCurrentScreen] = useState(null);
+  const [screenModule, setScreenModule] = useState(null);
   const handleLinkClick = () => {
     window.location.href = '/';
   };
@@ -176,6 +179,37 @@ function HomePage() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Load screen-specific code on component mount
+  useEffect(() => {
+    // Initial load
+    const screenSize = getCurrentScreenSize();
+    setCurrentScreen(screenSize);
+
+    loadScreenScript().then(module => {
+      setScreenModule(module);
+    });
+
+    // Handle resize
+    const handleResize = debounce(() => {
+      const newSize = getCurrentScreenSize();
+      if (newSize !== currentScreen) {
+        setCurrentScreen(newSize);
+        loadScreenScript().then(module => {
+          setScreenModule(module);
+        });
+      }
+    }, 250);
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [currentScreen]);
+
+  const handleSegmentClick = (segment) => {
+    const segmentStart = segment.start;
+  };
+
   return (
     <>
       <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
@@ -202,26 +236,26 @@ function HomePage() {
           <div class="launchlist-widget" data-key-id="UpeyL8" data-height="180px"></div>
         </div>
         <div className="images">
-          {window.innerWidth > 768 ? (
+          {currentScreen === SCREEN_SIZES.DESKTOP ? (
             <>
-              <div className="column left-column">
+              <div className="column ani-left-column">
                 <img src={frame48} alt="Desktop Frame 1" className="frame" />
                 <img src={frame48} alt="Desktop Frame 2" className="frame" />
               </div>
-              <div className="column right-column">
+              <div className="column ani-right-column">
                 <img src={frame49} alt="Desktop Frame 3" className="frame" />
                 <img src={frame49} alt="Desktop Frame 4" className="frame" />
               </div>
             </>
           ) : (
             <>
-              <div className="column left-column">
+              <div className="column ani-left-column">
                 <img src={frame1} alt="Mobile Frame 1" className="frame" />
                 <img src={frame2} alt="Mobile Frame 2" className="frame" />
                 <img src={frame1} alt="Mobile Frame 1" className="frame" />
                 <img src={frame2} alt="Mobile Frame 2" className="frame" />
               </div>
-              <div className="column right-column">
+              <div className="column ani-right-column">
                 {/* <img src={frame2} alt="Mobile Frame 3" className="frame" /> */}
                 {/* <img src={frame2} alt="Mobile Frame 4" className="frame" /> */}
               </div>
