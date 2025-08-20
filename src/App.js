@@ -1308,6 +1308,7 @@ function BoardView() {
           onPostLikeChange={handlePostLikeUpdate}
           boardCreatorId={boardData?.owner_id}
           boardEmail={boardData?.email}
+          boardName={boardData?.title}
           onRequireSignIn={() => setIsJoinPopupOpen(true)}
         />
       )}

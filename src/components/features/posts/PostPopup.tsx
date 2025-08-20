@@ -55,6 +55,7 @@ interface PostPopupProps {
   onPostLikeChange: (postId: string, likeCount: number, isLiked: boolean) => void;
   boardCreatorId?: string;
   boardEmail?: string;
+  boardName?: string;
   onRequireSignIn: () => void;
 }
 
@@ -196,7 +197,7 @@ async function deleteCommentAttachments(commentId: string) {
   }
 }
 
-export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange, boardCreatorId, boardEmail, onRequireSignIn }: PostPopupProps) {
+export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange, boardCreatorId, boardEmail, boardName, onRequireSignIn }: PostPopupProps) {
   const [liked, setLiked] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
   const [commentText, setCommentText] = useState('');
@@ -2170,7 +2171,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         <div className="mobile-navbar-back" onClick={handleClose}>
           <LeftOutlined />
         </div>
-        <div className="mobile-navbar-title">Board Name</div>
+        <div className="mobile-navbar-title">{boardName || 'Board Name'}</div>
         <div className="mobile-navbar-info" onClick={() => setShowMobileInfo(true)}>
           <InfoCircleOutlined />
         </div>
