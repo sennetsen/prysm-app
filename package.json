@@ -1,6 +1,6 @@
 {
   "name": "Prysm",
-  "version": "1.0.0-beta",
+  "version": "1.1.0",
   "private": true,
   "dependencies": {
     "@ant-design/icons": "^5.6.0",
