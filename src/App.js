@@ -214,6 +214,26 @@ function BoardView() {
   const { boardPath, postId } = useParams();
   const navigate = useNavigate();
   const [boardData, setBoardData] = useState(null);
+  
+  // Redirect logic for domain handling
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const { hostname, pathname } = window.location;
+      
+      // Case 1: prysmapp.com/ (root only) → redirect to www.prysmapp.com
+      if (hostname === "prysmapp.com" && pathname === "/") {
+        window.location.replace("https://www.prysmapp.com");
+        return;
+      }
+      
+      // Case 2: www.prysmapp.com/something → redirect to prysmapp.com/something
+      if (hostname === "www.prysmapp.com" && pathname !== "/") {
+        const newUrl = `https://prysmapp.com${pathname}`;
+        window.location.replace(newUrl);
+        return;
+      }
+    }
+  }, []);
   const [boardNotFound, setBoardNotFound] = useState(false);
   const [user, setUser] = useState(null);
   const [totalRequests, setTotalRequests] = useState(0);
