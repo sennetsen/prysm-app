@@ -968,6 +968,7 @@ function BoardView() {
 
   // Added function to update likes in the board view from a post popup
   const handlePostLikeUpdate = useCallback((postId, newLikeCount, isLiked) => {
+    console.log('🔄 App: handlePostLikeUpdate called with:', { postId, newLikeCount, isLiked });
     setCards(prevCards =>
       prevCards.map(card => {
         if (card.id === postId) {
@@ -989,14 +990,17 @@ function BoardView() {
     // Also update the selected post so it stays in sync
     setSelectedPost(prevSelected => {
       if (prevSelected && prevSelected.id === postId) {
-        return {
+        const updatedPost = {
           ...prevSelected,
           board_id: boardData?.id, // Ensure board_id is preserved
           likesCount: newLikeCount,
+          reaction_counts: { like: newLikeCount }, // Update reaction_counts to match PostPopup expectations
           reactions: isLiked
             ? [...(prevSelected.reactions || []), { user_id: user?.id, reaction_type: 'like' }]
             : (prevSelected.reactions || []).filter(r => !(r.user_id === user?.id && r.reaction_type === 'like'))
         };
+        console.log('🔄 App: Updated selectedPost with reaction_counts:', updatedPost.reaction_counts);
+        return updatedPost;
       }
       return prevSelected;
     });

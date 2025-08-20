@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, Button, message } from 'antd';
 import { Avatar } from '../../shared';
 import { CommentThread } from '../comments/CommentThread';
-import { notifyNewComment, notifyBoardCreatorActivity, NOTIFICATION_TYPES } from '../../../utils/notificationService';
+import { notifyNewComment, notifyBoardCreatorActivity, NOTIFICATION_TYPES, notifyPostLike } from '../../../utils/notificationService';
 
 import {
   HeartOutlined,
@@ -52,7 +52,7 @@ interface PostPopupProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: any;
-  onPostLikeChange: (postId: string) => void;
+  onPostLikeChange: (postId: string, likeCount: number, isLiked: boolean) => void;
   boardCreatorId?: string;
   boardEmail?: string;
   onRequireSignIn: () => void;
@@ -226,8 +226,12 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [hasContent, setHasContent] = useState(false); // Track if user has typed content
   const [newCommentIds, setNewCommentIds] = useState<Set<string>>(new Set()); // Track new comments for animation
 
-  // Initialize likeCount from post.likes or post.likesCount
-  const [likeCount, setLikeCount] = useState(post.reaction_counts?.like ?? 0);
+  // Initialize likeCount from post.likes or post.likesCount - only on mount
+  const [likeCount, setLikeCount] = useState(() => {
+    const initialCount = post.reaction_counts?.like ?? 0;
+    console.log('🔄 PostPopup: Initializing likeCount with:', initialCount, 'from post:', post.reaction_counts);
+    return initialCount;
+  });
 
   // Handle mobile popup closing with animation
   const handleClose = () => {
@@ -273,10 +277,37 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
   // Mobile comment submission restored
 
-  // Keep likeCount in sync with post prop
+
+
+  // Keep likeCount and liked in sync with post prop and backend
   useEffect(() => {
+    // Fetch whether the current user has liked this post
+    const fetchLiked = async () => {
+      if (!currentUser) {
+        setLiked(false);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('reactions')
+        .select('id')
+        .eq('post_id', post.id)
+        .eq('user_id', currentUser.id)
+        .eq('reaction_type', 'like');
+      setLiked(!error && data && data.length > 0);
+    };
+    fetchLiked();
+  }, [post.id, currentUser]);
+
+  // Keep likeCount in sync with post prop changes
+  useEffect(() => {
+    console.log('🔄 PostPopup: Updating likeCount from post prop:', post.reaction_counts?.like ?? 0);
     setLikeCount(post.reaction_counts?.like ?? 0);
-  }, [post.reaction_counts?.like]);
+  }, [post.reaction_counts]);
+
+  // Debug likeCount changes
+  useEffect(() => {
+    console.log('🔄 PostPopup: likeCount state changed to:', likeCount);
+  }, [likeCount]);
 
   // Fetch subscription state when component mounts or user changes
   useEffect(() => {
@@ -374,25 +405,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     adjustTextareaHeight(e.target);
   }, []);
 
-  // Keep likeCount and liked in sync with post prop and backend
-  useEffect(() => {
-    // Fetch whether the current user has liked this post
-    const fetchLiked = async () => {
-      if (!currentUser) {
-        setLiked(false);
-        return;
-      }
-      const { data, error } = await supabase
-        .from('reactions')
-        .select('id')
-        .eq('post_id', post.id)
-        .eq('user_id', currentUser.id)
-        .eq('reaction_type', 'like');
-      setLiked(!error && data && data.length > 0);
-    };
-    fetchLiked();
-  }, [post.id, currentUser]);
-
+  // Handle like operation
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!currentUser) {
@@ -400,11 +413,15 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       return;
     }
 
-    try {
-      const isCurrentlyLiked = liked;
+    const isCurrentlyLiked = liked;
+    const originalLikeCount = likeCount;
 
-      // Optimistically update UI
+    try {
+      // Optimistically update UI immediately
       setLiked(!isCurrentlyLiked);
+      const newLikeCount = isCurrentlyLiked ? Math.max(0, likeCount - 1) : likeCount + 1;
+      console.log('🔄 PostPopup: Optimistically updating likeCount from', likeCount, 'to', newLikeCount);
+      setLikeCount(newLikeCount);
 
       // Update in the backend
       const { data: currentReactions, error: fetchError } = await supabase
@@ -474,30 +491,39 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             })
             .eq('id', post.id);
         }
+
+        // Send notification to post author about the new like
+        try {
+          const currentPath = window.location.pathname;
+          const boardPath = currentPath.split('/')[1]; // Extract board path from URL
+          
+          // Get post details for notification
+          const { data: postData } = await supabase
+            .from('posts')
+            .select('title, author_id')
+            .eq('id', post.id)
+            .single();
+          
+          if (postData && postData.author_id !== currentUser.id) { // Don't notify if user likes their own post
+            await notifyPostLike(
+              post.id,
+              postData.title || 'Untitled Post',
+              boardPath
+            );
+          }
+        } catch (notificationError) {
+          console.error('Error sending like notification:', notificationError);
+          // Don't fail the like operation if notifications fail
+        }
       }
 
-      // Refetch the latest like count and liked state from backend to stay in sync
-      const [{ data: postData, error: postError }, { data: likedData, error: likedError }] = await Promise.all([
-        supabase
-          .from('posts')
-          .select('reaction_counts')
-          .eq('id', post.id)
-          .single(),
-        supabase
-          .from('reactions')
-          .select('id')
-          .eq('post_id', post.id)
-          .eq('user_id', currentUser.id)
-          .eq('reaction_type', 'like')
-      ]);
-      if (!postError && postData) {
-        onPostLikeChange(post.id);
-      }
-      setLiked(!likedError && Array.isArray(likedData) && likedData.length > 0);
+      // Notify parent component about the change with updated counts
+      onPostLikeChange(post.id, newLikeCount, !isCurrentlyLiked);
     } catch (error) {
       console.error('Error handling reaction:', error);
       // Revert optimistic UI update on error
-      setLiked(liked);
+      setLiked(isCurrentlyLiked); // Revert to original liked state
+      setLikeCount(originalLikeCount); // Revert to original count
       message.error('Failed to update like status');
     }
   };
@@ -573,22 +599,36 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           throw commentError;
         }
         
-        const currentCount = commentData.reaction_counts?.like || 0;
+        console.log('📊 Raw comment data from DB:', commentData);
+        
+        // Handle the case where reaction_counts might be null or empty
+        const currentReactionCounts = commentData.reaction_counts || {};
+        const currentCount = currentReactionCounts.like || 0;
         const newCount = Math.max(0, currentCount - 1);
         console.log('📊 Updating comment reaction count from', currentCount, 'to', newCount);
+        
+        // Ensure we create a proper JSONB structure
+        const newReactionCounts = { like: newCount };
+        console.log('📊 New reaction_counts object:', newReactionCounts);
 
-        const { error: updateError } = await supabase
+        // Try the update
+        const { data: updateResult, error: updateError } = await supabase
           .from('comments')
           .update({
-            reaction_counts: { ...commentData.reaction_counts, like: newCount }
+            reaction_counts: newReactionCounts
           })
-          .eq('id', commentId);
+          .eq('id', commentId)
+          .select('reaction_counts'); // Return the updated data
 
         if (updateError) {
-          console.error('❌ Error updating comment reaction counts:', updateError);
+          console.error('❌ Update failed:', updateError);
           throw updateError;
         }
-        console.log('✅ Comment reaction counts updated successfully');
+
+        console.log('✅ Update result:', updateResult);
+
+        // Refresh comments to ensure UI is in sync with database
+        await fetchComments();
 
         // Send notification if board creator liked a comment
         try {
@@ -648,22 +688,34 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           throw commentError;
         }
         
-        const currentCount = commentData.reaction_counts?.like || 0;
+        // Handle the case where reaction_counts might be null or empty
+        const currentReactionCounts = commentData.reaction_counts || {};
+        const currentCount = currentReactionCounts.like || 0;
         const newCount = currentCount + 1;
         console.log('📊 Updating comment reaction count from', currentCount, 'to', newCount);
+        
+        // Ensure we create a proper JSONB structure
+        const newReactionCounts = { like: newCount };
+        console.log('📊 New reaction_counts object:', newReactionCounts);
 
-        const { error: updateError } = await supabase
+        // Try the update
+        const { data: updateResult, error: updateError } = await supabase
           .from('comments')
           .update({
-            reaction_counts: { ...commentData.reaction_counts, like: newCount }
+            reaction_counts: newReactionCounts
           })
-          .eq('id', commentId);
+          .eq('id', commentId)
+          .select('reaction_counts'); // Return the updated data
 
         if (updateError) {
-          console.error('❌ Error updating comment reaction counts:', updateError);
+          console.error('❌ Update failed:', updateError);
           throw updateError;
         }
-        console.log('✅ Comment reaction counts updated successfully');
+
+        console.log('✅ Update result:', updateResult);
+
+        // Refresh comments to ensure UI is in sync with database
+        await fetchComments();
       }
     } catch (error) {
       console.error('💥 Error handling comment like:', error);
@@ -2268,7 +2320,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                         icon={liked ? <HeartFilled /> : <HeartOutlined />}
                         onClick={handleLike}
                       >
-                        <span className="like-count">{post.reaction_counts?.like || 0}</span>
+                        <span className="like-count">{likeCount}</span>
                       </Button>
 
                       <Button className="custom-comment-button" icon={<MessageOutlined />}>
@@ -2512,7 +2564,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                       icon={liked ? <HeartFilled /> : <HeartOutlined />}
                       onClick={handleLike}
                     >
-                      <span className="like-count">{post.reaction_counts?.like || 0}</span>
+                      <span className="like-count">{likeCount}</span>
                     </Button>
                     <Button className="custom-comment-button" icon={<MessageOutlined />}>
                       <span className="comment-count">{commentCount}</span>
