@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Avatar } from 'antd';
 import './MentionDropdown.css';
+import { Avatar } from '../../shared';
 
 interface User {
   id: string;
   username: string;
   full_name?: string;
   avatar_url?: string;
+  avatar_storage_path?: string;
 }
 
 interface MentionDropdownProps {
@@ -49,6 +50,7 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
         id: 'everyone',
         username: 'Everyone',
         avatar_url: '',
+        avatar_storage_path: '',
       };
       options.push(everyone);
     }
@@ -99,44 +101,31 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
     }
   }, [isVisible, position]);
 
-  // If not visible or no matches found, don't show the dropdown
   if (!isVisible || allOptions.length === 0) {
     return null;
   }
 
   return (
-    <div className="mention-dropdown" data-testid="mention-dropdown">
+    <div
+      className="mention-dropdown"
+      style={{
+        position: 'absolute',
+        top: position.top,
+        left: position.left,
+        zIndex: 1000,
+      }}
+    >
       {allOptions.map((user, index) => (
         <div
-          key={user.id || index}
-          className={`mention-item ${user.id === 'everyone' ? 'everyone-item' : ''} ${index === selectedIndex ? 'selected-item' : ''
-            }`}
+          key={user.id}
+          className={`mention-option ${index === selectedIndex ? 'selected' : ''}`}
           onClick={() => onSelectUser(user)}
+          onMouseEnter={() => setSelectedIndex(index)}
         >
-          {user.id === 'everyone' ? (
-            <>
-              <div className="everyone-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"
-                    fill="white"
-                  />
-                </svg>
-              </div>
-              <div className="mention-username">
-                Everyone <span className="user-count">({users.length})</span>
-              </div>
-            </>
-          ) : (
-            <>
-              <Avatar
-                src={user.avatar_url || `https://i.pravatar.cc/150?u=${user.id}`}
-                size={24}
-                className="mention-avatar"
-              />
-              <span className="mention-username">{user.username}</span>
-              {user.full_name && <span className="mention-fullname">{user.full_name}</span>}
-            </>
+          <Avatar user={user} size={24} />
+          <span className="mention-username">{user.username}</span>
+          {user.full_name && user.full_name !== user.username && (
+            <span className="mention-fullname">({user.full_name})</span>
           )}
         </div>
       ))}

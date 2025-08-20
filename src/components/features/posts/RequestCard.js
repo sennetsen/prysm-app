@@ -4,6 +4,7 @@ import { bigNumberFormatter, formatNumberWithCommas } from '../../../utils/bigNu
 import { HeartFilled, HeartOutlined, FileOutlined, MessageOutlined } from "@ant-design/icons";
 import { Button, Tooltip, Popconfirm } from "antd";
 import fallbackImg from '../../../img/fallback.png';
+import { Avatar } from '../../shared';
 
 export default React.memo(
   function RequestCard({
@@ -226,22 +227,11 @@ export default React.memo(
                 e.stopPropagation(); // Stop event propagation
                 onContactCardToggle();
               }}>
-                {author.avatar_url ? (
-                  <img
-                    src={author.avatar_url}
-                    alt="Profile"
-                    className="profile-pic"
-                    onError={(e) => {
-                      e.target.src = fallbackImg;
-                    }}
-                  />
-                ) : (
-                  <img
-                    src={fallbackImg}
-                    alt="Profile"
-                    className="profile-pic"
-                  />
-                )}
+                <Avatar
+                  user={author}
+                  size={24}
+                  className="profile-pic"
+                />
                 <span>{author.full_name}</span>
               </div>
             </Tooltip>
@@ -288,7 +278,15 @@ export default React.memo(
                     icon={<MessageOutlined />}
                     onClick={(e) => {
                       e.stopPropagation(); // Stop event propagation
-                      // The card click will handle opening the post popup
+                      // Open the post popup when comment button is clicked
+                      onPostClick({
+                        id,
+                        title,
+                        content,
+                        author,
+                        created_at,
+                        attachments
+                      });
                     }}
                     className="custom-comment-button"
                   >
@@ -301,7 +299,15 @@ export default React.memo(
                   icon={<MessageOutlined />}
                   onClick={(e) => {
                     e.stopPropagation(); // Stop event propagation
-                    // The card click will handle opening the post popup
+                    // Open the post popup when comment button is clicked
+                    onPostClick({
+                      id,
+                      title,
+                      content,
+                      author,
+                      created_at,
+                      attachments
+                    });
                   }}
                   className="custom-comment-button"
                 >

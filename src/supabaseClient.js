@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import UserProfile from './components/shared/UserProfile';
+import { syncUserAvatar } from './utils/avatarUtils';
 
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
@@ -26,41 +27,6 @@ function GoogleSignInButton({ onClick, onSuccess }) {
 
       if (authError) throw authError;
 
-      const currentTime = new Date().toISOString();
-
-      // Check if user exists in your users table
-      const { data: userData } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (!userData) {
-        // For new users
-        const userData = {
-          id: user.id,
-          email: user.email,
-          full_name: user.user_metadata.full_name || user.user_metadata.name,
-          avatar_url: user.user_metadata.avatar_url || user.user_metadata.picture,
-          created_at: currentTime,
-          last_sign_in: currentTime
-        };
-
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert([userData]);
-
-        if (insertError) throw insertError;
-      } else {
-        // For existing users
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ last_sign_in: currentTime })
-          .eq('id', user.id);
-
-        if (updateError) throw updateError;
-      }
-
       setUser(user);
       if (onSuccess) {
         onSuccess({ user });
@@ -78,7 +44,15 @@ function GoogleSignInButton({ onClick, onSuccess }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        // Sync avatar when user signs in (handles profile picture updates)
+        try {
+          await syncUserAvatar(session.user);
+        } catch (avatarError) {
+          console.warn('❌ Auth state change - failed to sync avatar:', avatarError);
+        }
+      }
       setUser(session?.user || null);
     });
 

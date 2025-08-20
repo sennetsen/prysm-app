@@ -9,17 +9,21 @@ import Sidebar from "./components/features/board/Sidebar";
 import RequestCard from "./components/features/posts/RequestCard";
 import { MentionTest } from "./components/features/comments/MentionTest";
 import "./App.css";
-import { Button, Checkbox, Form, Tooltip, Modal, Avatar, message } from 'antd';
+import { Button, Checkbox, Form, Tooltip, Modal, message } from 'antd';
+import Avatar from './components/shared/Avatar';
 import { lightenColor } from './utils/colorUtils'; // Import the lightenColor function
 import { GoogleSignInButton } from './supabaseClient';
+import { syncUserAvatar } from './utils/avatarUtils';
 import postbutton from './img/postbutton.svg';
 import helpmascot from './img/helpmascot.jpg';
 import { handleSignOut } from './components/shared/UserProfile';
 import fallbackImg from './img/fallback.png';
 import mailicon from './img/mail.svg';
 import { PostPopup } from './components/features/posts/PostPopup';
+import { notifyPostLike } from './utils/notificationService';
 import './components/features/posts/PostPopup.css';
 import { PaperClipOutlined, CloseOutlined, FileOutlined } from '@ant-design/icons';
+import { generatePostUrl } from './utils/slugUtils';
 
 // Add this function after the imports and before the BoardView component
 async function uploadPostAttachment(file, postId, authorId) {
@@ -215,10 +219,10 @@ function BoardView() {
   const [totalRequests, setTotalRequests] = useState(0);
   const [cards, setCards] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newPostContent, setNewPostContent] = useState("");
   const [newPostTitle, setNewPostTitle] = useState("");
+  const [newPostContent, setNewPostContent] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [modalColor, setModalColor] = useState("#fff");
+  const [modalColor, setModalColor] = useState("#FEEAA4");
   const [isProfilePopupOpen, setIsProfilePopupOpen] = useState(false);
   const [isQuestionPopupOpen, setIsQuestionPopupOpen] = useState(false);
   const [isBoardOwner, setIsBoardOwner] = useState(false);
@@ -235,6 +239,7 @@ function BoardView() {
   const [postFileList, setPostFileList] = useState([]);
   const [sortType, setSortType] = useState('new'); // Add sort state
   const [isLoadingDirectPost, setIsLoadingDirectPost] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Sort handler function
   const handleSortChange = (newSortType) => {
@@ -264,7 +269,7 @@ function BoardView() {
     const fetchBoardData = async () => {
       const { data, error } = await supabase
         .from('boards')
-        .select('*, owner:users(avatar_url, id)')
+        .select('*, owner:users(avatar_url, avatar_storage_path, id)')
         .eq('url_path', boardPath)
         .maybeSingle();
 
@@ -294,6 +299,8 @@ function BoardView() {
       document.title = "Prysm";
     }
   }, [boardData?.creator_name, boardData?.title]);
+
+
 
   useEffect(() => {
     // Update the meta theme color
@@ -328,6 +335,9 @@ function BoardView() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
+      if (session?.user) {
+        syncUserAvatar(session.user);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -340,7 +350,7 @@ function BoardView() {
       .from('posts')
       .select(`
         *,
-        author:users(full_name, avatar_url, email, created_at),
+        author:users(full_name, avatar_url, avatar_storage_path, email, created_at),
         reactions(reaction_type, user_id)
       `)
       .eq('board_id', boardData.id);
@@ -416,6 +426,20 @@ function BoardView() {
           ...directPost,
           board_id: boardData?.id
         });
+        
+        // Update title for direct post URL
+        if (boardData?.creator_name && boardData?.title && directPost.title) {
+          document.title = `${directPost.title} | ${boardData.title} | ${boardData.creator_name} | Prysm`;
+        }
+        
+        // Check if we need to redirect to include the slug for better SEO
+        const currentPath = window.location.pathname;
+        const expectedPath = generatePostUrl(boardPath, postId, directPost.title);
+        
+        if (currentPath !== expectedPath) {
+          // Redirect to the full URL with slug for better SEO
+          navigate(expectedPath, { replace: true });
+        }
       } else {
         // Invalid post ID - redirect to board URL
         navigate(`/${boardPath}`);
@@ -437,14 +461,17 @@ function BoardView() {
       const isPostPath = currentPath.includes('/posts/');
 
       if (!isPostPath) {
-        // No post in URL, close the popup
+        // No post in URL, close the popup and restore board title
         setSelectedPost(null);
+        if (boardData?.creator_name && boardData?.title) {
+          document.title = `${boardData.title} | ${boardData.creator_name} | Prysm`;
+        }
       }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [boardData?.creator_name, boardData?.title]);
 
   // Re-sort cards when sort type changes
   useEffect(() => {
@@ -468,7 +495,7 @@ function BoardView() {
           .from('posts')
           .select(`
             *,
-            author:users(full_name, avatar_url),
+            author:users(full_name, avatar_url, avatar_storage_path),
             reactions(reaction_type, user_id)
           `)
           .eq('id', payload.new.id)
@@ -580,6 +607,7 @@ function BoardView() {
     setIsAnonymous(false);
     setPostFileList([]);
     setModalColor(postColors[Math.floor(Math.random() * postColors.length)]);
+    setIsSubmitting(false); // Reset loading state
 
     // Clean up file previews
     postFileList.forEach(file => {
@@ -591,6 +619,8 @@ function BoardView() {
 
   const handlePostSubmit = async () => {
     if (newPostContent.trim() && newPostTitle.trim()) {
+      setIsSubmitting(true); // Set loading state
+      
       const postData = {
         title: newPostTitle.trim(),
         content: newPostContent.trim(),
@@ -612,6 +642,7 @@ function BoardView() {
 
       if (error) {
         console.error('Error adding post:', error);
+        setIsSubmitting(false); // Clear loading state on error
         return;
       }
 
@@ -630,6 +661,42 @@ function BoardView() {
           }
         }
 
+        // Auto-subscribe the author to their own post
+        // This ensures authors get notified about comments and activity on their posts
+        try {
+          // Check if user is already subscribed (though this shouldn't happen for new posts)
+          // But we'll keep the check for future-proofing and performance
+          const { data: existingSubscription } = await supabase
+            .from('subscriptions')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('post_id', postId)
+            .single();
+
+          if (existingSubscription) {
+            console.log('User already subscribed to post, skipping upsert');
+          } else {
+            const { error: subscribeError } = await supabase
+              .from('subscriptions')
+              .upsert([{
+                user_id: user.id,
+                post_id: postId
+              }], {
+                onConflict: 'user_id,post_id' // Use upsert to prevent duplicates
+              });
+
+            if (subscribeError) {
+              console.warn('Failed to auto-subscribe author to post:', subscribeError);
+              // Don't show error to user since this is automatic
+            } else {
+              console.log('Author automatically subscribed to their post');
+            }
+          }
+        } catch (subscribeErr) {
+          console.warn('Error auto-subscribing author to post:', subscribeErr);
+          // Don't show error to user since this is automatic
+        }
+
         // Initialize reactions as an empty array
         const newPost = {
           ...data[0],
@@ -640,14 +707,20 @@ function BoardView() {
           },
           reactions: []
         };
-        setCards(prevCards => [...prevCards, newPost]);
+        setCards(prevCards => [newPost, ...prevCards]); // Add new post at the beginning
         setTotalPosts(prev => prev + 1);
         setTotalRequests(prev => prev + 1);
+        
+        // Show success notification
+        message.success('Post submitted!');
+        
         handleModalClose();
       } else {
         console.error('No data returned from insert operation');
       }
     }
+    
+    setIsSubmitting(false); // Clear loading state
   };
 
   const handleOutsideClick = (e) => {
@@ -758,6 +831,30 @@ function BoardView() {
             reaction_counts: { ...postData.reaction_counts, like: newCount }
           })
           .eq('id', postId);
+
+        // Send notification to post author about the new like
+        try {
+          const currentPath = window.location.pathname;
+          const boardPath = currentPath.split('/')[1]; // Extract board path from URL
+          
+          // Get post details for notification
+          const { data: postData } = await supabase
+            .from('posts')
+            .select('title, author_id')
+            .eq('id', postId)
+            .single();
+          
+          if (postData && postData.author_id !== user.id) { // Don't notify if user likes their own post
+            await notifyPostLike(
+              postId,
+              postData.title || 'Untitled Post',
+              boardPath
+            );
+          }
+        } catch (notificationError) {
+          console.error('Error sending like notification:', notificationError);
+          // Don't fail the like operation if notifications fail
+        }
       }
 
       // Update local state without sorting
@@ -864,8 +961,9 @@ function BoardView() {
       board_id: boardData?.id
     });
 
-    // Navigate to the post URL using React Router
-    navigate(`/${boardPath}/posts/${post.id}`);
+    // Navigate to the post URL with slug using React Router
+    const postUrl = generatePostUrl(boardPath, post.id, post.title);
+    navigate(postUrl);
   };
 
   // Added function to update likes in the board view from a post popup
@@ -907,9 +1005,15 @@ function BoardView() {
   // Stable onClose function for PostPopup
   const handlePostPopupClose = useCallback(() => {
     setSelectedPost(null);
+    
+    // Restore board title when post popup closes
+    if (boardData?.creator_name && boardData?.title) {
+      document.title = `${boardData.title} | ${boardData.creator_name} | Prysm`;
+    }
+    
     // Navigate back to the board
     navigate(`/${boardPath}`);
-  }, [navigate, boardPath]);
+  }, [navigate, boardPath, boardData?.creator_name, boardData?.title]);
 
   const toggleSidebar = () => setIsSidebarHidden((h) => !h);
 
@@ -1078,6 +1182,7 @@ function BoardView() {
                 onClick={handleFileAttachment}
                 title="Attach files"
                 type="button"
+                disabled={isSubmitting}
               >
                 <PaperClipOutlined />
               </button>
@@ -1086,9 +1191,9 @@ function BoardView() {
                 <button
                   className="post-button"
                   onClick={handlePostSubmit}
-                  disabled={!newPostContent.trim() || !newPostTitle.trim()}
+                  disabled={!newPostContent.trim() || !newPostTitle.trim() || isSubmitting}
                 >
-                  Request
+                  {isSubmitting ? 'Requesting...' : 'Request'}
                 </button>
               </div>
             </div>
@@ -1157,9 +1262,10 @@ function BoardView() {
           <div className="contact-card-popup">
             <button className="close-popup" onClick={handleContactCardClose}>&times;</button>
             <div className="profile-picture">
-              <img
-                src={contactCardData.is_anonymous && !isBoardOwner ? fallbackImg : contactCardData.author?.avatar_url || fallbackImg}
-                alt="Profile"
+              <Avatar
+                user={contactCardData.author}
+                size={80}
+                className="profile-pic"
               />
             </div>
             <div className="contact-info">
@@ -1216,7 +1322,7 @@ function App() {
           {/* Root path removed - Vercel redirects / to home.prysmapp.com */}
           <Route path="/mention-test" element={<MentionTest />} />
           <Route path="/posts/*" element={<Navigate to="/" />} />
-          <Route path="/:boardPath/posts/:postId" element={<BoardView />} />
+          <Route path="/:boardPath/posts/:postId/:slug?" element={<BoardView />} />
           <Route path="/:boardPath/*" element={<BoardRedirect />} />
           <Route path="/:boardPath" element={<BoardView />} />
           <Route path="*" element={<Navigate to="/" />} />

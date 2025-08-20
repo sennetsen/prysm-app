@@ -162,6 +162,13 @@
     border: 2px solid white;
 }
 
+.navbar .profile-pic {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50%;
+    border: 2px solid white !important;
+}
+
 .share-button {
     background: linear-gradient(135deg, #d5dcfa, #feeaa5, #FFCFCF);
     border: none;

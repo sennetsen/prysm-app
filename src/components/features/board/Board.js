@@ -20,7 +20,7 @@ function Board({ boardId }) {
         const [boardResponse, postsResponse] = await Promise.all([
           supabase
             .from("boards")
-            .select("*, owner:users(avatar_url), creator_avatar")
+            .select("*, owner:users(avatar_url, avatar_storage_path), creator_avatar")
             .eq("id", boardId)
             .single(),
           supabase

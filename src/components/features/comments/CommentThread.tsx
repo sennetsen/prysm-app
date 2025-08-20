@@ -1,8 +1,8 @@
 // CommentThread.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../../../supabaseClient';
-import { Avatar, Button, Popconfirm, Tooltip } from 'antd';
-import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined, EllipsisOutlined, FileOutlined, PaperClipOutlined, LoadingOutlined } from '@ant-design/icons';
+import { Button, Popconfirm, Tooltip } from 'antd';
+import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined, FileOutlined, PaperClipOutlined, LoadingOutlined } from '@ant-design/icons';
+import { Avatar } from '../../shared';
 import './CommentThread.css';
 
 interface CommentThreadProps {
@@ -24,7 +24,10 @@ interface Comment {
   id: number;
   author: {
     name: string;
-    avatar: string;
+    avatar_url?: string;
+    avatar_storage_path?: string;
+    full_name?: string;
+    id?: string;
   };
   content: string;
   timestamp: string;
@@ -64,7 +67,6 @@ export const CommentThread = React.memo(function CommentThread({
   const [localComments, setLocalComments] = useState<Comment[]>(comments);
   const [minimizedComments, setMinimizedComments] = useState<number[]>([]);
   const [expandedReplies, setExpandedReplies] = useState<number[]>([]);
-  const [commentLikes, setCommentLikes] = useState(0);
   const replyFileInputRef = useRef<HTMLInputElement>(null);
   const replyInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -138,7 +140,9 @@ export const CommentThread = React.memo(function CommentThread({
       id: newReplyId,
       author: {
         name: currentUser?.user_metadata?.full_name || 'Current User',
-        avatar: currentUser?.user_metadata?.avatar_url || 'https://i.pravatar.cc/150?img=1',
+        avatar_url: currentUser?.user_metadata?.avatar_url || '',
+        full_name: currentUser?.user_metadata?.full_name || 'Current User',
+        id: currentUser?.id
       },
       content: replyText,
       timestamp: new Date().toISOString(),
@@ -184,7 +188,7 @@ export const CommentThread = React.memo(function CommentThread({
           return {
             ...comment,
             is_deleted: true,
-            author: { name: 'Deleted comment', avatar: '' }, // Change author
+            author: { name: 'Deleted comment', avatar_url: '', full_name: 'Deleted comment' }, // Change author
             content: '', // Clear content
             likes: 0, // Reset likes
             liked: false, // Reset liked status
@@ -201,7 +205,7 @@ export const CommentThread = React.memo(function CommentThread({
                 ? {
                   ...reply,
                   is_deleted: true,
-                  author: { name: 'Deleted comment', avatar: '' },
+                  author: { name: 'Deleted comment', avatar_url: '', full_name: 'Deleted comment' },
                   content: '',
                   likes: 0,
                   liked: false,
@@ -349,7 +353,7 @@ export const CommentThread = React.memo(function CommentThread({
     return (
       <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''} ${isDeleted ? 'deleted-comment' : ''} ${replyingToComment === comment.id.toString() ? 'replying-to' : ''} ${comment.isNew ? 'new-comment' : ''}`}>
         <div className="comment-avatar">
-          <Avatar src={comment.author.avatar} size={isDeleted ? 26 : 36} />
+          <Avatar user={comment.author} size={isDeleted ? 26 : 36} />
         </div>
         <div className="comment-content">
           <div className="comment-header">
@@ -639,13 +643,21 @@ export const CommentThread = React.memo(function CommentThread({
                       {/* Show "X more replies" summary if there are more than 2 replies and not expanded */}
                       {hasAdditionalReplies && !isExpanded && (
                         <div className="more-replies" onClick={() => toggleReplies(comment.id)}>
-                          <Avatar.Group className="avatars" maxCount={3}>
-                            {additionalUserAvatars.map((user, index) => (
+                          <div className="custom-avatar-group">
+                            {additionalUserAvatars.slice(0, 3).map((user, index) => (
                               <Tooltip key={index} title={user.name} placement="top">
-                                <Avatar src={user.avatar} size={24} />
+                                <Avatar 
+                                  user={user} 
+                                  size={24}
+                                  style={{
+                                    marginLeft: index > 0 ? -4 : 0,
+                                    border: '1px solid #fff',
+                                    zIndex: 3 - index
+                                  }}
+                                />
                               </Tooltip>
                             ))}
-                          </Avatar.Group>
+                          </div>
                           <span className="more-replies-text">
                             <span style={{ fontWeight: 600 }}>
                               {additionalRepliesCount} more {additionalRepliesCount === 1 ? 'reply' : 'replies'}

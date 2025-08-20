@@ -42,6 +42,45 @@ export default {
 			});
 		}
 
+		// Handle avatar upload (POST /avatar/upload)
+		if (request.method === "POST" && url.pathname === "/avatar/upload") {
+			const formData = await request.formData();
+			const file = formData.get("file") as File;
+			const userId = formData.get("userId") as string;
+			const originalName = (formData.get("fileName") as string) || "avatar";
+
+			if (!file || !userId) {
+				return withCorsHeaders(new Response("Missing file or userId", { status: 400 }));
+			}
+
+			// Extract file extension from original name or determine from MIME type
+			let fileExtension = "jpg"; // default
+			if (originalName.includes(".")) {
+				fileExtension = originalName.split(".").pop() || "jpg";
+			} else if (file.type) {
+				// Map MIME types to extensions
+				const mimeToExt: { [key: string]: string } = {
+					"image/jpeg": "jpg",
+					"image/jpg": "jpg",
+					"image/png": "png",
+					"image/gif": "gif",
+					"image/webp": "webp",
+					"image/svg+xml": "svg"
+				};
+				fileExtension = mimeToExt[file.type] || "jpg";
+			}
+
+			const fileName = `avatars/${userId}.${fileExtension}`;
+
+			await env.ATTACHMENTS_BUCKET.put(fileName, file.stream(), {
+				httpMetadata: { contentType: file.type }
+			});
+
+			return withCorsHeaders(new Response(JSON.stringify({ storage_path: fileName }), {
+				headers: { "Content-Type": "application/json" }
+			}));
+		}
+
 		// Handle file upload (POST /upload)
 		if (request.method === "POST" && url.pathname === "/upload") {
 			const formData = await request.formData();

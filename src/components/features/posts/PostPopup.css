@@ -1443,3 +1443,40 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+/* Comment Avatar Styling */
+.comment-avatar .avatar-image {
+  border: 2px solid #281010 !important;
+}
+
+/* Custom Avatar Group */
+.custom-avatar-group {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.custom-avatar-group .ant-avatar {
+  transition: all 0.3s ease;
+}
+
+.custom-avatar-group .ant-avatar:hover {
+  transform: scale(1.1);
+  z-index: 10 !important;
+}
+
+.avatar-more {
+  transition: all 0.3s ease;
+}
+
+.avatar-more:hover {
+  transform: scale(1.1);
+  z-index: 10 !important;
+}
+
+/* Author Avatar in About Section */
+.author-avatar {
+  border: 2px solid #281010 !important;
+}
+
+/* Comment Avatar Styling */
