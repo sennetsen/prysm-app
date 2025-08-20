@@ -11,8 +11,6 @@ Visit us at [prysmapp.com](https://prysmapp.com)!
 - Performance optimizations
 
 ## [1.0.0-beta] - 2025-02-10
-
-## [1.0.0-beta] - 2025-02-10
 ### Added
 - Website beta launch
 - Core features implemented
