@@ -209,7 +209,6 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const commentInputRef = useRef<HTMLTextAreaElement>(null); // Desktop comment input
   const mobileCommentInputRef = useRef<HTMLTextAreaElement>(null); // Mobile comment input  
   const commentTextRef = useRef<string>(''); // Track input value without re-renders
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [showStickyHeader, setShowStickyHeader] = useState(false);
   const postContentRef = useRef<HTMLDivElement>(null);
   const popupContainerRef = useRef<HTMLDivElement>(null);
@@ -392,16 +391,9 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const handleCommentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     commentTextRef.current = value;
-
-    // Clear existing debounce timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Debounce state update to minimize re-renders
-    debounceTimerRef.current = setTimeout(() => {
-      setCommentText(value);
-    }, 100);
+    
+    // Update state immediately for controlled input
+    setCommentText(value);
 
     adjustTextareaHeight(e.target);
   }, []);
@@ -1098,10 +1090,6 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         }
       });
 
-      // Clear debounce timer
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
     };
   }, []);
 
@@ -1998,13 +1986,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     // Store the value in ref immediately (no re-render)
     commentTextRef.current = value;
 
+    // Update state immediately for controlled input
+    setCommentText(value);
+
     // Update content availability immediately for button state
     setHasContent(value.trim().length > 0);
-
-    // Clear existing timers
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
 
     // Handle auto-expansion immediately (no state change needed for typing)
     if (!isMobileInputExpanded && (value.length > 30 || fileList.length > 0)) {
@@ -2024,11 +2010,6 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         textarea.scrollTop = textarea.scrollHeight;
       }
     }
-
-    // Debounce the state update to prevent unnecessary re-renders
-    debounceTimerRef.current = setTimeout(() => {
-      setCommentText(value);
-    }, 300); // Longer debounce for mobile to prevent keyboard dismissal
   }, [isMobileInputExpanded, fileList.length]);
 
   // Handle clicking on the input container
@@ -2121,11 +2102,6 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       }
 
       if (submissionSucceeded) {
-        // Cancel any pending debounced updates to avoid stale repopulation
-        if (debounceTimerRef.current) {
-          clearTimeout(debounceTimerRef.current);
-          debounceTimerRef.current = null;
-        }
 
         // Dismiss the mobile keyboard before collapsing
         if (mobileCommentInputRef.current) {
@@ -2637,6 +2613,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
               ref={mobileCommentInputRef}
               placeholder={replyingToComment ? "Write a reply..." : "Join the conversation"}
               className="comment-input mobile-comment-input"
+              value={commentText}
               onChange={handleMobileCommentChange}
               onFocus={handleMobileInputFocus}
               onBlur={handleMobileInputBlur}
