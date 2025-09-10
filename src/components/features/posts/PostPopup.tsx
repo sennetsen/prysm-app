@@ -86,6 +86,7 @@ interface Comment {
   attachments?: Attachment[];
   files?: File[]; // Add optional files property for uploads
   is_deleted?: boolean;
+  is_anonymous?: boolean; // Flag for anonymous comments
   isNew?: boolean; // Flag for new comments added via real-time updates
 }
 
@@ -225,6 +226,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [isFileUploading, setIsFileUploading] = useState(false);
   const [hasContent, setHasContent] = useState(false);
   const [isCommentAnonymous, setIsCommentAnonymous] = useState(false); // Track if user has typed content
+  const [isReplyAnonymous, setIsReplyAnonymous] = useState(false); // Track if reply should be anonymous
   const [newCommentIds, setNewCommentIds] = useState<Set<string>>(new Set()); // Track new comments for animation
 
   // Initialize likeCount from post.likes or post.likesCount - only on mount
@@ -823,6 +825,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     }
 
     try {
+
       // 1. Insert comment into Supabase
       const { data, error } = await supabase
         .from('comments')
@@ -837,9 +840,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         .select();
 
       if (error) {
+        console.error('💥 Error inserting comment:', error);
         message.error('Failed to post comment');
         return;
       }
+
 
       const commentId = data[0].id;
 
@@ -1016,7 +1021,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     } finally {
       if (!internal) setIsSubmitting(false);
     }
-  }, [isSubmitting, commentText, fileList, createCommentWithAttachments, isMobile, onRequireSignIn]);
+  }, [isSubmitting, commentText, fileList, createCommentWithAttachments, isMobile, onRequireSignIn, isCommentAnonymous]);
 
   const handleAddReply = useCallback(async (parentId: string, reply: Comment) => {
     if (!currentUser) {
@@ -1029,7 +1034,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         content: reply.content,
         parentCommentId: parentId,
         files: reply.files || [],
-        isAnonymous: isCommentAnonymous
+        isAnonymous: isReplyAnonymous
       });
 
       if (result?.success) {
@@ -1040,7 +1045,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       console.error('Error creating reply:', error);
       message.error('Failed to post reply');
     }
-  }, [createCommentWithAttachments, currentUser, onRequireSignIn]);
+  }, [createCommentWithAttachments, currentUser, onRequireSignIn, isReplyAnonymous]);
 
   const handleFileAttachment = () => {
     if (!currentUser) {
@@ -1413,8 +1418,6 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       .eq('post_id', post.id)
       .order('created_at', { ascending: false });
 
-    console.log('📝 Fetched comments data:', commentsData);
-    console.log('❌ Comments error:', commentsError);
 
     // Fetch attachments for all comments
     let attachmentsData: any[] = [];
@@ -1473,14 +1476,13 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         const reactionCount = c.reaction_counts?.like || 0;
         const isLiked = !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like');
         
-        console.log(`📝 Comment ${c.id}: reaction_count=${reactionCount}, isLiked=${isLiked}`);
 
         commentMap[c.id] = {
           id: c.id,
           author: {
-            name: c.is_deleted ? 'Deleted comment' : c.author.full_name,
-            avatar_url: c.is_deleted ? '' : c.author.avatar_url,
-            avatar_storage_path: c.is_deleted ? '' : c.author.avatar_storage_path,
+            name: c.is_deleted ? 'Deleted comment' : (c.author?.full_name || 'Unknown User'),
+            avatar_url: c.is_deleted ? '' : (c.author?.avatar_url || ''),
+            avatar_storage_path: c.is_deleted ? '' : (c.author?.avatar_storage_path || ''),
           },
           content: c.is_deleted ? '' : c.content,
           timestamp: formatTimestamp(c.created_at),
@@ -1490,6 +1492,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           replies: [],
           attachments: c.is_deleted ? [] : commentAttachments,
           is_deleted: c.is_deleted || false,
+          is_anonymous: c.is_anonymous || false,
         };
       });
       // Attach replies to their parent
@@ -1502,14 +1505,13 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           const reactionCount = c.reaction_counts?.like || 0;
           const isLiked = !!userReactions.some(r => r.comment_id === c.id && r.reaction_type === 'like');
           
-          console.log(`💬 Reply ${c.id}: reaction_count=${reactionCount}, isLiked=${isLiked}`);
 
           parent.replies.push({
             id: c.id,
             author: {
-              name: c.is_deleted ? 'Deleted comment' : c.author.full_name,
-              avatar_url: c.is_deleted ? '' : c.author.avatar_url,
-              avatar_storage_path: c.is_deleted ? '' : c.author.avatar_storage_path,
+              name: c.is_deleted ? 'Deleted comment' : (c.author?.full_name || 'Unknown User'),
+              avatar_url: c.is_deleted ? '' : (c.author?.avatar_url || ''),
+              avatar_storage_path: c.is_deleted ? '' : (c.author?.avatar_storage_path || ''),
             },
             content: c.is_deleted ? '' : c.content,
             timestamp: formatTimestamp(c.created_at),
@@ -1518,6 +1520,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             liked: c.is_deleted ? false : isLiked,
             attachments: c.is_deleted ? [] : replyAttachments,
             is_deleted: c.is_deleted || false,
+            is_anonymous: c.is_anonymous || false,
           });
         }
       });
@@ -2074,7 +2077,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           content: currentText,
           parentCommentId: replyingToComment,
           files: fileList,
-          isAnonymous: isCommentAnonymous
+          isAnonymous: isReplyAnonymous
         });
 
         if (result?.success) {
@@ -2084,7 +2087,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           setHasContent(false);
           setFileList([]); // Clear attachments after successful reply
           setReplyingToComment(null);
-          setIsCommentAnonymous(false);
+          setIsReplyAnonymous(false); // Reset reply anonymous state
           if (mobileCommentInputRef.current) {
             mobileCommentInputRef.current.value = '';
           }
@@ -2125,7 +2128,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, replyingToComment, fileList.length, currentUser, createCommentWithAttachments]);
+  }, [isSubmitting, replyingToComment, fileList.length, currentUser, createCommentWithAttachments, isReplyAnonymous]);
 
 
 
@@ -2420,6 +2423,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                       userCommentsThisSession={userCommentsThisSession}
                       onRequireSignIn={onRequireSignIn}
                       isSubmitting={isSubmitting}
+                      isReplyAnonymous={isReplyAnonymous}
+                      setIsReplyAnonymous={setIsReplyAnonymous}
                       isFileUploading={isFileUploading}
                     />
                   </div>
@@ -2588,6 +2593,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     onReplyClick={handleReplyClick}
                     replyingToComment={replyingToComment}
                     userCommentsThisSession={userCommentsThisSession}
+                    isReplyAnonymous={isReplyAnonymous}
+                    setIsReplyAnonymous={setIsReplyAnonymous}
                     onRequireSignIn={onRequireSignIn}
                     isSubmitting={isSubmitting}
                     isFileUploading={isFileUploading}
@@ -2657,8 +2664,11 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
               <div className="mobile-action-buttons-row">
                 <div className="mobile-anonymous-checkbox">
                   <Checkbox
-                    checked={isCommentAnonymous}
-                    onChange={(e) => setIsCommentAnonymous(e.target.checked)}
+                    checked={replyingToComment ? isReplyAnonymous : isCommentAnonymous}
+                    onChange={(e) => replyingToComment 
+                      ? setIsReplyAnonymous(e.target.checked)
+                      : setIsCommentAnonymous(e.target.checked)
+                    }
                     className="hide-name-checkbox"
                   >
                     <span className="hide-name-text">Hide my name</span>

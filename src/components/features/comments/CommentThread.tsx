@@ -1,6 +1,6 @@
 // CommentThread.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Popconfirm, Tooltip } from 'antd';
+import { Button, Popconfirm, Tooltip, Checkbox, Form } from 'antd';
 import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined, FileOutlined, PaperClipOutlined, LoadingOutlined } from '@ant-design/icons';
 import { Avatar } from '../../shared';
 import fallbackImg from '../../../img/fallback.png';
@@ -19,6 +19,8 @@ interface CommentThreadProps {
   onRequireSignIn?: () => void;
   isSubmitting?: boolean; // Add loading state prop
   isFileUploading?: boolean; // Add file upload loading state prop
+  isReplyAnonymous?: boolean; // Reply anonymous state
+  setIsReplyAnonymous?: (value: boolean) => void; // Reply anonymous setter
 }
 
 interface Comment {
@@ -61,7 +63,9 @@ export const CommentThread = React.memo(function CommentThread({
   userCommentsThisSession = new Set(),
   onRequireSignIn,
   isSubmitting, // Add loading state prop
-  isFileUploading // Add file upload loading state prop
+  isFileUploading, // Add file upload loading state prop
+  isReplyAnonymous = false, // Reply anonymous state
+  setIsReplyAnonymous // Reply anonymous setter
 }: CommentThreadProps) {
   console.log('🔄 CommentThread rendered with props:', {
     postId,
@@ -157,7 +161,8 @@ export const CommentThread = React.memo(function CommentThread({
       timestamp: new Date().toISOString(),
       likes: 0,
       liked: false,
-      files: replyAttachments // Pass the actual File objects for upload
+      files: replyAttachments, // Pass the actual File objects for upload
+      is_anonymous: isReplyAnonymous
     };
 
     // Add the reply to the parent comment
@@ -186,6 +191,7 @@ export const CommentThread = React.memo(function CommentThread({
     setReplyText('');
     setReplyAttachments([]);
     setReplyingToId(null);
+    setIsReplyAnonymous?.(false); // Reset reply anonymous state
   };
 
   const handleDeleteComment = (commentId: string) => {
@@ -359,13 +365,6 @@ export const CommentThread = React.memo(function CommentThread({
 
     const isMinimized = minimizedComments.includes(comment.id);
 
-    console.log(`🎨 Rendering comment ${comment.id}:`, {
-      isReply,
-      isDeleted,
-      likes: comment.likes,
-      liked: comment.liked,
-      author: comment.author.name
-    });
 
     return (
       <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''} ${isDeleted ? 'deleted-comment' : ''} ${replyingToComment === comment.id ? 'replying-to' : ''} ${comment.isNew ? 'new-comment' : ''}`}>
@@ -583,6 +582,17 @@ export const CommentThread = React.memo(function CommentThread({
                     >
                       {isSubmitting ? <LoadingOutlined /> : 'Reply'}
                     </Button>
+                  </div>
+                  <div className="reply-anonymous-checkbox-row">
+                    <Form.Item className="hide-name-container" style={{ marginBottom: 0 }}>
+                      <Checkbox
+                        checked={isReplyAnonymous}
+                        onChange={(e) => setIsReplyAnonymous?.(e.target.checked)}
+                        className="hide-name-checkbox"
+                      >
+                        <span className="hide-name-text">Hide my name</span>
+                      </Checkbox>
+                    </Form.Item>
                   </div>
                   {replyAttachments.length > 0 && (
                     <div className="reply-attachments-preview">
