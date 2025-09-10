@@ -315,12 +315,13 @@
 .input-buttons {
   position: absolute;
   bottom: 0px;
+  left: 0px;
   right: 0px;
   display: flex;
   flex-direction: row;
-  justify-content: flex-end;
-  gap: 12px;
+  justify-content: space-between;
   align-items: center;
+  padding: 0 8px;
 }
 
 /* Create a wrapper for just the attachment and send buttons */
@@ -829,11 +830,31 @@
     margin: 12px 0 8px 0;
   }
 
+  .mobile-anonymous-checkbox {
+    margin: 0;
+  }
+
+  .mobile-anonymous-checkbox .hide-name-checkbox {
+    margin: 0;
+  }
+
+  .mobile-anonymous-checkbox .hide-name-text {
+    font-size: 14px;
+    color: #666;
+    margin-left: 8px;
+  }
+
   .mobile-action-buttons-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
+    padding: 8px 0;
+  }
+
+  .mobile-buttons-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
   }
 
   .mobile-action-buttons-row .comment-action-button {

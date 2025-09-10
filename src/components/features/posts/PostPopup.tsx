@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Modal, Button, message } from 'antd';
+import { Modal, Button, message, Checkbox, Form } from 'antd';
 import { Avatar } from '../../shared';
 import { CommentThread } from '../comments/CommentThread';
 import { notifyNewComment, notifyBoardCreatorActivity, NOTIFICATION_TYPES, notifyPostLike } from '../../../utils/notificationService';
@@ -223,7 +223,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
   const [isExportingCSV, setIsExportingCSV] = useState(false);
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [isFileUploading, setIsFileUploading] = useState(false);
-  const [hasContent, setHasContent] = useState(false); // Track if user has typed content
+  const [hasContent, setHasContent] = useState(false);
+  const [isCommentAnonymous, setIsCommentAnonymous] = useState(false); // Track if user has typed content
   const [newCommentIds, setNewCommentIds] = useState<Set<string>>(new Set()); // Track new comments for animation
 
   // Initialize likeCount from post.likes or post.likesCount - only on mount
@@ -813,6 +814,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       content: string;
       parentCommentId?: string;
       files: File[];
+      isAnonymous?: boolean;
     }
   ) => {
     if (!currentUser) {
@@ -828,7 +830,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           post_id: post.id,
           author_id: currentUser.id,
           content: commentData.content,
-          is_anonymous: false,
+          is_anonymous: commentData.isAnonymous || false,
           created_at: new Date().toISOString(),
           parent_comment_id: commentData.parentCommentId || null, // null for top-level, UUID for replies
         }])
@@ -981,7 +983,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
     try {
       const result = await createCommentWithAttachments({
         content: currentText,
-        files: fileList
+        files: fileList,
+        isAnonymous: isCommentAnonymous
       });
 
       if (result?.success) {
@@ -990,6 +993,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         setCommentText('');
         setHasContent(false);
         setFileList([]);
+        setIsCommentAnonymous(false);
 
         // Clear the textarea value directly (desktop and mobile)
         if (commentInputRef.current) {
@@ -1024,7 +1028,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
       const result = await createCommentWithAttachments({
         content: reply.content,
         parentCommentId: parentId,
-        files: reply.files || []
+        files: reply.files || [],
+        isAnonymous: isCommentAnonymous
       });
 
       if (result?.success) {
@@ -2068,7 +2073,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         const result = await createCommentWithAttachments({
           content: currentText,
           parentCommentId: replyingToComment,
-          files: fileList
+          files: fileList,
+          isAnonymous: isCommentAnonymous
         });
 
         if (result?.success) {
@@ -2078,6 +2084,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           setHasContent(false);
           setFileList([]); // Clear attachments after successful reply
           setReplyingToComment(null);
+          setIsCommentAnonymous(false);
           if (mobileCommentInputRef.current) {
             mobileCommentInputRef.current.value = '';
           }
@@ -2088,7 +2095,8 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
         // Submit as regular comment using the unified function
         const result = await createCommentWithAttachments({
           content: currentText,
-          files: fileList
+          files: fileList,
+          isAnonymous: isCommentAnonymous
         });
 
         if (result?.success) {
@@ -2097,6 +2105,7 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
           setCommentText('');
           setHasContent(false);
           setFileList([]);
+          setIsCommentAnonymous(false);
           submissionSucceeded = true;
         }
       }
@@ -2361,6 +2370,15 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                           </div>
                         )}
                         <div className="input-buttons">
+                          <Form.Item className="hide-name-container" style={{ marginBottom: 0, marginRight: 'auto' }}>
+                            <Checkbox
+                              checked={isCommentAnonymous}
+                              onChange={(e) => setIsCommentAnonymous(e.target.checked)}
+                              className="hide-name-checkbox"
+                            >
+                              <span className="hide-name-text">Hide my name</span>
+                            </Checkbox>
+                          </Form.Item>
                           <div className="action-buttons-group">
                             <button
                               className="comment-action-button"
@@ -2636,39 +2654,49 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
 
           {isMobileInputExpanded && (
             <>
-              <div className="mobile-input-divider"></div>
               <div className="mobile-action-buttons-row">
-                <button
-                  className="comment-action-button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setIsActionButtonClicked(true);
-                    handleFileAttachment();
-                  }}
-                  title="Attach files"
-                  disabled={isSubmitting || isFileUploading}
-                  style={{
-                    opacity: (isSubmitting || isFileUploading) ? 0.5 : 1,
-                    pointerEvents: (isSubmitting || isFileUploading) ? 'none' : 'auto'
-                  }}
-                >
-                  <PaperClipOutlined />
-                </button>
-                <button
-                  className="comment-action-button send"
-                  onMouseDown={async (e) => {
-                    e.preventDefault();
-                    setIsActionButtonClicked(true);
-                    await handleMobileCommentSubmit();
-                  }}
-                  title="Send comment"
-                  disabled={isSubmitting || (!hasContent && fileList.length === 0)}
-                  style={{
-                    backgroundColor: post.color || '#e6756e'
-                  }}
-                >
-                  {isSubmitting ? <LoadingOutlined /> : <img src={SendArrow} alt="Send" className="send-arrow-icon" />}
-                </button>
+                <div className="mobile-anonymous-checkbox">
+                  <Checkbox
+                    checked={isCommentAnonymous}
+                    onChange={(e) => setIsCommentAnonymous(e.target.checked)}
+                    className="hide-name-checkbox"
+                  >
+                    <span className="hide-name-text">Hide my name</span>
+                  </Checkbox>
+                </div>
+                <div className="mobile-buttons-group">
+                  <button
+                    className="comment-action-button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setIsActionButtonClicked(true);
+                      handleFileAttachment();
+                    }}
+                    title="Attach files"
+                    disabled={isSubmitting || isFileUploading}
+                    style={{
+                      opacity: (isSubmitting || isFileUploading) ? 0.5 : 1,
+                      pointerEvents: (isSubmitting || isFileUploading) ? 'none' : 'auto'
+                    }}
+                  >
+                    <PaperClipOutlined />
+                  </button>
+                  <button
+                    className="comment-action-button send"
+                    onMouseDown={async (e) => {
+                      e.preventDefault();
+                      setIsActionButtonClicked(true);
+                      await handleMobileCommentSubmit();
+                    }}
+                    title="Send comment"
+                    disabled={isSubmitting || (!hasContent && fileList.length === 0)}
+                    style={{
+                      backgroundColor: post.color || '#e6756e'
+                    }}
+                  >
+                    {isSubmitting ? <LoadingOutlined /> : <img src={SendArrow} alt="Send" className="send-arrow-icon" />}
+                  </button>
+                </div>
               </div>
             </>
           )}

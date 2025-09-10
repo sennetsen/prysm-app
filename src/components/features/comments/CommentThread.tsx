@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button, Popconfirm, Tooltip } from 'antd';
 import { HeartOutlined, HeartFilled, MessageOutlined, DeleteOutlined, FileOutlined, PaperClipOutlined, LoadingOutlined } from '@ant-design/icons';
 import { Avatar } from '../../shared';
+import fallbackImg from '../../../img/fallback.png';
 import './CommentThread.css';
 
 interface CommentThreadProps {
@@ -44,6 +45,7 @@ interface Comment {
   }[];
   files?: File[]; // Add optional files property for uploads
   is_deleted?: boolean;
+  is_anonymous?: boolean; // Flag for anonymous comments
   isNew?: boolean; // Flag for new comments added via real-time updates
 }
 
@@ -368,11 +370,24 @@ export const CommentThread = React.memo(function CommentThread({
     return (
       <div key={comment.id} className={`comment ${isReply ? 'reply-comment' : ''} ${isDeleted ? 'deleted-comment' : ''} ${replyingToComment === comment.id ? 'replying-to' : ''} ${comment.isNew ? 'new-comment' : ''}`}>
         <div className="comment-avatar">
-          <Avatar user={comment.author} size={isDeleted ? 26 : 36} />
+          {comment.is_anonymous ? (
+            <img
+              src={fallbackImg}
+              alt="Anonymous"
+              style={{
+                width: isDeleted ? 26 : 36,
+                height: isDeleted ? 26 : 36,
+                borderRadius: '50%',
+                objectFit: 'cover'
+              }}
+            />
+          ) : (
+            <Avatar user={comment.author} size={isDeleted ? 26 : 36} />
+          )}
         </div>
         <div className="comment-content">
           <div className="comment-header">
-            <span className="comment-author">{comment.author.name}</span>
+            <span className="comment-author">{comment.is_anonymous ? 'Anonymous' : comment.author.name}</span>
             <span className="comment-timestamp">{formatTimeDifference(comment.timestamp)}</span>
           </div>
           {!isMinimized && (
