@@ -115,7 +115,9 @@ export default React.memo(
           content,
           author,
           created_at,
-          attachments
+          attachments,
+          is_anonymous: isAnonymous,
+          author_id: authorId
         })}
         data-card-id={id}
         data-card-index={index}
@@ -285,7 +287,9 @@ export default React.memo(
                         content,
                         author,
                         created_at,
-                        attachments
+                        attachments,
+                        is_anonymous: isAnonymous,
+                        author_id: authorId
                       });
                     }}
                     className="custom-comment-button"
@@ -306,7 +310,9 @@ export default React.memo(
                       content,
                       author,
                       created_at,
-                      attachments
+                      attachments,
+                      is_anonymous: isAnonymous,
+                      author_id: authorId
                     });
                   }}
                   className="custom-comment-button"

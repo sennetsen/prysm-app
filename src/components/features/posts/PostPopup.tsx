@@ -38,6 +38,8 @@ interface PostPopupProps {
     created_at: string;
     color: string;
     board_id: string; // <-- add this
+    is_anonymous?: boolean; // Flag for anonymous posts
+    author_id?: string; // Add author_id for permission checking
     reaction_counts?: {
       like: number;
     };
@@ -199,6 +201,31 @@ async function deleteCommentAttachments(commentId: string) {
 }
 
 export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange, boardCreatorId, boardEmail, boardName, onRequireSignIn }: PostPopupProps) {
+  
+  // Helper function to determine if current user can see author identity for anonymous posts
+  const canSeeAuthorIdentity = () => {
+    // If post is not anonymous, everyone can see the author
+    if (!post.is_anonymous) return true;
+    
+    // If post is anonymous, only the author themselves and board owner can see the identity
+    const isPostAuthor = currentUser?.id === post.author_id;
+    const isBoardOwner = currentUser?.email === boardEmail;
+    
+    // Debug logging
+    console.log('🔍 Debug canSeeAuthorIdentity:', {
+      post_is_anonymous: post.is_anonymous,
+      currentUser_id: currentUser?.id,
+      currentUser_email: currentUser?.email,
+      post_author_id: post.author_id,
+      boardEmail: boardEmail,
+      boardCreatorId: boardCreatorId,
+      isPostAuthor,
+      isBoardOwner,
+      canSee: isPostAuthor || isBoardOwner
+    });
+    
+    return isPostAuthor || isBoardOwner;
+  };
   const [liked, setLiked] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
   const [commentText, setCommentText] = useState('');
@@ -2440,14 +2467,16 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
                     <h3>About</h3>
                     <div className="author-info">
                       <Avatar
-                        user={post.author}
+                        user={canSeeAuthorIdentity() ? post.author : undefined}
                         size={24}
                         className="author-avatar"
                       />
-                      <span className="author-name">{post.author.full_name}</span>
+                      <span className="author-name">
+                        {canSeeAuthorIdentity() ? post.author.full_name : 'Anonymous'}
+                      </span>
                     </div>
-                    {/* Only show email if current user is board owner */}
-                    {currentUser?.email === boardEmail && (
+                    {/* Only show email if current user is board owner AND can see author identity */}
+                    {currentUser?.email === boardEmail && canSeeAuthorIdentity() && (
                       <div className="author-email" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <img src={MailIcon} alt="mail" className="mail-icon" />
                         <span>{post.author.email}</span>
@@ -2543,11 +2572,13 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
             <>
               <div className="mobile-post-header">
                 <Avatar
-                  user={post.author}
+                  user={canSeeAuthorIdentity() ? post.author : undefined}
                   size={40}
                   className="author-avatar"
                 />
-                <span className="author-name">{post.author.full_name}</span>
+                <span className="author-name">
+                  {canSeeAuthorIdentity() ? post.author.full_name : 'Anonymous'}
+                </span>
                 <span className="post-time">
                   {formatRelativeTime(post.created_at)}
                 </span>
@@ -2737,14 +2768,16 @@ export function PostPopup({ post, isOpen, onClose, currentUser, onPostLikeChange
               <h3>About</h3>
               <div className="author-info">
                 <Avatar
-                  user={post.author}
+                  user={canSeeAuthorIdentity() ? post.author : undefined}
                   size={24}
                   className="author-avatar"
                 />
-                <span className="author-name">{post.author.full_name}</span>
+                <span className="author-name">
+                  {canSeeAuthorIdentity() ? post.author.full_name : 'Anonymous'}
+                </span>
               </div>
-              {/* Only show email if current user is board owner */}
-              {currentUser?.email === boardEmail && (
+              {/* Only show email if current user is board owner AND can see author identity */}
+              {currentUser?.email === boardEmail && canSeeAuthorIdentity() && (
                 <div className="author-email">
                   <img src={MailIcon} alt="mail" className="mail-icon" />
                   <span>{post.author.email}</span>

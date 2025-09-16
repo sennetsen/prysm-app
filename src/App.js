@@ -1320,17 +1320,25 @@ function BoardView() {
       )}
 
       {selectedPost && (
-        <PostPopup
-          post={selectedPost}
-          isOpen={!!selectedPost}
-          onClose={handlePostPopupClose}
-          currentUser={user}
-          onPostLikeChange={handlePostLikeUpdate}
-          boardCreatorId={boardData?.owner_id}
-          boardEmail={boardData?.email}
-          boardName={boardData?.title}
-          onRequireSignIn={() => setIsJoinPopupOpen(true)}
-        />
+        <>
+          {console.log('🔍 Debug PostPopup props:', {
+            currentUser_id: user?.id,
+            boardData_owner_id: boardData?.owner_id,
+            selectedPost_author_id: selectedPost?.author_id,
+            selectedPost_is_anonymous: selectedPost?.is_anonymous
+          })}
+          <PostPopup
+            post={selectedPost}
+            isOpen={!!selectedPost}
+            onClose={handlePostPopupClose}
+            currentUser={user}
+            onPostLikeChange={handlePostLikeUpdate}
+            boardCreatorId={boardData?.owner_id}
+            boardEmail={boardData?.email}
+            boardName={boardData?.title}
+            onRequireSignIn={() => setIsJoinPopupOpen(true)}
+          />
+        </>
       )}
 
     </div>
