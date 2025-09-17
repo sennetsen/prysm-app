@@ -2,6 +2,7 @@
 .avatar-image {
   background: transparent !important;
   border: none !important;
+  display: block;
 }
 
 /* Custom avatar sizes if needed */
