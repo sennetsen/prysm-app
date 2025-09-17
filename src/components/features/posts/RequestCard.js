@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./RequestCard.css";
 import { bigNumberFormatter, formatNumberWithCommas } from '../../../utils/bigNumberFormatter';
-import { HeartFilled, HeartOutlined, FileOutlined, MessageOutlined } from "@ant-design/icons";
+import { HeartFilled, HeartOutlined, FileOutlined, MessageOutlined, PushpinOutlined, PushpinFilled } from "@ant-design/icons";
 import { Button, Tooltip, Popconfirm } from "antd";
 import fallbackImg from '../../../img/fallback.png';
 import { Avatar } from '../../shared';
@@ -26,7 +26,9 @@ export default React.memo(
     onContactCardToggle,
     onPostClick,
     attachments = [],
-    commentCount = 0
+    commentCount = 0,
+    isPinned = false,
+    onPin
   }) {
     const [timestamp, setTimestamp] = useState('');
     const [isNew, setIsNew] = useState(true);
@@ -107,7 +109,7 @@ export default React.memo(
 
     return (
       <div
-        className={`request-card ${isNew ? 'new-card' : ''} ${isDeleting ? 'deleting' : ''}`}
+        className={`request-card ${isNew ? 'new-card' : ''} ${isDeleting ? 'deleting' : ''} ${isPinned ? 'pinned' : ''}`}
         style={{ backgroundColor: color, '--card-color': color }}
         onClick={() => onPostClick({
           id,
@@ -122,6 +124,22 @@ export default React.memo(
         data-card-id={id}
         data-card-index={index}
       >
+        {/* Pin button for all users */}
+        {currentUserId && onPin && (
+          <Tooltip title={isPinned ? "Unpin Post" : "Pin Post"} placement="top">
+            <button
+              className={`pin-button ${isPinned ? 'pinned' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onPin(id, !isPinned);
+              }}
+              aria-label={isPinned ? "Unpin post" : "Pin post"}
+            >
+              {isPinned ? <PushpinFilled /> : <PushpinOutlined />}
+            </button>
+          </Tooltip>
+        )}
+
         {canDelete && (
           <Popconfirm
             title="Delete this post?"

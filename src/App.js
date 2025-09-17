@@ -24,6 +24,7 @@ import { notifyPostLike } from './utils/notificationService';
 import './components/features/posts/PostPopup.css';
 import { PaperClipOutlined, CloseOutlined, FileOutlined } from '@ant-design/icons';
 import { generatePostUrl } from './utils/slugUtils';
+import { pinPost, unpinPost, isPostPinned, sortPostsWithPins } from './utils/pinUtils';
 
 // Add this function after the imports and before the BoardView component
 async function uploadPostAttachment(file, postId, authorId) {
@@ -268,7 +269,7 @@ function BoardView() {
 
   // Helper function to sort cards
   const sortCards = (cards, sortType) => {
-    return [...cards].sort((a, b) => {
+    let sorted = [...cards].sort((a, b) => {
       if (sortType === 'top') {
         // Sort by likes count (descending)
         return b.likesCount - a.likesCount;
@@ -277,6 +278,13 @@ function BoardView() {
         return new Date(b.created_at) - new Date(a.created_at);
       }
     });
+    
+    // Apply pin sorting if user is logged in
+    if (user?.id && boardData?.id) {
+      sorted = sortPostsWithPins(sorted, user.id, boardData.id);
+    }
+    
+    return sorted;
   };
 
   const defaultColors = useMemo(() => [
@@ -756,6 +764,20 @@ function BoardView() {
     }
   };
 
+  // Pin/unpin handler
+  const handlePin = (postId, shouldPin) => {
+    if (!user?.id || !boardData?.id) return;
+    
+    if (shouldPin) {
+      pinPost(user.id, boardData.id, postId);
+    } else {
+      unpinPost(user.id, boardData.id, postId);
+    }
+    
+    // Force re-render to update pin state and sorting
+    setCards(prevCards => [...prevCards]);
+  };
+
   // Update the handleDelete function to use the new simpler approach
   const handleDelete = async (id) => {
     try {
@@ -1099,6 +1121,8 @@ function BoardView() {
               onPostClick={handlePostClick}
               attachments={card.attachments || []}
               commentCount={card.commentCount || 0}
+              isPinned={user?.id && boardData?.id ? isPostPinned(user.id, boardData.id, card.id) : false}
+              onPin={handlePin}
             />
           ))}
           <Tooltip title="Make a Request" placement="right">
